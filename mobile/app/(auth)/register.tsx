@@ -29,7 +29,7 @@ export default function RegisterScreen() {
   const [appleLoading, setAppleLoading] = useState(false);
 
   const [request, response, promptAsync] = Google.useAuthRequest({
-    expoClientId: GOOGLE_EXPO_CLIENT_ID,
+    clientId: GOOGLE_EXPO_CLIENT_ID,
     iosClientId: GOOGLE_IOS_CLIENT_ID,
     androidClientId: GOOGLE_ANDROID_CLIENT_ID,
     webClientId: GOOGLE_WEB_CLIENT_ID,
@@ -70,6 +70,34 @@ export default function RegisterScreen() {
     } catch (err) {
       setGoogleLoading(false);
       Alert.alert("Google Sign-In Failed", "Could not start Google sign-in. Please try again.");
+    }
+  };
+
+  const handleApplePress = async () => {
+    setAppleLoading(true);
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+      const idToken = credential.identityToken;
+      if (!idToken) {
+        Alert.alert("Apple Sign-In Failed", "Could not retrieve authentication token. Please try again.");
+        return;
+      }
+      const fullName = [credential.fullName?.givenName, credential.fullName?.familyName]
+        .filter(Boolean)
+        .join(" ") || undefined;
+      await loginWithApple(idToken, fullName);
+      router.replace("/(tabs)");
+    } catch (err: any) {
+      if (err.code !== "ERR_REQUEST_CANCELED") {
+        Alert.alert("Apple Sign-In Failed", "Could not sign up with Apple. Please try again.");
+      }
+    } finally {
+      setAppleLoading(false);
     }
   };
 
@@ -160,6 +188,24 @@ export default function RegisterScreen() {
               </>
             )}
           </TouchableOpacity>
+
+          {Platform.OS === "ios" && (
+            <TouchableOpacity
+              style={[styles.appleButton, appleLoading && styles.appleButtonDisabled]}
+              onPress={handleApplePress}
+              disabled={appleLoading}
+              activeOpacity={0.7}
+            >
+              {appleLoading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <Ionicons name="logo-apple" size={20} color="#FFFFFF" style={styles.appleIcon} />
+                  <Text style={styles.appleButtonText}>Continue with Apple</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -214,5 +260,26 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     fontWeight: "600",
     color: colors.text.primary,
+  },
+  appleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#000000",
+    borderRadius: borderRadius.md,
+    minHeight: 48,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+  appleButtonDisabled: {
+    opacity: 0.6,
+  },
+  appleIcon: {
+    marginRight: spacing.sm,
+  },
+  appleButtonText: {
+    fontSize: fontSize.base,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
 });

@@ -13,3 +13,5 @@ from app.models.league import League, Event, Team, TeamMember, Result, Prize  # 
 from app.models.putting import PuttAttempt  # noqa: E402, F401
 from app.models.disc import RegisteredDisc, DiscFoundReport, DiscMessage  # noqa: E402, F401
 from app.models.sticker import StickerOrder, StickerInventory  # noqa: E402, F401
+from app.models.league_member import LeagueMember  # noqa: E402, F401
+from app.models.admin import AuditLog, Announcement  # noqa: E402, F401

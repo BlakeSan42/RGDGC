@@ -17,7 +17,9 @@ class UserLogin(BaseModel):
 
 class UserUpdate(BaseModel):
     display_name: str | None = None
+    username: str | None = None
     phone: str | None = None
+    bio: str | None = None
     avatar_url: str | None = None
 
 
@@ -26,12 +28,23 @@ class UserOut(BaseModel):
     email: str
     username: str
     display_name: str | None
+    phone: str | None = None
+    bio: str | None = None
     avatar_url: str | None
     role: str
     handicap: float | None
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class DeleteAccountRequest(BaseModel):
+    password: str
+
+
+class PushTokenRequest(BaseModel):
+    token: str
+    platform: str  # "ios" or "android"
 
 
 class TokenResponse(BaseModel):

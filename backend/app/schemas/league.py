@@ -50,6 +50,18 @@ class ResultSubmit(BaseModel):
     dq: bool = False
 
 
+class LeagueMemberOut(BaseModel):
+    id: int
+    league_id: int
+    user_id: int
+    joined_at: datetime
+    is_active: bool
+    username: str | None = None
+    display_name: str | None = None
+
+    model_config = {"from_attributes": True}
+
+
 class LeaderboardEntry(BaseModel):
     rank: int
     player_id: int

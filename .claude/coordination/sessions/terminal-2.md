@@ -1,24 +1,31 @@
 ---
 name: terminal-2
-role: Full-stack builder — built initial scaffold, backend, mobile, MCP, infrastructure
+role: Mobile lead — fix TS errors, get app running, walk critical scoring path
 started: 2026-03-22T12:00:00-05:00
-last_heartbeat: 2026-03-22T13:35:00-05:00
+last_heartbeat: 2026-03-22T17:00:00-05:00
 status: active
 ---
 
-Currently working on: Fixing 2 failing backend tests, verifying mobile + MCP npm builds
+Currently working on: Terminal 4's dispatch — fixing mobile deps, TS errors, getting app compiling and scoring flow working
 
 Blocked by: nothing
 
-Can help with: Everything — built the initial 96-file scaffold, all backend endpoints, mobile app, MCP server
+Can help with: Mobile app, backend API, MCP server
 
 Active subagents: none
 
+## Taking Terminal 4's Mobile Workstream:
+1. Install missing deps (expo-auth-session, expo-web-browser, expo-crypto, expo-location, expo-notifications)
+2. Fix all TypeScript errors
+3. npx expo start → verify loads
+4. Walk critical path: Play → Start Round → Select Course → Layout → Scorecard → Complete
+5. Verify Stats, League, Profile tabs render
+6. Chat tab — add "coming soon" state if not wired
+
 ## Completed this session
 - Full project scaffold (96 files, 20,625 lines)
-- Backend: 15 models, 8 API modules, points engine, putting physics, JWT auth, 39/41 tests passing
-- Mobile: Expo Router, 4-tab layout, auth flow, typed API client, design system, all tab screens
-- MCP server: 9 tools + PDGA rules, TypeScript
-- Infrastructure: CLAUDE.md (300+ lines), Docker (ports 5433/6381/8001), CI/CD (GitHub Actions + EAS), health check
-- Database seeded: River Grove DGC, 3 layouts, 54 holes, 2 leagues, admin user
-- GitHub repo created and pushed: https://github.com/BlakeSan42/RGDGC
+- Backend + mobile + MCP server + infrastructure
+- Scoring flow (3 screens), putting practice screen
+- Fixed location: IL → Kingwood, TX with real UDisc hole data
+- Database reseeded, all 41 backend tests passing
+- Notified team about location correction

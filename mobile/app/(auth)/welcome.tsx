@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
+import { View, Text, StyleSheet, Platform, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { Link, router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Google from "expo-auth-session/providers/google";
+import * as AppleAuthentication from "expo-apple-authentication";
 import * as WebBrowser from "expo-web-browser";
 import Constants from "expo-constants";
 import { useAuth } from "@/context/AuthContext";
@@ -18,11 +19,12 @@ const GOOGLE_ANDROID_CLIENT_ID = Constants.expoConfig?.extra?.googleAndroidClien
 const GOOGLE_WEB_CLIENT_ID = Constants.expoConfig?.extra?.googleWebClientId ?? process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? "";
 
 export default function WelcomeScreen() {
-  const { loginWithGoogle } = useAuth();
+  const { loginWithGoogle, loginWithApple } = useAuth();
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
 
   const [request, response, promptAsync] = Google.useAuthRequest({
-    expoClientId: GOOGLE_EXPO_CLIENT_ID,
+    clientId: GOOGLE_EXPO_CLIENT_ID,
     iosClientId: GOOGLE_IOS_CLIENT_ID,
     androidClientId: GOOGLE_ANDROID_CLIENT_ID,
     webClientId: GOOGLE_WEB_CLIENT_ID,
@@ -66,6 +68,34 @@ export default function WelcomeScreen() {
     }
   };
 
+  const handleApplePress = async () => {
+    setAppleLoading(true);
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+      const idToken = credential.identityToken;
+      if (!idToken) {
+        Alert.alert("Apple Sign-In Failed", "Could not retrieve authentication token. Please try again.");
+        return;
+      }
+      const fullName = [credential.fullName?.givenName, credential.fullName?.familyName]
+        .filter(Boolean)
+        .join(" ") || undefined;
+      await loginWithApple(idToken, fullName);
+      router.replace("/(tabs)");
+    } catch (err: any) {
+      if (err.code !== "ERR_REQUEST_CANCELED") {
+        Alert.alert("Apple Sign-In Failed", "Could not sign in with Apple. Please try again.");
+      }
+    } finally {
+      setAppleLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.hero}>
@@ -93,6 +123,24 @@ export default function WelcomeScreen() {
             </>
           )}
         </TouchableOpacity>
+
+        {Platform.OS === "ios" && (
+          <TouchableOpacity
+            style={[styles.appleButton, appleLoading && styles.appleButtonDisabled]}
+            onPress={handleApplePress}
+            disabled={appleLoading}
+            activeOpacity={0.7}
+          >
+            {appleLoading ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <>
+                <Ionicons name="logo-apple" size={20} color="#FFFFFF" style={styles.appleIcon} />
+                <Text style={styles.appleButtonText}>Continue with Apple</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
 
         <View style={styles.dividerContainer}>
           <View style={styles.dividerLine} />
@@ -191,5 +239,26 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     fontWeight: "600",
     color: colors.text.primary,
+  },
+  appleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#000000",
+    borderRadius: borderRadius.md,
+    minHeight: 48,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+  appleButtonDisabled: {
+    opacity: 0.6,
+  },
+  appleIcon: {
+    marginRight: spacing.sm,
+  },
+  appleButtonText: {
+    fontSize: fontSize.base,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
 });

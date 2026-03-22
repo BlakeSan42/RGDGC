@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Integer, Numeric, String, func
+from sqlalchemy import Boolean, DateTime, Integer, Numeric, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models import Base
@@ -20,7 +20,10 @@ class User(Base):
     auth_provider: Mapped[str] = mapped_column(String(20), default="email")  # email, google, apple
     google_id: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
     apple_id: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
+    bio: Mapped[str | None] = mapped_column(String(500))
     wallet_address: Mapped[str | None] = mapped_column(String(42))  # Ethereum address (P1)
+    push_token: Mapped[str | None] = mapped_column(String(255))
+    push_platform: Mapped[str | None] = mapped_column(String(10))  # ios, android
     handicap: Mapped[float | None] = mapped_column(Numeric(4, 1))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

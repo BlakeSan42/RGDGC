@@ -7,11 +7,8 @@ interface ExpoPushToken {
   data: string;
 }
 
-interface NotificationTrigger {
-  seconds?: number;
-  repeats?: boolean;
-  date?: Date;
-}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type NotificationTrigger = any; // expo-notifications trigger input — lazy loaded
 
 interface PermissionStatus {
   granted: boolean;

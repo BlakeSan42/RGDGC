@@ -26,19 +26,22 @@ const MISS_REASONS = [
   { key: "miss_short", label: "Short" },
 ] as const;
 
-const WIND_OPTIONS = [
+type WindOption = { key: string; label: string; speed: number };
+type PuttStyleOption = { key: string; label: string };
+
+const WIND_OPTIONS: WindOption[] = [
   { key: "none", label: "None", speed: 0 },
   { key: "light", label: "Light", speed: 5 },
   { key: "moderate", label: "Mod", speed: 12 },
   { key: "strong", label: "Strong", speed: 22 },
-] as const;
+];
 
-const PUTT_STYLES = [
+const PUTT_STYLES: PuttStyleOption[] = [
   { key: "spin", label: "Spin" },
   { key: "push", label: "Push" },
   { key: "spush", label: "Spush" },
   { key: "turbo", label: "Turbo" },
-] as const;
+];
 
 type PracticeMode = "free" | "ladder" | "circle_of_death" | "twenty_one";
 

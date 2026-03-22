@@ -30,6 +30,9 @@ google-auth-httplib2>=0.2.0
 # HTTP
 httpx==0.28.1
 
+# QR Code generation
+qrcode[svg]==8.0
+
 # Utils
 python-dotenv==1.0.1
 
