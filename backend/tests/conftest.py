@@ -87,11 +87,36 @@ async def db() -> AsyncGenerator[AsyncSession, None]:
 
 _test_app = None
 
+def _create_test_app():
+    """Create app without lifespan for testing (tables managed by fixtures)."""
+    from fastapi import FastAPI
+    from fastapi.middleware.cors import CORSMiddleware
+    from app.api.v1.router import api_router
+    from app.api.public import router as public_router
+
+    app = FastAPI(title="RGDGC Test")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    app.include_router(api_router, prefix="/api/v1")
+    app.include_router(public_router)
+
+    @app.get("/health")
+    async def health():
+        return {"status": "healthy", "service": "rgdgc-api-test"}
+
+    return app
+
+
 @pytest_asyncio.fixture
 async def client() -> AsyncGenerator[AsyncClient, None]:
     global _test_app
     if _test_app is None:
-        _test_app = create_app()
+        _test_app = _create_test_app()
 
     async def override_db():
         async with _TestSession() as session:
