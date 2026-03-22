@@ -241,7 +241,7 @@ async def confirm_returned(db: AsyncSession, disc_code: str, user_id: int) -> Re
             DiscFoundReport.resolved.is_(False),
         )
     )
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()
     for report in result.scalars().all():
         report.resolved = True
         report.resolved_at = now

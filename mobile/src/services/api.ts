@@ -306,6 +306,11 @@ export const geoApi = {
   },
 };
 
+export const userApi = {
+  registerPushToken: (token: string, platform: string) =>
+    api("/api/v1/users/me/push-token", { method: "POST", body: { token, platform } }),
+};
+
 export const puttingApi = {
   logAttempt: (data: PuttAttempt) =>
     api("/api/v1/putting/attempt", { method: "POST", body: data }),

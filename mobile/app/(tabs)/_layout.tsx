@@ -1,18 +1,33 @@
+import { useState, useEffect } from "react";
 import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, View, StyleSheet } from "react-native";
+import { Pressable, View, StyleSheet, Platform } from "react-native";
 import { colors } from "@/constants/theme";
-
-// Mock unread count — replace with real notification state later
-const MOCK_UNREAD_COUNT = 3;
 
 function NotificationBell() {
   const router = useRouter();
-  const hasUnread = MOCK_UNREAD_COUNT > 0;
+  const [hasUnread, setHasUnread] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    let sub: { remove: () => void } | undefined;
+    (async () => {
+      try {
+        const Notifications = await import("expo-notifications");
+        // Show badge dot when a notification arrives while app is in foreground
+        sub = Notifications.addNotificationReceivedListener(() => {
+          setHasUnread(true);
+        });
+      } catch {
+        // expo-notifications not available
+      }
+    })();
+    return () => sub?.remove();
+  }, []);
 
   return (
     <Pressable
-      onPress={() => router.push("/notifications")}
+      onPress={() => { setHasUnread(false); router.push("/notifications"); }}
       hitSlop={8}
       style={bellStyles.container}
     >

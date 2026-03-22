@@ -14,7 +14,7 @@ from app.services.social_auth import (
     verify_apple_token,
     verify_google_token,
 )
-from tests.conftest import TestSession
+# TestSession removed — use db fixture from conftest instead
 
 
 # ── Fixtures ──

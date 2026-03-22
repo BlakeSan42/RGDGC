@@ -29,14 +29,7 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store",
-      "expo-auth-session",
-      [
-        "@rnmapbox/maps",
-        {
-          "RNMapboxMapsImpl": "mapbox"
-        }
-      ]
+      "expo-secure-store"
     ],
     "web": {
       "bundler": "metro",

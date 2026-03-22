@@ -10,6 +10,8 @@ import {
   Plus,
   Trophy,
   ArrowRight,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import {
   BarChart,
@@ -21,7 +23,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { getDashboardStats, getRecentActivity, getWeeklyRounds } from '../lib/api';
-import type { DashboardStats, ActivityItem, WeeklyRounds } from '../lib/types';
+import type { DashboardStats, ActivityItem } from '../lib/types';
 
 function StatCard({
   label,
@@ -96,34 +98,16 @@ function ActivityFeed({ items }: { items: ActivityItem[] }) {
   );
 }
 
-// Mock data for when the API is not yet available
-const mockStats: DashboardStats = {
-  active_players: 47,
-  upcoming_events: 3,
-  rounds_this_week: 128,
-  revenue_this_month: 2450,
-  player_growth: 12,
-  event_growth: 8,
-  round_growth: -3,
-  revenue_growth: 15,
+const emptyStats: DashboardStats = {
+  active_players: 0,
+  upcoming_events: 0,
+  rounds_this_week: 0,
+  revenue_this_month: 0,
+  player_growth: 0,
+  event_growth: 0,
+  round_growth: 0,
+  revenue_growth: 0,
 };
-
-const mockActivity: ActivityItem[] = [
-  { id: '1', type: 'round_completed', message: 'JakePutt22 completed a round on White layout (-3)', timestamp: new Date(Date.now() - 1800000).toISOString() },
-  { id: '2', type: 'player_joined', message: 'New player DiscDave registered', timestamp: new Date(Date.now() - 3600000).toISOString() },
-  { id: '3', type: 'event_created', message: 'Sunday Singles #14 created for Mar 30', timestamp: new Date(Date.now() - 7200000).toISOString() },
-  { id: '4', type: 'results_finalized', message: 'Dubs Night #12 results finalized', timestamp: new Date(Date.now() - 14400000).toISOString() },
-  { id: '5', type: 'disc_found', message: 'Found disc reported: Green Destroyer on hole 7', timestamp: new Date(Date.now() - 28800000).toISOString() },
-];
-
-const mockWeekly: WeeklyRounds[] = [
-  { week: 'Feb 10', rounds: 82 },
-  { week: 'Feb 17', rounds: 95 },
-  { week: 'Feb 24', rounds: 78 },
-  { week: 'Mar 3', rounds: 110 },
-  { week: 'Mar 10', rounds: 124 },
-  { week: 'Mar 17', rounds: 128 },
-];
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -131,24 +115,21 @@ export default function Dashboard() {
   const statsQuery = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: getDashboardStats,
-    placeholderData: mockStats,
   });
 
   const activityQuery = useQuery({
     queryKey: ['recent-activity'],
     queryFn: getRecentActivity,
-    placeholderData: mockActivity,
   });
 
   const weeklyQuery = useQuery({
     queryKey: ['weekly-rounds'],
     queryFn: getWeeklyRounds,
-    placeholderData: mockWeekly,
   });
 
-  const stats = statsQuery.data || mockStats;
-  const activity = activityQuery.data || mockActivity;
-  const weekly = weeklyQuery.data || mockWeekly;
+  const stats = statsQuery.data || emptyStats;
+  const activity = activityQuery.data || [];
+  const weekly = weeklyQuery.data || [];
 
   return (
     <div className="space-y-6">
@@ -159,7 +140,34 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Stats Error */}
+      {statsQuery.isError && (
+        <div className="card border-red-200 bg-red-50 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-red-500" />
+            <p className="text-sm text-red-700">Failed to load dashboard stats. Is the backend running?</p>
+          </div>
+          <button
+            onClick={() => statsQuery.refetch()}
+            className="btn-secondary flex items-center gap-2 text-sm"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Stats Grid */}
+      {statsQuery.isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="card animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-24 mb-3" />
+              <div className="h-8 bg-gray-200 rounded w-16" />
+            </div>
+          ))}
+        </div>
+      ) : (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Active Players"
@@ -190,6 +198,7 @@ export default function Dashboard() {
           color="bg-purple-600"
         />
       </div>
+      )}
 
       {/* Quick Actions */}
       <div className="flex flex-wrap gap-3">
@@ -216,6 +225,19 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-900">Rounds Per Week</h2>
           </div>
+          {weeklyQuery.isLoading ? (
+            <div className="h-64 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-forest-900" />
+            </div>
+          ) : weeklyQuery.isError ? (
+            <div className="h-64 flex flex-col items-center justify-center gap-3">
+              <AlertCircle className="w-8 h-8 text-gray-300" />
+              <p className="text-sm text-gray-400">Failed to load chart data</p>
+              <button onClick={() => weeklyQuery.refetch()} className="btn-secondary text-sm flex items-center gap-1">
+                <RefreshCw className="w-3.5 h-3.5" /> Retry
+              </button>
+            </div>
+          ) : (
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={weekly} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
@@ -233,6 +255,7 @@ export default function Dashboard() {
               </BarChart>
             </ResponsiveContainer>
           </div>
+          )}
         </div>
 
         {/* Activity feed */}
@@ -243,7 +266,18 @@ export default function Dashboard() {
               View all <ArrowRight className="w-3 h-3" />
             </button>
           </div>
-          {activity.length === 0 ? (
+          {activityQuery.isLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-forest-900" />
+            </div>
+          ) : activityQuery.isError ? (
+            <div className="text-center py-8">
+              <p className="text-sm text-gray-400 mb-2">Failed to load activity</p>
+              <button onClick={() => activityQuery.refetch()} className="text-xs text-forest-900 hover:underline">
+                Retry
+              </button>
+            </div>
+          ) : activity.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-8">No recent activity</p>
           ) : (
             <ActivityFeed items={activity} />

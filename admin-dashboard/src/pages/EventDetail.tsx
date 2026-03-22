@@ -11,6 +11,7 @@ import {
   AlertCircle,
   Clock,
   XCircle,
+  RefreshCw,
 } from 'lucide-react';
 import {
   getEvent,
@@ -89,6 +90,24 @@ export default function EventDetail() {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-forest-900" />
+      </div>
+    );
+  }
+
+  if (eventQuery.isError) {
+    return (
+      <div className="text-center py-20">
+        <AlertCircle className="w-12 h-12 text-red-300 mx-auto mb-3" />
+        <p className="text-gray-500 font-medium">Failed to load event</p>
+        <p className="text-sm text-gray-400 mt-1">Check that the backend is running at the configured API URL.</p>
+        <div className="flex justify-center gap-3 mt-4">
+          <button onClick={() => navigate('/events')} className="btn-secondary">
+            Back to Events
+          </button>
+          <button onClick={() => eventQuery.refetch()} className="btn-primary inline-flex items-center gap-2">
+            <RefreshCw className="w-4 h-4" /> Retry
+          </button>
+        </div>
       </div>
     );
   }

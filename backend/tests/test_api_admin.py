@@ -27,10 +27,10 @@ async def test_analytics_dashboard(client: AsyncClient, admin_headers):
     res = await client.get("/api/v1/admin/analytics/dashboard", headers=admin_headers)
     assert res.status_code == 200
     data = res.json()
-    assert "total_members" in data
-    assert "total_rounds" in data
+    assert "active_players" in data
+    assert "rounds_this_week" in data
     assert "upcoming_events" in data
-    assert isinstance(data["total_members"], int)
+    assert isinstance(data["active_players"], int)
 
 
 # ── Change User Role ──

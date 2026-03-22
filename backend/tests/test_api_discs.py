@@ -317,7 +317,9 @@ async def test_full_lost_found_returned_workflow(client: AsyncClient, auth_heade
         f"/api/v1/discs/{disc_code}/lost",
         headers=auth_headers,
     )
-    assert lost_res.json()["status"] == "lost"
+    assert lost_res.status_code == 200, f"Mark lost failed ({lost_res.status_code}): {lost_res.text}"
+    lost_data = lost_res.json() if lost_res.text else {}
+    assert lost_data.get("status") == "lost", f"Expected lost status, got: {lost_res.status_code} {lost_res.text}"
 
     # 3. Someone finds it (public, no auth)
     found_res = await client.post(
@@ -331,4 +333,6 @@ async def test_full_lost_found_returned_workflow(client: AsyncClient, auth_heade
         f"/api/v1/discs/{disc_code}/returned",
         headers=auth_headers,
     )
-    assert returned_res.json()["status"] == "active"
+    assert returned_res.status_code == 200, f"Confirm return failed ({returned_res.status_code}): {returned_res.text}"
+    returned_data = returned_res.json() if returned_res.text else {}
+    assert returned_data.get("status") == "active", f"Expected active status, got: {returned_res.status_code} {returned_res.text}"

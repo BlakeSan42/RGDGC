@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Platform } from "react-native";
+import { userApi } from "@/services/api";
 
 // Types — mirrors expo-notifications API surface
 interface ExpoPushToken {
@@ -79,8 +80,12 @@ export function useNotifications() {
         const token = tokenData.data;
         setExpoPushToken(token);
 
-        // TODO: send token to backend via POST /api/v1/users/me/push-token
-        // await api.post('/users/me/push-token', { token, platform: Platform.OS });
+        // Send token to backend
+        try {
+          await userApi.registerPushToken(token, Platform.OS);
+        } catch {
+          // Non-critical — token will be re-sent on next app launch
+        }
 
         return token;
       } catch {

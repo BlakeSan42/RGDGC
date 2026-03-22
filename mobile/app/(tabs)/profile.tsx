@@ -78,6 +78,8 @@ export default function ProfileScreen() {
             </View>
           </Pressable>
           <View style={styles.navDivider} />
+          <NavRow label="Sync & Offline" onPress={() => router.push("/sync")} />
+          <View style={styles.navDivider} />
           <NavRow label="Settings" onPress={() => router.push("/settings")} />
         </Card>
       </View>

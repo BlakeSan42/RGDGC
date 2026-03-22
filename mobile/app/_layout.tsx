@@ -1,12 +1,62 @@
-import { Stack } from "expo-router";
+import { useEffect, useRef } from "react";
+import { View, StyleSheet, Platform } from "react-native";
+import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { AuthProvider } from "@/context/AuthContext";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { OfflineProvider } from "@/context/OfflineContext";
+import { OfflineBanner } from "@/components/common/OfflineBanner";
+import { useNotifications } from "@/hooks/useNotifications";
+
+/** Registers push token after login and sets up notification listeners. */
+function NotificationSetup() {
+  const { isAuthenticated } = useAuth();
+  const { registerForPushNotifications } = useNotifications();
+  const router = useRouter();
+  const registered = useRef(false);
+
+  useEffect(() => {
+    if (!isAuthenticated || registered.current) return;
+    // Register push token on first authenticated mount
+    registerForPushNotifications().then(() => {
+      registered.current = true;
+    });
+  }, [isAuthenticated]);
+
+  // Set up notification response listener (tapping a notification)
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+
+    let sub: { remove: () => void } | undefined;
+    (async () => {
+      try {
+        const Notifications = await import("expo-notifications");
+        sub = Notifications.addNotificationResponseReceivedListener((response) => {
+          const data = response.notification.request.content.data;
+          // Navigate based on notification type
+          if (data?.type === "event_results" && data?.event_id) {
+            router.push(`/event/${data.event_id}`);
+          } else if (data?.type === "announcement") {
+            router.push("/notifications");
+          }
+        });
+      } catch {
+        // expo-notifications not available
+      }
+    })();
+
+    return () => sub?.remove();
+  }, []);
+
+  return null;
+}
 
 export default function RootLayout() {
   return (
     <AuthProvider>
       <OfflineProvider>
+      <NotificationSetup />
+      <View style={styles.root}>
+      <OfflineBanner />
       <StatusBar style="auto" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" />
@@ -112,7 +162,12 @@ export default function RootLayout() {
           options={{ headerShown: true, title: "Sync & Offline" }}
         />
       </Stack>
+      </View>
       </OfflineProvider>
     </AuthProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+});

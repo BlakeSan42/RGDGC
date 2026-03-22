@@ -341,7 +341,20 @@ Example (8 players):
 - Putting zones: **C1** (0-10m), **C1X** (circle 1 exclusive), **C2** (10-20m)
 
 ## Skills
-See `.claude/skills/` for investigation workflows: `orchestrate.md`, `diagnose.md`, `visualize.md`
+See `.claude/skills/` for workflows:
+- `autopilot.md` — **Start here.** Autonomous work: read roadmap, claim task, execute, repeat.
+- `coordinate.md` — Multi-session sync, messaging, task claiming
+- `orchestrate.md` — Master reasoning for cross-system investigation
+- `diagnose.md` — Step-by-step issue diagnosis
+- `visualize.md` — Data visualization & architecture diagrams
+
+## Autonomous Operation
+When starting a session without specific instructions, enter **autopilot mode**:
+1. Read `.claude/coordination/roadmap.md` for prioritized task queue
+2. Read `.claude/coordination/board.md` to see what's claimed
+3. Pick the highest-priority unclaimed task
+4. Claim it, execute it, mark it done, pick the next one
+5. See `.claude/coordination/autopilot.md` for full protocol
 
 ## Deployment
 ```bash

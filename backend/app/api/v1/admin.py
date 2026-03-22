@@ -76,17 +76,152 @@ async def admin_dashboard(
     admin: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    user_count = await db.execute(select(func.count(User.id)).where(User.is_active.is_(True)))
-    round_count = await db.execute(select(func.count(Round.id)))
-    event_count = await db.execute(
+    now = datetime.utcnow()
+    one_week_ago = now - timedelta(days=7)
+    one_month_ago = now - timedelta(days=30)
+    two_months_ago = now - timedelta(days=60)
+
+    # Active players (played a round in last 30 days)
+    active_q = await db.execute(
+        select(func.count(func.distinct(Round.user_id))).where(Round.started_at >= one_month_ago)
+    )
+    active_players = active_q.scalar() or 0
+
+    # Active players previous month (for growth calc)
+    prev_active_q = await db.execute(
+        select(func.count(func.distinct(Round.user_id))).where(
+            and_(Round.started_at >= two_months_ago, Round.started_at < one_month_ago)
+        )
+    )
+    prev_active = prev_active_q.scalar() or 0
+
+    # Upcoming events
+    event_q = await db.execute(
         select(func.count(Event.id)).where(Event.status == "upcoming")
     )
+    upcoming_events = event_q.scalar() or 0
+
+    # Rounds this week
+    week_rounds_q = await db.execute(
+        select(func.count(Round.id)).where(Round.started_at >= one_week_ago)
+    )
+    rounds_this_week = week_rounds_q.scalar() or 0
+
+    # Rounds previous week
+    two_weeks_ago = now - timedelta(days=14)
+    prev_week_q = await db.execute(
+        select(func.count(Round.id)).where(
+            and_(Round.started_at >= two_weeks_ago, Round.started_at < one_week_ago)
+        )
+    )
+    prev_week_rounds = prev_week_q.scalar() or 0
+
+    # Revenue this month (sum of event fees from results)
+    revenue_q = await db.execute(
+        select(func.coalesce(func.sum(Event.entry_fee), 0)).where(
+            and_(Event.event_date >= one_month_ago.date(), Event.status == "completed")
+        )
+    )
+    revenue_this_month = float(revenue_q.scalar() or 0)
+
+    def growth_pct(current: int, previous: int) -> int:
+        if previous == 0:
+            return 100 if current > 0 else 0
+        return round((current - previous) / previous * 100)
 
     return {
-        "total_members": user_count.scalar() or 0,
-        "total_rounds": round_count.scalar() or 0,
-        "upcoming_events": event_count.scalar() or 0,
+        "active_players": active_players,
+        "upcoming_events": upcoming_events,
+        "rounds_this_week": rounds_this_week,
+        "revenue_this_month": revenue_this_month,
+        "player_growth": growth_pct(active_players, prev_active),
+        "event_growth": 0,
+        "round_growth": growth_pct(rounds_this_week, prev_week_rounds),
+        "revenue_growth": 0,
     }
+
+
+@router.get("/activity")
+async def get_recent_activity(
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+    limit: int = Query(10, ge=1, le=50),
+):
+    """Recent activity feed combining audit logs, rounds, and events."""
+    items: list[dict] = []
+
+    # Recent audit log entries
+    audit_q = await db.execute(
+        select(AuditLog).order_by(AuditLog.created_at.desc()).limit(limit)
+    )
+    for log in audit_q.scalars().all():
+        action_messages = {
+            "event_create": "New event created",
+            "role_change": "Player role updated",
+            "announcement_create": "New announcement posted",
+            "results_finalize": "Event results finalized",
+            "cache_clear": "Cache cleared",
+        }
+        msg = action_messages.get(log.action, f"Admin action: {log.action}")
+        if log.details:
+            if "title" in log.details:
+                msg = f"{msg}: {log.details['title']}"
+        type_map = {
+            "event_create": "event_created",
+            "results_finalize": "results_finalized",
+            "role_change": "player_joined",
+        }
+        items.append({
+            "id": f"audit-{log.id}",
+            "type": type_map.get(log.action, "round_completed"),
+            "message": msg,
+            "timestamp": log.created_at.isoformat(),
+        })
+
+    # Recent completed rounds
+    round_q = await db.execute(
+        select(Round).where(Round.completed_at.isnot(None))
+        .order_by(Round.completed_at.desc()).limit(limit)
+    )
+    for rnd in round_q.scalars().all():
+        score_str = ""
+        if rnd.total_score is not None:
+            score_str = f" ({'+' if rnd.total_score > 0 else ''}{rnd.total_score})" if rnd.total_score != 0 else " (E)"
+        items.append({
+            "id": f"round-{rnd.id}",
+            "type": "round_completed",
+            "message": f"Round completed{score_str}",
+            "timestamp": rnd.completed_at.isoformat(),
+        })
+
+    # Sort by timestamp descending and trim
+    items.sort(key=lambda x: x["timestamp"], reverse=True)
+    return items[:limit]
+
+
+@router.get("/analytics/weekly-rounds")
+async def weekly_rounds(
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+    weeks: int = Query(6, ge=1, le=12),
+):
+    """Rounds per week for the last N weeks."""
+    now = datetime.utcnow()
+    result = []
+    for i in range(weeks - 1, -1, -1):
+        week_end = now - timedelta(weeks=i)
+        week_start = week_end - timedelta(weeks=1)
+        count_q = await db.execute(
+            select(func.count(Round.id)).where(
+                and_(Round.started_at >= week_start, Round.started_at < week_end)
+            )
+        )
+        count = count_q.scalar() or 0
+        result.append({
+            "week": week_start.strftime("%b %d"),
+            "rounds": count,
+        })
+    return result
 
 
 @router.post("/users/{user_id}/role")
@@ -335,7 +470,7 @@ async def player_analytics(
     admin: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()
     one_week_ago = now - timedelta(days=7)
     one_month_ago = now - timedelta(days=30)
 
@@ -390,7 +525,7 @@ async def round_analytics(
     admin: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()
     thirty_days_ago = now - timedelta(days=30)
 
     # Total rounds

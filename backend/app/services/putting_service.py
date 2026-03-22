@@ -19,7 +19,10 @@ from app.models.putting import PuttAttempt
 # Basket dimensions (meters)
 BASKET_RADIUS = 0.27  # Standard PDGA basket inner radius
 DISC_RADIUS = 0.108  # Standard disc radius
-EFFECTIVE_RADIUS = BASKET_RADIUS - DISC_RADIUS  # 0.162m
+# Effective catching radius accounts for chains catching discs
+# that don't perfectly center — chains extend ~0.33m from pole
+CHAIN_CATCH_RADIUS = 0.33
+EFFECTIVE_RADIUS = CHAIN_CATCH_RADIUS  # chains catch off-center hits
 
 
 @dataclass
@@ -81,8 +84,9 @@ def calculate_make_probability(
     p_angle = 2 * _normal_cdf(theta_0 / params.sigma_angle) - 1
 
     # Distance accuracy (how well they control speed)
-    overshoot = 0.4  # typical target overshoot in meters
-    p_distance = _normal_cdf(overshoot / params.sigma_distance)
+    # At close range, distance control is near-certain; it matters more at range
+    overshoot_margin = 0.5 + 0.3 * min(distance_meters / 10.0, 1.0)  # 0.5-0.8m window
+    p_distance = _normal_cdf(overshoot_margin / params.sigma_distance)
 
     # Base probability
     p_base = p_angle * p_distance * (1 - params.epsilon)

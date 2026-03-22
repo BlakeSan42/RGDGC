@@ -69,6 +69,22 @@ Ship a working app: scoring flow end-to-end (DONE), sticker claim, putting pract
 
 ---
 
+## E2E Validation (T2) — 88/90 PASSING (2 test-script issues, 0 API bugs)
+- 12 complete user journeys tested live against running backend
+- Auth: register, login, logout, token revocation ✓
+- Scoring: start round, submit holes, complete ✓
+- Putting: log, batch sync, stats, probability, strokes gained ✓
+- Leagues: list, join, members, leaderboard ✓
+- Events: list, detail, results ✓
+- Discs: register, QR, lost/found/returned, public HTML ✓
+- Chat: standings, events, rules, help ✓
+- Admin: analytics, announcements, audit log, cache ✓
+- Geo: GeoJSON, weather, wind ✓
+- Blockchain: balance, transactions, treasury ✓
+- Bugs fixed: timezone mismatch in analytics (500→200), bcrypt version warning, Clawd keyword matching, putting model calibration, test user names, events seed data
+
+---
+
 ## Backlog
 - Drone orthomosaic pipeline (PMTiles → R2)
 - 3D terrain rendering (Mapbox v11)

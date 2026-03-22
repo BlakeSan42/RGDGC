@@ -3,15 +3,12 @@ import { View, Text, StyleSheet, Platform, TouchableOpacity, ActivityIndicator, 
 import { Link, router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import * as Google from "expo-auth-session/providers/google";
 import * as AppleAuthentication from "expo-apple-authentication";
-import * as WebBrowser from "expo-web-browser";
 import Constants from "expo-constants";
 import { useAuth } from "@/context/AuthContext";
+import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 import { Button } from "@/components/common/Button";
 import { colors, spacing, fontSize, borderRadius } from "@/constants/theme";
-
-WebBrowser.maybeCompleteAuthSession();
 
 const GOOGLE_EXPO_CLIENT_ID = Constants.expoConfig?.extra?.googleExpoClientId ?? process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID ?? "";
 const GOOGLE_IOS_CLIENT_ID = Constants.expoConfig?.extra?.googleIosClientId ?? process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? "";
@@ -20,10 +17,9 @@ const GOOGLE_WEB_CLIENT_ID = Constants.expoConfig?.extra?.googleWebClientId ?? p
 
 export default function WelcomeScreen() {
   const { loginWithGoogle, loginWithApple } = useAuth();
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [appleLoading, setAppleLoading] = useState(false);
 
-  const [request, response, promptAsync] = Google.useAuthRequest({
+  const google = useGoogleAuth({
     clientId: GOOGLE_EXPO_CLIENT_ID,
     iosClientId: GOOGLE_IOS_CLIENT_ID,
     androidClientId: GOOGLE_ANDROID_CLIENT_ID,
@@ -31,21 +27,12 @@ export default function WelcomeScreen() {
   });
 
   useEffect(() => {
-    if (response?.type === "success") {
-      const idToken = response.authentication?.idToken;
-      if (idToken) {
-        handleGoogleAuth(idToken);
-      } else {
-        setGoogleLoading(false);
-        Alert.alert("Google Sign-In Failed", "Could not retrieve authentication token. Please try again.");
-      }
-    } else if (response?.type === "error") {
-      setGoogleLoading(false);
-      Alert.alert("Google Sign-In Failed", response.error?.message || "An unexpected error occurred. Please try again.");
-    } else if (response?.type === "dismiss") {
-      setGoogleLoading(false);
+    if (google.idToken) {
+      handleGoogleAuth(google.idToken);
+    } else if (google.error) {
+      Alert.alert("Google Sign-In Failed", google.error);
     }
-  }, [response]);
+  }, [google.idToken, google.error]);
 
   const handleGoogleAuth = async (idToken: string) => {
     try {
@@ -53,18 +40,6 @@ export default function WelcomeScreen() {
       router.replace("/(tabs)");
     } catch (err) {
       Alert.alert("Sign-In Failed", "Could not sign in with Google. Please try again.");
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
-
-  const handleGooglePress = async () => {
-    setGoogleLoading(true);
-    try {
-      await promptAsync();
-    } catch (err) {
-      setGoogleLoading(false);
-      Alert.alert("Google Sign-In Failed", "Could not start Google sign-in. Please try again.");
     }
   };
 
@@ -109,12 +84,12 @@ export default function WelcomeScreen() {
 
       <View style={styles.actions}>
         <TouchableOpacity
-          style={[styles.googleButton, (!request || googleLoading) && styles.googleButtonDisabled]}
-          onPress={handleGooglePress}
-          disabled={!request || googleLoading}
+          style={[styles.googleButton, (!google.request || google.loading) && styles.googleButtonDisabled]}
+          onPress={google.promptAsync}
+          disabled={!google.request || google.loading}
           activeOpacity={0.7}
         >
-          {googleLoading ? (
+          {google.loading ? (
             <ActivityIndicator size="small" color={colors.text.primary} />
           ) : (
             <>

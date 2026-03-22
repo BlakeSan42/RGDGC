@@ -1,0 +1,18 @@
+Here are the commands to run manually:
+
+  Terminal A — Backend API:
+  cd ~/RGDGC/backend
+  source venv/bin/activate
+  uvicorn app.main:app --reload --port 8001
+
+  Terminal B — Mobile Web:
+  cd ~/RGDGC/mobile
+  npx expo start --web --port 8082
+
+  Prerequisites (should already be running):
+  cd ~/RGDGC
+  docker compose up -d   # PostgreSQL on 5433, Redis on 6381
+
+  Then open http://localhost:8082 in your browser.
+
+  The backend API docs are at http://localhost:8001/docs (Swagger UI).

@@ -10,6 +10,8 @@ import {
   ChevronDown,
   ChevronUp,
   Award,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import {
   getLeagues,
@@ -257,6 +259,15 @@ export default function LeagueManagement() {
       {leaguesQuery.isLoading ? (
         <div className="flex items-center justify-center py-16">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-forest-900" />
+        </div>
+      ) : leaguesQuery.isError ? (
+        <div className="card text-center py-12">
+          <AlertCircle className="w-12 h-12 text-red-300 mx-auto mb-3" />
+          <p className="text-gray-500 font-medium">Failed to load leagues</p>
+          <p className="text-sm text-gray-400 mt-1">Check that the backend is running at the configured API URL.</p>
+          <button onClick={() => leaguesQuery.refetch()} className="btn-secondary mt-4 inline-flex items-center gap-2">
+            <RefreshCw className="w-4 h-4" /> Retry
+          </button>
         </div>
       ) : leagues.length === 0 ? (
         <div className="card text-center py-12">

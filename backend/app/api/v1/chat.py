@@ -35,7 +35,7 @@ async def chat(
     msg = data.message.lower().strip()
 
     # --- Standings / Leaderboard ---
-    if any(kw in msg for kw in ("standings", "leaderboard", "points", "ranking")):
+    if any(kw in msg for kw in ("standings", "leaderboard", "points", "ranking", "winning", "leader", "who's ahead", "whos ahead", "top", "season")):
         return await _handle_standings(db)
 
     # --- Events ---

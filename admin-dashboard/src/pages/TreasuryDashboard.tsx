@@ -10,6 +10,7 @@ import {
   ChevronRight,
   AlertCircle,
   X,
+  RefreshCw,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -50,15 +51,19 @@ function StatusDot({ status }: { status: Transaction['status'] }) {
   );
 }
 
-// Mock chart data
-const mockChartData = [
-  { month: 'Oct', balance: 5000 },
-  { month: 'Nov', balance: 7200 },
-  { month: 'Dec', balance: 6800 },
-  { month: 'Jan', balance: 9500 },
-  { month: 'Feb', balance: 11200 },
-  { month: 'Mar', balance: 12800 },
-];
+// Chart data will be derived from treasury stats once contracts are deployed.
+// For now, show current balance as a single data point.
+function buildChartData(balance: number): { month: string; balance: number }[] {
+  const now = new Date();
+  return Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now);
+    d.setMonth(d.getMonth() - (5 - i));
+    return {
+      month: d.toLocaleString('default', { month: 'short' }),
+      balance: i === 5 ? balance : 0,
+    };
+  });
+}
 
 export default function TreasuryDashboard() {
   const queryClient = useQueryClient();
@@ -72,7 +77,6 @@ export default function TreasuryDashboard() {
   const treasuryQuery = useQuery({
     queryKey: ['treasury-stats'],
     queryFn: getTreasuryStats,
-    placeholderData: { balance: 12800, total_minted: 25000, total_distributed: 12200, pending_payouts: 1500 },
   });
 
   const txQuery = useQuery({
@@ -131,7 +135,34 @@ export default function TreasuryDashboard() {
         </div>
       </div>
 
+      {/* Stats Error */}
+      {treasuryQuery.isError && (
+        <div className="card border-red-200 bg-red-50 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-red-500" />
+            <p className="text-sm text-red-700">Failed to load treasury stats. Blockchain service may be unavailable.</p>
+          </div>
+          <button
+            onClick={() => treasuryQuery.refetch()}
+            className="btn-secondary flex items-center gap-2 text-sm"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Stats */}
+      {treasuryQuery.isLoading ? (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="card animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-20 mb-3" />
+              <div className="h-8 bg-gray-200 rounded w-24" />
+            </div>
+          ))}
+        </div>
+      ) : (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="card">
           <div className="flex items-center gap-2 mb-1">
@@ -170,13 +201,14 @@ export default function TreasuryDashboard() {
           </p>
         </div>
       </div>
+      )}
 
       {/* Chart */}
       <div className="card">
         <h2 className="font-semibold text-gray-900 mb-4">Treasury Balance Over Time</h2>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={mockChartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+            <AreaChart data={buildChartData(stats?.balance || 0)} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
               <XAxis dataKey="month" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
               <YAxis tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
@@ -217,7 +249,19 @@ export default function TreasuryDashboard() {
           </select>
         </div>
 
-        {transactions.length === 0 ? (
+        {txQuery.isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-forest-900" />
+          </div>
+        ) : txQuery.isError ? (
+          <div className="text-center py-12">
+            <AlertCircle className="w-10 h-10 text-red-300 mx-auto mb-2" />
+            <p className="text-gray-500 text-sm">Failed to load transactions</p>
+            <button onClick={() => txQuery.refetch()} className="btn-secondary mt-3 inline-flex items-center gap-2 text-sm">
+              <RefreshCw className="w-3.5 h-3.5" /> Retry
+            </button>
+          </div>
+        ) : transactions.length === 0 ? (
           <div className="text-center py-12">
             <Wallet className="w-10 h-10 text-gray-300 mx-auto mb-2" />
             <p className="text-gray-500 text-sm">No transactions found</p>
