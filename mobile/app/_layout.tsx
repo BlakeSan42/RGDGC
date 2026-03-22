@@ -97,6 +97,14 @@ export default function RootLayout() {
           name="compare"
           options={{ headerShown: true, title: "Compare Players" }}
         />
+        <Stack.Screen
+          name="stickers/claim"
+          options={{ headerShown: true, title: "Claim Sticker" }}
+        />
+        <Stack.Screen
+          name="course/map"
+          options={{ headerShown: true, title: "Course Map" }}
+        />
       </Stack>
     </AuthProvider>
   );

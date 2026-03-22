@@ -64,7 +64,7 @@ export default function CourseMapScreen() {
   const [error, setError] = useState<string | null>(null);
   const [selectedHole, setSelectedHole] = useState<HoleInfo | null>(null);
   const [mapStyle, setMapStyle] = useState<"satellite" | "streets">("satellite");
-  const cameraRef = useRef<Camera>(null);
+  const cameraRef = useRef<InstanceType<typeof Camera>>(null);
 
   useEffect(() => {
     if (!courseId) return;
