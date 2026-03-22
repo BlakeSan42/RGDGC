@@ -401,25 +401,20 @@ def _get_deployer_account():
 
 def _send_signed_tx(w3, account, tx_data: dict) -> str:
     """Build, sign, and send a transaction. Returns the tx hash hex string."""
-    tx_data.update({
-        "from": account.address,
-        "nonce": w3.eth.get_transaction_count(account.address),
-        "chainId": w3.eth.chain_id,
-    })
+    # Set core fields
+    tx_data["nonce"] = w3.eth.get_transaction_count(account.address)
+    tx_data["chainId"] = w3.eth.chain_id
+
+    # Remove gas fields set by build_transaction — we'll recalculate cleanly
+    for key in ("maxFeePerGas", "maxPriorityFeePerGas", "gasPrice"):
+        tx_data.pop(key, None)
+
     # Estimate gas if not set
     if "gas" not in tx_data:
         tx_data["gas"] = w3.eth.estimate_gas(tx_data)
-    # Use EIP-1559 if supported, otherwise legacy gas price
-    try:
-        latest = w3.eth.get_block("latest")
-        if hasattr(latest, "baseFeePerGas") and latest.baseFeePerGas is not None:
-            base_fee = latest.baseFeePerGas
-            tx_data["maxFeePerGas"] = base_fee * 2
-            tx_data["maxPriorityFeePerGas"] = w3.to_wei(1, "gwei")
-        else:
-            tx_data["gasPrice"] = w3.eth.gas_price
-    except Exception:
-        tx_data["gasPrice"] = w3.eth.gas_price
+
+    # Set gas pricing — use legacy gasPrice for simplicity on testnets
+    tx_data["gasPrice"] = w3.eth.gas_price
 
     signed = w3.eth.account.sign_transaction(tx_data, private_key=account.key)
     tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)

@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1 import auth, users, courses, rounds, leagues, events, putting, admin, stickers, geo, discs, chat, weather, blockchain, web3auth, owner, payments
+from app.api.v1 import auth, users, courses, rounds, leagues, events, putting, admin, stickers, geo, discs, chat, weather, blockchain, web3auth, owner, payments, treasury
 
 api_router = APIRouter()
 
@@ -20,6 +20,7 @@ api_router.include_router(chat.router, prefix="/chat", tags=["chat"])
 api_router.include_router(weather.router, prefix="/weather", tags=["weather"])
 api_router.include_router(blockchain.router, prefix="/blockchain", tags=["blockchain"])
 api_router.include_router(payments.router, prefix="/payments", tags=["payments"])
+api_router.include_router(treasury.router, prefix="/treasury", tags=["treasury"])
 
 # KSA router — import only if module exists (added by another terminal)
 try:

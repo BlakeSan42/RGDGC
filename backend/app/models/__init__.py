@@ -17,6 +17,7 @@ from app.models.league_member import LeagueMember  # noqa: E402, F401
 from app.models.admin import AuditLog, Announcement  # noqa: E402, F401
 from app.models.transaction import Transaction  # noqa: E402, F401
 from app.models.payment import EventPayment  # noqa: E402, F401
+from app.models.ledger import LedgerEntry, SeasonSummary  # noqa: E402, F401
 
 # KSA models — import only if the file exists (added by another terminal)
 try:
