@@ -295,17 +295,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     case "get_upcoming_events": {
       const leagueId = (args as Record<string, unknown>).league_id;
       const limit = (args as Record<string, unknown>).limit ?? 5;
-      const path = leagueId
-        ? `/api/v1/leagues/${leagueId}/events?status=upcoming&limit=${limit}`
-        : `/api/v1/events?status=upcoming&limit=${limit}`;
-      const data = (await apiGet(path)) as { events?: Array<Record<string, unknown>> };
+      // Backend returns array from /events, optionally filtered by status and league_id
+      let path = `/api/v1/events?status=upcoming&limit=${limit}`;
+      if (leagueId) path += `&league_id=${leagueId}`;
+      const data = (await apiGet(path)) as Array<Record<string, unknown>>;
 
       let result = "**Upcoming Events**\n\n";
-      const events = data.events ?? [];
+      const events = Array.isArray(data) ? data : [];
+      if (events.length === 0) return text("No upcoming events scheduled.");
       events.forEach((ev: Record<string, unknown>) => {
-        result += `- ${ev.name} — ${ev.event_date} (${ev.num_players ?? "?"} registered)\n`;
+        result += `- ${ev.name ?? "League Event"} — ${ev.event_date} (${ev.num_players ?? "?"} registered)\n`;
       });
-      return text(result || "No upcoming events.");
+      return text(result);
     }
 
     // ── Event Results ──
@@ -368,7 +369,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     // ── Event Check-ins ──
     case "get_event_checkins": {
       const eventId = (args as Record<string, unknown>).event_id;
-      const data = await apiGet(`/api/v1/events/${eventId}/players`);
+      // Backend uses /results endpoint — check-ins create result entries
+      const data = await apiGet(`/api/v1/events/${eventId}/results`);
       return text(JSON.stringify(data, null, 2));
     }
 

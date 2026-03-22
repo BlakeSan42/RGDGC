@@ -11,12 +11,15 @@ GET /disc/{disc_code} — Returns a styled, mobile-responsive HTML page showing:
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
 from app.services.disc_service import lookup_disc
 
 router = APIRouter(tags=["public"])
+limiter = Limiter(key_func=get_remote_address)
 
 # RGDGC deep link scheme (configurable for prod vs dev)
 APP_DEEP_LINK = "rgdgc://disc/{disc_code}"
@@ -378,6 +381,7 @@ def _render_not_found_page(disc_code: str) -> str:
 
 
 @router.get("/disc/{disc_code}", response_class=HTMLResponse)
+@limiter.limit("60/minute")
 async def public_disc_page(
     disc_code: str,
     request: Request,

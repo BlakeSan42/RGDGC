@@ -48,3 +48,6 @@ contracts/typechain-types/
 # Signals (keep structure, ignore large data)
 signals/*.jsonl
 !signals/.processed_transcripts
+
+# Private / confidential research
+docs/KSA-Research/

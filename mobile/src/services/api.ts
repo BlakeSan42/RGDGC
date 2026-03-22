@@ -1,4 +1,4 @@
-import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
 import Constants from "expo-constants";
 
 const API_URL =
@@ -9,20 +9,50 @@ const API_URL =
 const TOKEN_KEY = "rgdgc_access_token";
 const REFRESH_KEY = "rgdgc_refresh_token";
 
+// ── Platform-aware Token Storage ──
+// Native: expo-secure-store (encrypted keychain/keystore)
+// Web: localStorage (acceptable for dev/testing — no secrets at rest)
+
+const tokenStore = {
+  get: async (key: string): Promise<string | null> => {
+    if (Platform.OS === "web") {
+      return localStorage.getItem(key);
+    }
+    const SecureStore = await import("expo-secure-store");
+    return SecureStore.getItemAsync(key);
+  },
+  set: async (key: string, value: string): Promise<void> => {
+    if (Platform.OS === "web") {
+      localStorage.setItem(key, value);
+      return;
+    }
+    const SecureStore = await import("expo-secure-store");
+    await SecureStore.setItemAsync(key, value);
+  },
+  delete: async (key: string): Promise<void> => {
+    if (Platform.OS === "web") {
+      localStorage.removeItem(key);
+      return;
+    }
+    const SecureStore = await import("expo-secure-store");
+    await SecureStore.deleteItemAsync(key);
+  },
+};
+
 // ── Token Management ──
 
 export async function getToken(): Promise<string | null> {
-  return SecureStore.getItemAsync(TOKEN_KEY);
+  return tokenStore.get(TOKEN_KEY);
 }
 
 export async function setTokens(access: string, refresh: string) {
-  await SecureStore.setItemAsync(TOKEN_KEY, access);
-  await SecureStore.setItemAsync(REFRESH_KEY, refresh);
+  await tokenStore.set(TOKEN_KEY, access);
+  await tokenStore.set(REFRESH_KEY, refresh);
 }
 
 export async function clearTokens() {
-  await SecureStore.deleteItemAsync(TOKEN_KEY);
-  await SecureStore.deleteItemAsync(REFRESH_KEY);
+  await tokenStore.delete(TOKEN_KEY);
+  await tokenStore.delete(REFRESH_KEY);
 }
 
 // ── API Client ──
@@ -34,7 +64,7 @@ interface RequestOptions {
 }
 
 async function refreshAccessToken(): Promise<string | null> {
-  const refreshToken = await SecureStore.getItemAsync(REFRESH_KEY);
+  const refreshToken = await tokenStore.get(REFRESH_KEY);
   if (!refreshToken) return null;
 
   try {
@@ -238,6 +268,42 @@ export const leaderboardApi = {
     api<PuttingLeader[]>(`/api/v1/putting/leaders?limit=${limit}`),
   courseRecords: () =>
     api<CourseRecord[]>(`/api/v1/courses/records`),
+};
+
+export const geoApi = {
+  courseGeoJSON: (courseId: number, layoutId?: number) => {
+    let path = `/api/v1/geo/courses/${courseId}/geojson`;
+    if (layoutId) path += `?layout_id=${layoutId}`;
+    return api<GeoJSON.FeatureCollection>(path, { auth: false });
+  },
+
+  holeElevation: (courseId: number, holeNumber: number, layoutId?: number) => {
+    let path = `/api/v1/geo/courses/${courseId}/holes/${holeNumber}/elevation`;
+    if (layoutId) path += `?layout_id=${layoutId}`;
+    return api<{
+      hole_number: number;
+      par: number;
+      distance_ft: number | null;
+      tee_elevation_ft: number | null;
+      basket_elevation_ft: number | null;
+      elevation_change_ft: number | null;
+      profile: Array<{ distance_ft: number; elevation_ft: number }> | null;
+    }>(path, { auth: false });
+  },
+
+  nearestHole: (lat: number, lng: number, courseId?: number) => {
+    let path = `/api/v1/geo/nearest-hole?lat=${lat}&lng=${lng}`;
+    if (courseId) path += `&course_id=${courseId}`;
+    return api<{
+      found: boolean;
+      hole_number?: number;
+      distance_m?: number;
+      distance_ft?: number;
+      par?: number;
+      hole_distance_ft?: number;
+      tee_position?: [number, number];
+    }>(path, { auth: false });
+  },
 };
 
 export const puttingApi = {

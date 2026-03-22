@@ -16,9 +16,11 @@ Authenticated endpoints:
     GET  /{disc_code}/messages — Get messages (owner only)
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,6 +28,7 @@ from app.config import get_settings
 from app.core.security import get_current_user
 from app.db.database import get_db
 from app.models.user import User
+from app.services.storage_service import delete_file, upload_file
 from app.schemas.disc import (
     DiscFoundCreate,
     DiscFoundResponse,
@@ -49,7 +52,8 @@ from app.services.disc_service import (
     send_disc_message,
 )
 
-router = APIRouter(prefix="/discs", tags=["discs"])
+router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 # Optional auth: returns User or None (does not raise on missing/invalid token)
 _optional_bearer = HTTPBearer(auto_error=False)
@@ -251,13 +255,42 @@ async def confirm_disc_returned(
     )
 
 
+@router.post("/{disc_code}/photo", response_model=dict)
+async def upload_disc_photo(
+    disc_code: str,
+    file: UploadFile,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Upload disc photo. Owner only."""
+    disc = await lookup_disc(db, disc_code)
+    if disc is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Disc not found")
+    if disc.owner_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the disc owner can upload a photo",
+        )
+
+    # Delete previous photo if it exists
+    if disc.photo_url:
+        await delete_file(disc.photo_url)
+
+    url = await upload_file(file, folder="discs", filename=f"disc-{disc.disc_code}")
+    disc.photo_url = url
+    await db.flush()
+    return {"photo_url": url}
+
+
 # ---------------------------------------------------------------------------
 # Public endpoints (no auth required)
 # ---------------------------------------------------------------------------
 
 
 @router.get("/{disc_code}/lookup", response_model=DiscPublicResponse)
+@limiter.limit("30/minute")
 async def public_disc_lookup(
+    request: Request,
     disc_code: str,
     db: AsyncSession = Depends(get_db),
 ):
@@ -282,7 +315,9 @@ async def public_disc_lookup(
 
 
 @router.post("/{disc_code}/found", response_model=DiscFoundResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/minute")
 async def report_disc_found(
+    request: Request,
     disc_code: str,
     data: DiscFoundCreate,
     user: User | None = Depends(get_optional_user),
@@ -303,7 +338,9 @@ async def report_disc_found(
 
 
 @router.post("/{disc_code}/messages", response_model=DiscMessageResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def create_disc_message(
+    request: Request,
     disc_code: str,
     data: DiscMessageCreate,
     user: User | None = Depends(get_optional_user),

@@ -9,7 +9,18 @@ import {
   Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import * as Haptics from "expo-haptics";
+import { Platform } from "react-native";
+import * as HapticsModule from "expo-haptics";
+
+// No-op haptics on web
+const Haptics = Platform.OS === "web"
+  ? {
+      notificationAsync: async () => {},
+      impactAsync: async () => {},
+      NotificationFeedbackType: HapticsModule.NotificationFeedbackType,
+      ImpactFeedbackStyle: HapticsModule.ImpactFeedbackStyle,
+    }
+  : HapticsModule;
 import { puttingApi } from "@/services/api";
 import { colors, spacing, fontSize, borderRadius } from "@/constants/theme";
 import type { PuttAttempt, PuttProbability } from "@/types";

@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta, timezone
 
 from jose import JWTError, jwt
@@ -11,8 +12,56 @@ from app.config import get_settings
 from app.db.database import get_db
 from app.models.user import User
 
+logger = logging.getLogger(__name__)
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
+
+# ---------------------------------------------------------------------------
+# Redis token blacklist (lazy init)
+# ---------------------------------------------------------------------------
+_redis_client = None
+
+
+def _get_redis():
+    """Lazily initialize and return a Redis client."""
+    global _redis_client
+    if _redis_client is None:
+        try:
+            import redis as redis_lib
+            settings = get_settings()
+            _redis_client = redis_lib.Redis.from_url(
+                settings.redis_url, decode_responses=True
+            )
+            _redis_client.ping()
+        except Exception as exc:
+            logger.warning("Redis unavailable for token blacklist: %s", exc)
+            _redis_client = None
+    return _redis_client
+
+
+def blacklist_token(token: str, expires_in: int) -> None:
+    """Store a token in the Redis blacklist with a TTL matching its expiry."""
+    client = _get_redis()
+    if client is None:
+        logger.warning("Cannot blacklist token — Redis unavailable")
+        return
+    try:
+        client.setex(f"bl:{token}", max(expires_in, 1), "1")
+    except Exception as exc:
+        logger.warning("Failed to blacklist token: %s", exc)
+
+
+def is_token_blacklisted(token: str) -> bool:
+    """Check whether a token has been blacklisted. Returns False if Redis is down."""
+    client = _get_redis()
+    if client is None:
+        return False
+    try:
+        return client.exists(f"bl:{token}") > 0
+    except Exception as exc:
+        logger.warning("Failed to check token blacklist: %s", exc)
+        return False
 
 
 def hash_password(password: str) -> str:
@@ -43,6 +92,9 @@ async def get_current_user(
 ) -> User:
     settings = get_settings()
     token = credentials.credentials
+
+    if is_token_blacklisted(token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has been revoked")
 
     try:
         payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])

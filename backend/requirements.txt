@@ -26,6 +26,7 @@ cryptography>=42.0.0
 # Google OAuth
 google-auth>=2.29.0
 google-auth-httplib2>=0.2.0
+requests>=2.31.0
 
 # HTTP
 httpx==0.28.1
@@ -33,10 +34,19 @@ httpx==0.28.1
 # QR Code generation
 qrcode[svg]==8.0
 
+# Rate limiting
+slowapi>=0.1.9
+
+# Storage (S3/R2)
+boto3>=1.34.0
+
+# Blockchain / Web3
+web3>=7.0.0
+eth-account>=0.13.0
+
 # Utils
 python-dotenv==1.0.1
 
 # Testing
 pytest==8.3.4
 pytest-asyncio==0.24.0
-httpx==0.28.1

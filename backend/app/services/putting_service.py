@@ -170,3 +170,101 @@ async def get_putting_stats(db: AsyncSession, user_id: int) -> dict:
         "c2_percentage": zone_stats.get("c2", {}).get("percentage", 0),
         "by_zone": zone_stats,
     }
+
+
+def _expected_putts_tour(distance_meters: float) -> float:
+    """
+    Expected number of putts from a given distance using tour average data.
+
+    For a single putt attempt: expected_putts ~= 1 + (1 - P_make).
+    If you miss, you typically need one more putt from a close-in distance.
+    """
+    p_make = get_tour_average(distance_meters)
+    # If you make it, 1 putt. If you miss, assume ~1.05 putts remaining (tap-in).
+    return 1 * p_make + (1 + 1.05) * (1 - p_make)
+
+
+async def calculate_strokes_gained(
+    db: AsyncSession,
+    user_id: int,
+    player_level: str = "intermediate",
+) -> dict:
+    """
+    Calculate strokes gained putting for a player.
+
+    For each putt: SG = expected_putts_tour_avg(distance) - actual_putts
+    A positive SG means the player is gaining strokes vs tour average.
+
+    Returns:
+        Dict with total_sg, sg_per_round, sg_c1, sg_c1x, sg_c2,
+        total_putts, total_rounds_with_putts, and comparison_to_tour.
+    """
+    # Fetch all putt attempts for the user
+    stmt = select(PuttAttempt).where(PuttAttempt.user_id == user_id)
+    result = await db.execute(stmt)
+    putts = result.scalars().all()
+
+    if not putts:
+        return {
+            "total_sg": 0.0,
+            "sg_per_round": 0.0,
+            "sg_c1": 0.0,
+            "sg_c1x": 0.0,
+            "sg_c2": 0.0,
+            "total_putts": 0,
+            "total_rounds_with_putts": 0,
+            "comparison_to_tour": "no_data",
+        }
+
+    total_sg = 0.0
+    sg_by_zone = {"c1": 0.0, "c1x": 0.0, "c2": 0.0}
+    count_by_zone = {"c1": 0, "c1x": 0, "c2": 0}
+    round_ids = set()
+
+    for putt in putts:
+        distance = float(putt.distance_meters) if putt.distance_meters else 5.0
+        expected = _expected_putts_tour(distance)
+        actual = 1.0 if putt.made else 2.05  # miss = 1 attempt + expected tap-in
+
+        sg = expected - actual
+        total_sg += sg
+
+        zone = putt.zone or classify_zone(distance)
+        if zone in sg_by_zone:
+            sg_by_zone[zone] += sg
+            count_by_zone[zone] += 1
+
+        if putt.round_id:
+            round_ids.add(putt.round_id)
+
+    total_putts = len(putts)
+    total_rounds = max(len(round_ids), 1)
+    sg_per_round = total_sg / total_rounds
+
+    # Normalize zone SG to per-putt for meaningful comparison
+    sg_c1 = round(sg_by_zone["c1"], 2)
+    sg_c1x = round(sg_by_zone["c1x"], 2)
+    sg_c2 = round(sg_by_zone["c2"], 2)
+
+    # Comparison label
+    if sg_per_round > 1.0:
+        comparison = "well_above_tour"
+    elif sg_per_round > 0.2:
+        comparison = "above_tour"
+    elif sg_per_round > -0.2:
+        comparison = "near_tour"
+    elif sg_per_round > -1.0:
+        comparison = "below_tour"
+    else:
+        comparison = "well_below_tour"
+
+    return {
+        "total_sg": round(total_sg, 2),
+        "sg_per_round": round(sg_per_round, 2),
+        "sg_c1": sg_c1,
+        "sg_c1x": sg_c1x,
+        "sg_c2": sg_c2,
+        "total_putts": total_putts,
+        "total_rounds_with_putts": len(round_ids),
+        "comparison_to_tour": comparison,
+    }

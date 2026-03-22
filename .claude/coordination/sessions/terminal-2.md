@@ -1,31 +1,29 @@
 ---
 name: terminal-2
-role: Mobile lead — fix TS errors, get app running, walk critical scoring path
+role: Mobile lead — Mapbox maps, sticker claim, scoring flow
 started: 2026-03-22T12:00:00-05:00
-last_heartbeat: 2026-03-22T17:00:00-05:00
+last_heartbeat: 2026-03-22T17:30:00-05:00
 status: active
 ---
 
-Currently working on: Terminal 4's dispatch — fixing mobile deps, TS errors, getting app compiling and scoring flow working
+Currently working on: Adding @rnmapbox/maps for satellite course view, then sticker claim screen
 
 Blocked by: nothing
 
 Can help with: Mobile app, backend API, MCP server
 
-Active subagents: none
-
-## Taking Terminal 4's Mobile Workstream:
-1. Install missing deps (expo-auth-session, expo-web-browser, expo-crypto, expo-location, expo-notifications)
-2. Fix all TypeScript errors
-3. npx expo start → verify loads
-4. Walk critical path: Play → Start Round → Select Course → Layout → Scorecard → Complete
-5. Verify Stats, League, Profile tabs render
-6. Chat tab — add "coming soon" state if not wired
+## Claimed tasks:
+1. Add @rnmapbox/maps to Mobile (P0) — IN PROGRESS
+2. Mobile Sticker Claim Screen (P1) — NEXT
 
 ## Completed this session
 - Full project scaffold (96 files, 20,625 lines)
 - Backend + mobile + MCP server + infrastructure
-- Scoring flow (3 screens), putting practice screen
+- Scoring flow (3 screens: select-course → select-layout → scorecard)
 - Fixed location: IL → Kingwood, TX with real UDisc hole data
-- Database reseeded, all 41 backend tests passing
-- Notified team about location correction
+- Database reseeded with real course data (par 58 tournament, 19 holes)
+- Fixed all TypeScript errors (0 errors)
+- End-to-end smoke test PASSED
+- All 41 backend tests passing
+- Installed missing deps, fixed Google Auth config
+- Team coordination: location correction msg, welcome msg for T5

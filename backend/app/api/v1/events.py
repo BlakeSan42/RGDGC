@@ -9,6 +9,7 @@ from app.models.course import Layout
 from app.models.league import Event, Result
 from app.models.user import User
 from app.schemas.league import EventOut, ResultOut, ResultSubmit
+from app.services.cache_service import CacheService
 from app.services.points_service import finalize_event
 
 router = APIRouter()
@@ -17,12 +18,15 @@ router = APIRouter()
 @router.get("", response_model=list[EventOut])
 async def list_events(
     status: str | None = Query(None),
+    league_id: int | None = Query(None),
     limit: int = Query(20, le=100),
     db: AsyncSession = Depends(get_db),
 ):
     stmt = select(Event).order_by(Event.event_date.desc()).limit(limit)
     if status:
         stmt = stmt.where(Event.status == status)
+    if league_id:
+        stmt = stmt.where(Event.league_id == league_id)
     result = await db.execute(stmt)
     return [EventOut.model_validate(e) for e in result.scalars().all()]
 
@@ -136,4 +140,10 @@ async def finalize(
         results = await finalize_event(db, event_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+    # Invalidate leaderboard cache for this event's league
+    event = await db.get(Event, event_id)
+    if event and event.league_id:
+        await CacheService.delete_pattern(f"leaderboard:{event.league_id}:*")
+
     return [ResultOut.model_validate(r) for r in results]

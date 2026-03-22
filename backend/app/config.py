@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
 
     # CORS
-    cors_origins: str = "http://localhost:8081,http://localhost:5173"
+    cors_origins: str = "http://localhost:3000,http://localhost:5173,http://localhost:8081,http://localhost:19006"
 
     # Google OAuth
     google_client_id: str = ""
@@ -34,16 +34,30 @@ class Settings(BaseSettings):
     apple_team_id: str = ""
     apple_key_id: str = ""
 
+    # Storage
+    storage_backend: str = "local"  # local or s3
+    s3_bucket: str = ""
+    s3_region: str = "us-east-1"
+    s3_endpoint: str = ""  # For R2: https://xxx.r2.cloudflarestorage.com
+    s3_access_key: str = ""
+    s3_secret_key: str = ""
+    upload_max_size: int = 5 * 1024 * 1024  # 5MB
+
     # Blockchain (P1)
-    web3_provider_url: str = ""
-    rgdg_token_address: str = ""
-    treasury_address: str = ""
+    web3_provider_url: str = ""  # e.g. https://sepolia.infura.io/v3/YOUR_KEY
+    rgdg_token_address: str = ""  # Deployed RGDGToken contract address
+    treasury_address: str = ""  # Deployed RGDGTreasury contract address
+    disc_registry_address: str = ""  # Deployed DiscRegistry contract address
+    web3_chain_id: int = 11155111  # Sepolia testnet by default
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 
     @property
     def cors_origin_list(self) -> list[str]:
-        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+        origins = self.cors_origins.strip()
+        if origins == "*":
+            return ["*"]
+        return [o.strip() for o in origins.split(",") if o.strip()]
 
 
 @lru_cache

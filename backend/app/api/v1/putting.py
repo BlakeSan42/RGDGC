@@ -6,8 +6,10 @@ from app.db.database import get_db
 from app.models.putting import PuttAttempt
 from app.models.user import User
 from app.schemas.putting import PuttAttemptCreate, PuttBatchCreate, PuttProbability, PuttingStats
+from app.services.cache_service import CacheService
 from app.services.putting_service import (
     calculate_make_probability,
+    calculate_strokes_gained,
     get_putting_stats,
     get_tour_average,
     classify_zone,
@@ -95,10 +97,22 @@ async def putt_probability(
     db: AsyncSession = Depends(get_db),
 ):
     params = SKILL_PARAMS.get(skill_level)
-    prob = calculate_make_probability(
-        distance_meters, params, wind_speed, wind_direction, elevation_change
-    )
-    tour_avg = get_tour_average(distance_meters)
+
+    # Cache the pure-math probability calculation (10-min TTL)
+    # Round distance to 1 decimal to improve cache hit rate
+    dist_key = round(distance_meters, 1)
+    cache_key = f"putt_prob:{dist_key}:{skill_level}:{wind_speed}:{elevation_change}"
+    cached = await CacheService.get(cache_key)
+
+    if cached is not None:
+        prob = cached["prob"]
+        tour_avg = cached["tour_avg"]
+    else:
+        prob = calculate_make_probability(
+            distance_meters, params, wind_speed, wind_direction, elevation_change
+        )
+        tour_avg = get_tour_average(distance_meters)
+        await CacheService.set(cache_key, {"prob": prob, "tour_avg": tour_avg}, ttl=600)
 
     # Get personal average at this distance (approximate zone)
     stats = await get_putting_stats(db, user.id)
@@ -116,3 +130,19 @@ async def putt_probability(
         wind_adjustment=round(wind_speed * distance_meters * 0.002, 3) if wind_speed > 0 else None,
         elevation_adjustment=round(abs(elevation_change) / max(distance_meters, 0.1) * 0.3, 3) if elevation_change != 0 else None,
     )
+
+
+@router.get("/strokes-gained")
+async def get_strokes_gained(
+    skill_level: str = Query("intermediate"),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Calculate strokes gained putting vs tour average.
+
+    Returns breakdown by zone (C1, C1X, C2) and overall totals.
+    Positive values mean the player is gaining strokes (putting better than tour avg).
+    """
+    result = await calculate_strokes_gained(db, current_user.id, player_level=skill_level)
+    return result

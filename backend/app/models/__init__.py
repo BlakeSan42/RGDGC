@@ -15,3 +15,4 @@ from app.models.disc import RegisteredDisc, DiscFoundReport, DiscMessage  # noqa
 from app.models.sticker import StickerOrder, StickerInventory  # noqa: E402, F401
 from app.models.league_member import LeagueMember  # noqa: E402, F401
 from app.models.admin import AuditLog, Announcement  # noqa: E402, F401
+from app.models.transaction import Transaction  # noqa: E402, F401

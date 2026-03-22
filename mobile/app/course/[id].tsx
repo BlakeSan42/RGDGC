@@ -298,6 +298,28 @@ export default function CourseDetailScreen() {
           ))}
         </View>
 
+        {/* Course Map Button */}
+        <View style={styles.section}>
+          <Pressable
+            style={styles.mapBtn}
+            onPress={() =>
+              router.push({
+                pathname: "/course/map",
+                params: { courseId: String(course.id), courseName: course.name },
+              })
+            }
+          >
+            <Text style={styles.mapBtnIcon}>🗺️</Text>
+            <View style={styles.mapBtnTextContainer}>
+              <Text style={styles.mapBtnTitle}>Course Map</Text>
+              <Text style={styles.mapBtnSubtitle}>
+                Satellite view with tee pads, baskets, and fairways
+              </Text>
+            </View>
+            <Text style={styles.mapBtnArrow}>›</Text>
+          </Pressable>
+        </View>
+
         {/* Course Records (Placeholder) */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Course Records</Text>
@@ -462,6 +484,25 @@ const styles = StyleSheet.create({
   recordValue: { fontSize: fontSize.xl, fontWeight: "700", color: colors.text.primary, fontFamily: "JetBrainsMono" },
   recordLabel: { fontSize: fontSize.xs, color: colors.text.secondary, marginTop: 4 },
   recordDivider: { width: 1, backgroundColor: colors.gray[200], marginVertical: spacing.xs },
+
+  // Map Button
+  mapBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.bg.card,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  mapBtnIcon: { fontSize: 32, marginRight: spacing.md },
+  mapBtnTextContainer: { flex: 1 },
+  mapBtnTitle: { fontSize: fontSize.lg, fontWeight: "700", color: colors.text.primary },
+  mapBtnSubtitle: { fontSize: fontSize.sm, color: colors.text.secondary, marginTop: 2 },
+  mapBtnArrow: { fontSize: 24, color: colors.gray[400], fontWeight: "300" },
 
   // FAB
   fab: {

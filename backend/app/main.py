@@ -1,13 +1,20 @@
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from app.config import get_settings
 from app.db.database import engine
 from app.models import Base
 from app.api.v1.router import api_router
 from app.api.public import router as public_router
+
+limiter = Limiter(key_func=get_remote_address)
 
 
 @asynccontextmanager
@@ -40,8 +47,17 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
     app.include_router(api_router, prefix="/api/v1")
     app.include_router(public_router)
+
+    # Serve uploaded files locally in development
+    if settings.storage_backend == "local":
+        uploads_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
+        os.makedirs(uploads_dir, exist_ok=True)
+        app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
     @app.get("/health")
     async def health():

@@ -30,8 +30,19 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-auth-session"
+      "expo-auth-session",
+      [
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsImpl": "mapbox"
+        }
+      ]
     ],
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/icon.png"
+    },
     "scheme": "rgdgc",
     "extra": {
       "eas": {

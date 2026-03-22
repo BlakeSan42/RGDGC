@@ -1,89 +1,123 @@
 # RGDGC Sprint Board — 2026-03-22
 
 ## Current Sprint Goal
-**Phase A: Sticker System Integration** (NOW) → **Phase B: Geo/Mapping Architecture** (NEXT)
+Ship a working app: scoring flow end-to-end (DONE), sticker claim, putting practice, Mapbox maps, weather integration.
 
 ---
 
-## Phase A: Sticker System (Priority)
+## Phase A: Sticker System
 
 ### Move generate_disc_codes.py to scripts/
 - status: done:terminal-3
-- priority: P1
-- notes: Copied to scripts/generate_disc_codes.py.
 
 ### Mobile Sticker Claim Screen
-- status: unclaimed
+- status: claimed:terminal-2
 - priority: P1
-- depends_on: [Integrate Sticker Router]
-- notes: QR scanner → claim flow → add disc details. Uses /api/v1/stickers/claim/{code}. Ties into existing disc registration.
+- depends_on: []
+- notes: QR scanner → claim flow → add disc details. Backend sticker endpoints are live. Uses /api/v1/stickers/claim/{code}.
 
 ### Admin Dashboard: Sticker Management Page
 - status: unclaimed
 - priority: P1
-- depends_on: [Integrate Sticker Router]
 - notes: Generate batch, view inventory, download CSV. Wire into existing admin-dashboard/src/pages/.
 
 ---
 
-## Phase B: Geo/Mapping Architecture (In Progress)
+## Phase B: Geo/Mapping Architecture
 
 ### Enable PostGIS Extension
 - status: done:terminal-3
-- notes: PostGIS 3.4 enabled. Docker image swapped to postgis/postgis:15-3.4-alpine. GeoAlchemy2 + Shapely installed.
 
 ### Add Geo Fields to Course/Hole Models
 - status: done:terminal-3
-- notes: Hole: tee_position, basket_position, fairway_line (geometry), tee/basket elevation, elevation_profile. Course: boundary polygon. New CourseFeature model for OB/mandos/trees/water. GiST spatial indexes.
 
 ### GeoJSON API Endpoints
 - status: done:terminal-3
-- notes: 3 endpoints live — /geo/courses/{id}/geojson (full FeatureCollection), /geo/courses/{id}/holes/{n}/elevation, /geo/nearest-hole (auto-detect hole from GPS).
 
 ### Add @rnmapbox/maps to Mobile
-- status: unclaimed
-- priority: P0
-- depends_on: []
-- notes: Install Mapbox SDK, create course map view with satellite imagery + hole overlays. Free tier (50k loads/month).
+- status: done:terminal-3
+- notes: CourseMap component with satellite/street toggle, tee/basket/fairway layers, hole info cards.
+
+### Seed River Grove DGC GPS Coordinates
+- status: done:terminal-3
+- notes: 55 holes across 3 layouts with real GPS. GeoJSON endpoint returns 57 features.
 
 ### Download USGS 3DEP DEM for Kingwood TX
 - status: unclaimed
 - priority: P1
-- depends_on: []
-- notes: 1m resolution bare-earth DEM from USGS National Map. Compute elevation profiles per hole. Kingwood, TX (Harris County, Houston metro). Free data.
+- notes: 1m resolution bare-earth DEM. Harris County, Houston metro. Free from USGS National Map.
 
 ### Download Harris County LIDAR via TNRIS
 - status: unclaimed
 - priority: P1
-- depends_on: []
-- notes: Tree canopy height model from point clouds. Source: TNRIS (tnris.org) — Texas Natural Resources Info System. Harris County has excellent LIDAR from FEMA flood mapping. Also check USGS 3DEP. Free.
+- notes: Tree canopy height. Source: TNRIS (tnris.org). Free.
 
 ### Weather.gov API Integration
-- status: unclaimed
-- priority: P1
-- depends_on: []
-- notes: Real-time wind for Kingwood TX. NWS Houston/Galveston forecast office. No API key needed. Feed into putting probability model.
-
-### Seed River Grove DGC GPS Coordinates
-- status: unclaimed
-- priority: P0
-- depends_on: [Add Geo Fields]
-- notes: Need real lat/lng for every tee pad and basket on all 3 layouts (All 18 plus 3A, Standard 18, Ryne Theis Memorial). Can extract from UDisc, satellite imagery, or walk with GPS. Critical for map to show anything.
+- status: done:terminal-2
+- notes: weather_service.py (NWS API), weather.py (2 endpoints: /current, /putting-wind). Router wired. Uncommitted.
 
 ---
 
-## Still Unclaimed from Previous Sprint
+## Phase C: Backend QA (Terminal 4)
+
+### Fix missing dependencies
+- status: done:terminal-4
+- notes: Added qrcode[svg], requests, slowapi, boto3. Duplicate httpx removed.
+
+### Fix Alembic migrations
+- status: done:terminal-4
+- notes: Initial + sticker migrations were empty stubs. Rewrote with real DDL for all 20+ tables. Committed by terminal-2.
+
+### Fix disc route double prefix
+- status: done:terminal-4
+- notes: APIRouter(prefix="/discs") + mount prefix="/discs" caused /api/v1/discs/discs/. Removed internal prefix.
+
+### Smoke test all 12 API route groups
+- status: done:terminal-4
+- notes: All 12 route groups verified with curl. Full scoring flow tested end-to-end.
+
+---
+
+## Still Unclaimed
 
 ### Build Mobile Putting Practice
 - status: unclaimed
 - priority: P1
-- depends_on: []
 - notes: Log putts, see probability, track C1/C1X/C2. Uses /api/v1/putting/* endpoints.
+
+### Test MCP Server Against Live Backend
+- status: unclaimed
+- priority: P1
+- notes: All 9 tools against running API. Verify responses are correct.
+
+### Run CI Pipeline
+- status: unclaimed
+- priority: P1
+- notes: GitHub Actions — fix any lint/type/test failures.
+
+### Deploy Contracts to Sepolia
+- status: unclaimed
+- priority: P2
+- notes: Smart contracts exist in contracts/. Deploy, verify, wire addresses into backend config.
 
 ---
 
 ## Completed
-(see git log for full history — 18 tasks completed across terminal-1, terminal-2, terminal-3)
+Key milestones:
+- End-to-end smoke test PASSED (login → course → round → 19 holes → complete → -1 vs par)
+- Mobile TypeScript: 0 errors
+- Backend: 41/41 tests passing
+- All 12 API route groups verified (terminal-4 QA)
+- MCP server builds clean
+- Admin dashboard scaffolded (10 pages)
+- Sticker backend: 6 endpoints live
+- PostGIS + GeoJSON API: 3 endpoints live
+- Mapbox course map component added
+- Weather.gov integration (NWS API) added
+- Google OAuth wired
+- Real course data seeded (Kingwood, TX, 55 holes)
+- Disc registration working (RGDG-0001)
+- Chat bot responding to keyword queries
 
 ---
 
@@ -93,6 +127,6 @@
 - AR distance measurement (ARKit/ARCore)
 - Disc golf game engine (flight physics)
 - OpenClaw bot skills
-- Blockchain smart contract deployment
 - Push notifications
 - Offline mode + sync
+- Blockchain contract deployment + treasury wiring

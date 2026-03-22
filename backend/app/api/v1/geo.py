@@ -4,6 +4,7 @@ import json
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from geoalchemy2 import Geography
 from geoalchemy2.functions import ST_AsGeoJSON, ST_Distance, ST_MakePoint, ST_SetSRID
 from geoalchemy2.shape import to_shape
 from sqlalchemy import select, cast, Float, text
@@ -229,10 +230,12 @@ async def find_nearest_hole(
 
     query = (
         select(
-            Hole,
+            Hole.hole_number,
+            Hole.par,
+            Hole.distance.label("hole_distance_ft"),
             ST_Distance(
-                cast(Hole.tee_position, text("geography")),
-                cast(user_point, text("geography")),
+                cast(Hole.tee_position, Geography),
+                cast(user_point, Geography),
             ).label("distance_m"),
         )
         .join(Layout)
@@ -242,6 +245,8 @@ async def find_nearest_hole(
     if course_id:
         query = query.where(Layout.course_id == course_id)
 
+    # Only search default layout to avoid duplicates
+    query = query.where(Layout.is_default.is_(True))
     query = query.order_by("distance_m").limit(1)
 
     result = await db.execute(query)
@@ -250,13 +255,11 @@ async def find_nearest_hole(
     if not row:
         return {"found": False, "message": "No holes with GPS data found"}
 
-    hole, distance_m = row
     return {
         "found": True,
-        "hole_number": hole.hole_number,
-        "distance_m": round(distance_m, 1),
-        "distance_ft": round(distance_m * 3.28084, 1),
-        "par": hole.par,
-        "hole_distance_ft": hole.distance,
-        "tee_position": _point_to_coords(hole.tee_position),
+        "hole_number": row.hole_number,
+        "distance_m": round(row.distance_m, 1),
+        "distance_ft": round(row.distance_m * 3.28084, 1),
+        "par": row.par,
+        "hole_distance_ft": row.hole_distance_ft,
     }
