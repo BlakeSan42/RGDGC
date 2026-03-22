@@ -1,0 +1,293 @@
+================================================================================
+RGDGC — How to Grant Full Admin Access to Other People
+================================================================================
+Last updated: 2026-03-22
+
+There are 6 layers of admin access. You (Blake) control all of them.
+This guide explains how to grant each layer to your two co-admins.
+
+================================================================================
+LAYER 1: APP-LEVEL ADMIN (the most important one)
+================================================================================
+
+This controls what they can do in the RGDGC app and admin dashboard:
+create events, manage players, view treasury, post announcements, etc.
+
+ROLES IN THE SYSTEM:
+  super_admin  — Full access to everything (you, Blake)
+  admin        — Full access except: can't change other admins' roles,
+                 can't delete the super_admin account
+  player       — Normal club member
+  guest        — Read-only, limited features
+
+HOW TO PROMOTE A USER TO ADMIN:
+────────────────────────────────
+
+  Option A: Through the Admin Dashboard UI
+  1. They register for an account (app or admin dashboard)
+  2. You log into admin dashboard → Players → Find their name
+  3. Click their row → Change Role → Select "admin"
+  4. Save
+
+  Option B: Through the API (Swagger docs)
+  1. They register for an account
+  2. Go to http://localhost:8001/docs (or your production URL)
+  3. Authenticate with your super_admin JWT token
+  4. Call: POST /api/v1/admin/users/{their_user_id}/role
+     Body: "admin"
+
+  Option C: Direct database (fastest for initial setup)
+  1. Connect to PostgreSQL:
+     docker exec -it rgdgc-db psql -U rgdgc -d rgdgc
+  2. Run:
+     UPDATE users SET role = 'admin' WHERE email = 'their@email.com';
+     UPDATE users SET role = 'admin' WHERE email = 'other@email.com';
+  3. Verify:
+     SELECT email, role FROM users WHERE role IN ('admin', 'super_admin');
+
+  Option D: Using the seed script
+  Edit backend/scripts/seed_data.py and add them as admin users,
+  then re-run: cd backend && python scripts/seed_data.py
+
+WHAT ADMIN ROLE GIVES THEM:
+  ✓ Create/edit/cancel events
+  ✓ Finalize event results and calculate points
+  ✓ Change player roles (except other admins)
+  ✓ Post club announcements
+  ✓ View admin analytics dashboard
+  ✓ View audit log
+  ✓ Clear cache
+  ✓ View treasury stats
+  ✓ Manage disc registry (resolve found reports)
+  ✓ Access admin dashboard web app
+
+
+================================================================================
+LAYER 2: ADMIN DASHBOARD ACCESS
+================================================================================
+
+The admin dashboard at admin-dashboard/ is a separate web app.
+It checks the user's role — only admin/super_admin can log in.
+
+HOW TO GIVE ACCESS:
+───────────────────
+1. Make sure they have admin role (Layer 1 above)
+2. Give them the admin dashboard URL:
+   - Local dev: http://localhost:5173
+   - Production: https://admin.rgdgc.com (or wherever you deploy)
+3. They log in with their RGDGC account (email/password or Google)
+4. The dashboard checks their role — non-admins are rejected
+
+NO ADDITIONAL CREDENTIALS NEEDED — it uses the same account system.
+
+
+================================================================================
+LAYER 3: INFRASTRUCTURE ACCESS (Railway, hosting)
+================================================================================
+
+This is access to the actual servers, database, and deployment pipeline.
+Only give this to people you trust completely — they can see/modify
+everything, including other users' data.
+
+RAILWAY (backend hosting):
+──────────────────────────
+  URL: https://railway.app/dashboard
+  1. Go to your RGDGC project in Railway
+  2. Settings → Members → Invite
+  3. Enter their email
+  4. Role options:
+     - Admin: full access (deploy, env vars, database)
+     - Member: can view logs, can't change env vars
+  Recommendation: Give "Member" unless they need to deploy
+
+DATABASE (direct access):
+─────────────────────────
+  Only give this if they need to run queries or fix data.
+  Share the DATABASE_URL from your .env — but consider:
+  - Create a read-only PostgreSQL role for them instead:
+
+    CREATE ROLE rgdgc_readonly WITH LOGIN PASSWORD 'their-password';
+    GRANT CONNECT ON DATABASE rgdgc TO rgdgc_readonly;
+    GRANT USAGE ON SCHEMA public TO rgdgc_readonly;
+    GRANT SELECT ON ALL TABLES IN SCHEMA public TO rgdgc_readonly;
+
+  - For full access, share the DATABASE_URL (they can read/write/delete)
+
+GITHUB (code access):
+─────────────────────
+  1. Go to your repo → Settings → Collaborators
+  2. Add their GitHub usernames
+  3. Role: "Write" (can push/PR) or "Admin" (can change settings)
+
+
+================================================================================
+LAYER 4: THIRD-PARTY SERVICE ACCESS
+================================================================================
+
+These are the external services the system depends on.
+Share access only as needed.
+
+GOOGLE CLOUD CONSOLE (OAuth):
+─────────────────────────────
+  URL: https://console.cloud.google.com
+  1. IAM & Admin → IAM → Grant Access
+  2. Enter their email
+  3. Role: "Editor" (can manage OAuth credentials)
+  NOTE: They don't need this unless they're managing auth config.
+        The OAuth just works once set up.
+
+MAPBOX:
+───────
+  They don't need Mapbox access. The public token is embedded in the app.
+  Only share if they need to manage the account/billing.
+
+EXPO / EAS:
+────────────
+  URL: https://expo.dev
+  1. Go to your RGDGC project on expo.dev
+  2. Settings → Members → Invite
+  3. They can then trigger builds and view build logs
+  NOTE: Only needed if they're doing mobile app builds/releases.
+
+APPLE DEVELOPER (iOS):
+──────────────────────
+  URL: https://developer.apple.com
+  1. Account → People → Invite
+  2. Role: "Admin" or "App Manager"
+  3. They can manage TestFlight, App Store submissions
+  NOTE: $99/year account is tied to you. They use it as team members.
+
+GOOGLE PLAY CONSOLE (Android):
+──────────────────────────────
+  URL: https://play.google.com/console
+  1. Users and permissions → Invite new users
+  2. Enter their email
+  3. Set permissions: "Release manager" or "Admin"
+
+
+================================================================================
+LAYER 5: BLOCKCHAIN / SMART CONTRACT ADMIN
+================================================================================
+
+The smart contracts have an "owner" who can:
+- Mint $RGDG tokens
+- Set event fees on the treasury
+- Withdraw from treasury
+- Register discs as NFTs
+
+CURRENT OWNER: The wallet that deployed the contracts (your wallet).
+
+TO ADD CO-ADMINS (two approaches):
+
+  Option A: Transfer ownership (NOT recommended)
+  - Transfers full control to their wallet
+  - You lose control
+  - Don't do this
+
+  Option B: Multi-sig wallet (RECOMMENDED for production)
+  - Deploy a Gnosis Safe (https://safe.global)
+  - Require 2-of-3 signatures for admin actions
+  - Transfer contract ownership to the Safe
+  - All three of you are signers
+  - No single person can act alone
+
+  Option C: Keep single owner, share the private key (NOT recommended)
+  - Sharing private keys is a security risk
+  - If one person is compromised, everything is at risk
+
+  Option D: Add authorized callers to contracts
+  - The contracts could be modified to support multiple authorized callers
+  - Add a mapping of authorized addresses
+  - Each admin uses their own wallet
+
+FOR NOW (Sepolia testnet): Option D is fine. Just share the deployer
+private key since it's testnet tokens with no real value.
+
+FOR PRODUCTION: Use Option B (Gnosis Safe multi-sig).
+
+
+================================================================================
+LAYER 6: BOT ACCESS (Discord / Telegram)
+================================================================================
+
+DISCORD BOT:
+────────────
+  The bot token is a single credential. Don't share it directly.
+  Instead:
+  1. Make them "Server Administrator" in your Discord server
+  2. They can configure bot permissions, channels, etc.
+  3. Only the person managing the bot code needs the DISCORD_BOT_TOKEN
+
+TELEGRAM BOT:
+─────────────
+  Similar — the TELEGRAM_BOT_TOKEN is a single credential.
+  They don't need it unless they're deploying/managing the bot.
+
+
+================================================================================
+RECOMMENDED SETUP FOR YOUR TWO CO-ADMINS
+================================================================================
+
+For each person, do these steps in order:
+
+STEP 1: App admin access (5 minutes)
+─────────────────────────────────────
+  1. Have them create an RGDGC account (via app or admin dashboard)
+  2. Promote them to "admin" role (see Layer 1, Option A or C)
+  3. Share the admin dashboard URL
+
+STEP 2: GitHub access (2 minutes)
+─────────────────────────────────
+  1. Add them as collaborators on the GitHub repo
+  2. Role: "Write" for most people, "Admin" if they need to manage CI/CD
+
+STEP 3: Infrastructure access (5 minutes, only if needed)
+─────────────────────────────────────────────────────────
+  1. Invite to Railway project as "Member"
+  2. Invite to Expo project
+  3. Only if they'll be deploying or debugging production issues
+
+STEP 4: App store access (5 minutes, only if needed)
+─────────────────────────────────────────────────────
+  1. Add to Apple Developer team
+  2. Add to Google Play Console
+  3. Only if they'll be managing app releases
+
+WHAT THEY DON'T NEED:
+  ✗ Your .env file (contains secrets)
+  ✗ Database credentials (unless debugging)
+  ✗ Google Cloud Console access (OAuth is already configured)
+  ✗ Mapbox account access
+  ✗ Bot tokens
+  ✗ Contract deployer private key (use multi-sig for production)
+
+
+================================================================================
+QUICK REFERENCE: CREDENTIAL SHARING RULES
+================================================================================
+
+  SHARE FREELY:
+    - Admin dashboard URL
+    - App download link
+    - API documentation URL (Swagger)
+    - Course information, rules
+
+  SHARE WITH ADMINS:
+    - Railway dashboard access (as Member)
+    - Expo project access
+    - App store team membership
+    - GitHub repo write access
+
+  NEVER SHARE (keep in your .env only):
+    - SECRET_KEY / JWT_SECRET
+    - DATABASE_URL with write access
+    - GOOGLE_CLIENT_SECRET
+    - APPLE_PRIVATE_KEY / .p8 file
+    - DISCORD_BOT_TOKEN / TELEGRAM_BOT_TOKEN
+    - ANTHROPIC_API_KEY
+    - Contract deployer PRIVATE_KEY
+    - S3/R2 secret access key
+
+  If they need access to something in the "never share" list,
+  create a SEPARATE credential for them (e.g., a separate API key,
+  a separate database user with limited permissions).

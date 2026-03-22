@@ -43,7 +43,7 @@ export default function EventDetail() {
   const eventId = parseInt(id || '0');
 
   const [resultEntries, setResultEntries] = useState<
-    Array<{ user_id: number; total_strokes: number; is_dnf: boolean; is_dq: boolean }>
+    Array<{ user_id: number; total_strokes: number; dnf: boolean; dq: boolean }>
   >([]);
   const [showResultForm, setShowResultForm] = useState(false);
 
@@ -109,8 +109,8 @@ export default function EventDetail() {
     const entries = checkins.map((c) => ({
       user_id: c.user_id,
       total_strokes: 0,
-      is_dnf: false,
-      is_dq: false,
+      dnf: false,
+      dq: false,
     }));
     setResultEntries(entries);
     setShowResultForm(true);
@@ -118,11 +118,11 @@ export default function EventDetail() {
 
   const handleSubmitResults = () => {
     const sorted = [...resultEntries]
-      .filter((r) => !r.is_dnf && !r.is_dq)
+      .filter((r) => !r.dnf && !r.dq)
       .sort((a, b) => a.total_strokes - b.total_strokes);
 
     const resultsWithPosition = resultEntries.map((entry) => {
-      if (entry.is_dnf || entry.is_dq) {
+      if (entry.dnf || entry.dq) {
         return { ...entry, position: 0, points_earned: 0 };
       }
       const position = sorted.findIndex((s) => s.user_id === entry.user_id) + 1;
@@ -137,7 +137,7 @@ export default function EventDetail() {
       'Position,Player,Strokes,Score,Points,Status',
       ...results.map(
         (r) =>
-          `${r.position},${r.user?.display_name || r.user?.username},${r.total_strokes},${r.total_score},${r.points_earned},${r.is_dnf ? 'DNF' : r.is_dq ? 'DQ' : 'Complete'}`
+          `${r.position},${r.user?.display_name || r.user?.username},${r.total_strokes},${r.total_score},${r.points_earned},${r.dnf ? 'DNF' : r.dq ? 'DQ' : 'Complete'}`
       ),
     ].join('\n');
 
@@ -294,10 +294,10 @@ export default function EventDetail() {
                     <label className="flex items-center gap-1 text-xs text-gray-500">
                       <input
                         type="checkbox"
-                        checked={entry.is_dnf}
+                        checked={entry.dnf}
                         onChange={(e) => {
                           const updated = [...resultEntries];
-                          updated[idx] = { ...updated[idx], is_dnf: e.target.checked };
+                          updated[idx] = { ...updated[idx], dnf: e.target.checked };
                           setResultEntries(updated);
                         }}
                       />
@@ -306,10 +306,10 @@ export default function EventDetail() {
                     <label className="flex items-center gap-1 text-xs text-gray-500">
                       <input
                         type="checkbox"
-                        checked={entry.is_dq}
+                        checked={entry.dq}
                         onChange={(e) => {
                           const updated = [...resultEntries];
-                          updated[idx] = { ...updated[idx], is_dq: e.target.checked };
+                          updated[idx] = { ...updated[idx], dq: e.target.checked };
                           setResultEntries(updated);
                         }}
                       />
@@ -352,7 +352,7 @@ export default function EventDetail() {
                             : 'bg-gray-50 text-gray-500'
                         }`}
                       >
-                        {result.is_dnf ? 'DNF' : result.is_dq ? 'DQ' : result.position}
+                        {result.dnf ? 'DNF' : result.dq ? 'DQ' : result.position}
                       </span>
                       <div>
                         <p className="text-sm font-medium text-gray-900">

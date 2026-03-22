@@ -110,8 +110,8 @@ export interface Result {
   total_score: number;
   position: number;
   points_earned: number;
-  is_dnf: boolean;
-  is_dq: boolean;
+  dnf: boolean;
+  dq: boolean;
   user?: User;
 }
 

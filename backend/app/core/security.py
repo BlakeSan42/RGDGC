@@ -114,6 +114,28 @@ async def get_current_user(
 
 
 async def get_admin_user(user: User = Depends(get_current_user)) -> User:
+    """Require admin or super_admin role."""
     if user.role not in ("admin", "super_admin"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     return user
+
+
+async def get_super_admin(user: User = Depends(get_current_user)) -> User:
+    """Require super_admin role. Only Blake."""
+    if user.role != "super_admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+    return user
+
+
+def verify_owner_key(request_key: str) -> bool:
+    """
+    Verify the owner override key. This is a secondary authentication
+    factor that only the system owner (Blake) knows. Set via OWNER_KEY
+    env var. Used for critical operations like role escalation,
+    system reset, and user impersonation.
+    """
+    settings = get_settings()
+    owner_key = settings.owner_key
+    if not owner_key:
+        return False
+    return request_key == owner_key

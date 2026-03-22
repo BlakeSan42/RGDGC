@@ -43,6 +43,11 @@ class Settings(BaseSettings):
     s3_secret_key: str = ""
     upload_max_size: int = 5 * 1024 * 1024  # 5MB
 
+    # Owner override key — only Blake knows this. Required for:
+    # promoting to super_admin, impersonating users, system reset.
+    # Generate with: python3 -c "import secrets; print(secrets.token_hex(32))"
+    owner_key: str = ""
+
     # Blockchain (P1)
     web3_provider_url: str = ""  # e.g. https://sepolia.infura.io/v3/YOUR_KEY
     rgdg_token_address: str = ""  # Deployed RGDGToken contract address

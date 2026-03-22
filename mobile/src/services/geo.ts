@@ -3,7 +3,7 @@
  * Consumes the /api/v1/geo/* endpoints built by Terminal 3.
  */
 
-import { api } from "./api";
+// Types and helpers for geo/mapping features
 
 // ── GeoJSON Types ──
 
@@ -54,37 +54,9 @@ export interface NearestHoleResult {
   basket_coords: [number, number] | null;
 }
 
-// ── API Client ──
-
-export const geoApi = {
-  /**
-   * Get full GeoJSON FeatureCollection for a course.
-   * Includes holes (tee, basket, fairway), OB zones, mandos, trees, etc.
-   */
-  getCourseGeoJSON: (courseId: number, layoutId?: number) => {
-    let path = `/api/v1/geo/courses/${courseId}/geojson`;
-    if (layoutId) path += `?layout_id=${layoutId}`;
-    return api<GeoJSONFeatureCollection>(path);
-  },
-
-  /**
-   * Get elevation profile for a specific hole.
-   */
-  getHoleElevation: (courseId: number, holeNumber: number, layoutId?: number) => {
-    let path = `/api/v1/geo/courses/${courseId}/holes/${holeNumber}/elevation`;
-    if (layoutId) path += `?layout_id=${layoutId}`;
-    return api<ElevationProfile>(path);
-  },
-
-  /**
-   * Find the nearest hole to a GPS position (auto-detect which hole you're on).
-   */
-  getNearestHole: (lat: number, lng: number, courseId?: number) => {
-    let path = `/api/v1/geo/nearest-hole?lat=${lat}&lng=${lng}`;
-    if (courseId) path += `&course_id=${courseId}`;
-    return api<NearestHoleResult>(path);
-  },
-};
+// NOTE: Geo API client is in api.ts (geoApi export). This file provides
+// types and helper functions only. Use `import { geoApi } from "@/services/api"`
+// for API calls.
 
 // ── Helpers ──
 
