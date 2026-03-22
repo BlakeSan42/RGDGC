@@ -15,7 +15,11 @@ from app.models import Base
 from app.db.database import get_db
 from app.main import app
 
-TEST_DB_URL = "postgresql+asyncpg://rgdgc:rgdgc_dev@localhost:5433/rgdgc_test"
+import os
+
+_base_url = os.environ.get("DATABASE_URL", "postgresql+asyncpg://rgdgc:rgdgc_dev@localhost:5433/rgdgc")
+# Derive test DB URL from the base — replace the database name with rgdgc_test
+TEST_DB_URL = _base_url.rsplit("/", 1)[0] + "/rgdgc_test"
 
 engine = create_async_engine(TEST_DB_URL, echo=False)
 TestSession = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -31,7 +35,7 @@ def event_loop():
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def create_test_db():
     """Create test database if it doesn't exist, with PostGIS."""
-    admin_url = "postgresql+asyncpg://rgdgc:rgdgc_dev@localhost:5433/rgdgc"
+    admin_url = _base_url
     admin_engine = create_async_engine(admin_url, isolation_level="AUTOCOMMIT")
     async with admin_engine.connect() as conn:
         result = await conn.execute(text("SELECT 1 FROM pg_database WHERE datname='rgdgc_test'"))
@@ -46,14 +50,29 @@ async def create_test_db():
     await test_admin.dispose()
 
 
-@pytest_asyncio.fixture(autouse=True)
-async def reset_tables():
-    """Drop and recreate all tables before each test."""
+@pytest_asyncio.fixture(scope="session", autouse=True)
+async def setup_tables():
+    """Create all tables once at session start."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     yield
-    # no cleanup needed — drop_all runs before next test
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def clean_tables():
+    """Truncate all tables between tests — faster than drop/create, no race conditions."""
+    yield
+    async with engine.begin() as conn:
+        await conn.execute(text(
+            "DO $$ DECLARE r RECORD; BEGIN "
+            "FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public' "
+            "AND tablename != 'spatial_ref_sys') LOOP "
+            "EXECUTE 'TRUNCATE TABLE ' || quote_ident(r.tablename) || ' CASCADE'; "
+            "END LOOP; END $$;"
+        ))
 
 
 @pytest_asyncio.fixture

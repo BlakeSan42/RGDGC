@@ -5,119 +5,58 @@ Ship a working app: scoring flow end-to-end (DONE), sticker claim, putting pract
 
 ---
 
-## Phase A: Sticker System
+## Completed This Sprint
 
-### Move generate_disc_codes.py to scripts/
-- status: done:terminal-3
+### Phase A — Sticker System: COMPLETE
+- generate_disc_codes.py moved to scripts (T3)
+- Sticker backend: 6 endpoints live (T3)
+- Mobile Sticker Claim Screen: 3-step flow (T2)
 
-### Mobile Sticker Claim Screen
-- status: claimed:terminal-2
-- priority: P1
-- depends_on: []
-- notes: QR scanner → claim flow → add disc details. Backend sticker endpoints are live. Uses /api/v1/stickers/claim/{code}.
+### Phase B — Geo/Mapping: COMPLETE
+- PostGIS enabled, GeoAlchemy2 installed (T3)
+- Geo fields on Course/Hole models (T3)
+- 3 GeoJSON API endpoints live (T3)
+- @rnmapbox/maps + CourseMap component (T3 + T2)
+- 55 holes seeded with real GPS coordinates (T3)
+- Weather.gov API: /current + /wind endpoints (T2)
 
-### Admin Dashboard: Sticker Management Page
-- status: unclaimed
-- priority: P1
-- notes: Generate batch, view inventory, download CSV. Wire into existing admin-dashboard/src/pages/.
+### Phase C — Backend QA: COMPLETE
+- All 12 API route groups verified (T4)
+- Missing deps fixed (T4)
+- Alembic migrations fixed (T4)
+- Disc route double prefix fixed (T4)
 
----
-
-## Phase B: Geo/Mapping Architecture
-
-### Enable PostGIS Extension
-- status: done:terminal-3
-
-### Add Geo Fields to Course/Hole Models
-- status: done:terminal-3
-
-### GeoJSON API Endpoints
-- status: done:terminal-3
-
-### Add @rnmapbox/maps to Mobile
-- status: done:terminal-3
-- notes: CourseMap component with satellite/street toggle, tee/basket/fairway layers, hole info cards.
-
-### Seed River Grove DGC GPS Coordinates
-- status: done:terminal-3
-- notes: 55 holes across 3 layouts with real GPS. GeoJSON endpoint returns 57 features.
-
-### Download USGS 3DEP DEM for Kingwood TX
-- status: unclaimed
-- priority: P1
-- notes: 1m resolution bare-earth DEM. Harris County, Houston metro. Free from USGS National Map.
-
-### Download Harris County LIDAR via TNRIS
-- status: unclaimed
-- priority: P1
-- notes: Tree canopy height. Source: TNRIS (tnris.org). Free.
-
-### Weather.gov API Integration
-- status: done:terminal-2
-- notes: weather_service.py (NWS API), weather.py (2 endpoints: /current, /putting-wind). Router wired. Uncommitted.
-
----
-
-## Phase C: Backend QA (Terminal 4)
-
-### Fix missing dependencies
-- status: done:terminal-4
-- notes: Added qrcode[svg], requests, slowapi, boto3. Duplicate httpx removed.
-
-### Fix Alembic migrations
-- status: done:terminal-4
-- notes: Initial + sticker migrations were empty stubs. Rewrote with real DDL for all 20+ tables. Committed by terminal-2.
-
-### Fix disc route double prefix
-- status: done:terminal-4
-- notes: APIRouter(prefix="/discs") + mount prefix="/discs" caused /api/v1/discs/discs/. Removed internal prefix.
-
-### Smoke test all 12 API route groups
-- status: done:terminal-4
-- notes: All 12 route groups verified with curl. Full scoring flow tested end-to-end.
+### Cross-Terminal
+- MCP server: 9/9 tools verified (T2)
+- CI pipeline: fixed PostGIS, admin-dashboard check, peer deps (T2)
+- Location fix: IL → Kingwood TX with real UDisc data (T2)
+- End-to-end smoke test passing (T2 + T4)
+- 0 TypeScript errors across 36 mobile screens
+- Google OAuth, chat bot, disc management, notifications (T3)
 
 ---
 
 ## Still Unclaimed
 
-### Build Mobile Putting Practice
+### Admin Dashboard: Sticker Management Page
 - status: unclaimed
 - priority: P1
-- notes: Log putts, see probability, track C1/C1X/C2. Uses /api/v1/putting/* endpoints.
+- notes: Generate batch UI, inventory view, CSV download.
 
-### Test MCP Server Against Live Backend
+### USGS 3DEP DEM for Kingwood TX
 - status: unclaimed
 - priority: P1
-- notes: All 9 tools against running API. Verify responses are correct.
+- notes: 1m resolution bare-earth DEM for elevation profiles.
 
-### Run CI Pipeline
+### Harris County LIDAR via TNRIS
 - status: unclaimed
 - priority: P1
-- notes: GitHub Actions — fix any lint/type/test failures.
+- notes: Tree canopy height model.
 
 ### Deploy Contracts to Sepolia
 - status: unclaimed
 - priority: P2
-- notes: Smart contracts exist in contracts/. Deploy, verify, wire addresses into backend config.
-
----
-
-## Completed
-Key milestones:
-- End-to-end smoke test PASSED (login → course → round → 19 holes → complete → -1 vs par)
-- Mobile TypeScript: 0 errors
-- Backend: 41/41 tests passing
-- All 12 API route groups verified (terminal-4 QA)
-- MCP server builds clean
-- Admin dashboard scaffolded (10 pages)
-- Sticker backend: 6 endpoints live
-- PostGIS + GeoJSON API: 3 endpoints live
-- Mapbox course map component added
-- Weather.gov integration (NWS API) added
-- Google OAuth wired
-- Real course data seeded (Kingwood, TX, 55 holes)
-- Disc registration working (RGDG-0001)
-- Chat bot responding to keyword queries
+- notes: Smart contracts in contracts/. Deploy, verify, wire addresses.
 
 ---
 
@@ -129,4 +68,3 @@ Key milestones:
 - OpenClaw bot skills
 - Push notifications
 - Offline mode + sync
-- Blockchain contract deployment + treasury wiring

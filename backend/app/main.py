@@ -21,6 +21,14 @@ limiter = Limiter(key_func=get_remote_address)
 async def lifespan(app: FastAPI):
     # Startup: create tables (dev only — use Alembic in production)
     settings = get_settings()
+
+    # Reject default secrets in production
+    if settings.environment == "production":
+        if "change-in-production" in settings.jwt_secret:
+            raise RuntimeError("JWT_SECRET must be set in production — do not use default")
+        if "change-in-production" in settings.secret_key:
+            raise RuntimeError("SECRET_KEY must be set in production — do not use default")
+
     if settings.environment == "development":
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)

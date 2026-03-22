@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     # Redis
     redis_url: str = "redis://localhost:6381"
 
-    # Auth
+    # Auth — MUST be overridden in production via env vars
     secret_key: str = "dev-secret-key-change-in-production"
     jwt_secret: str = "dev-jwt-secret-change-in-production"
     jwt_expiry: int = 3600  # 1 hour
