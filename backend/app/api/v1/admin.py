@@ -1,6 +1,7 @@
 from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from pydantic import BaseModel
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -32,27 +33,30 @@ router = APIRouter()
 # ---------------------------------------------------------------------------
 
 
+class EventCreate(BaseModel):
+    league_id: int
+    layout_id: int
+    event_date: date
+    name: str | None = None
+    entry_fee: float | None = None
+
 @router.post("/events", response_model=EventOut, status_code=201)
 async def create_event(
-    league_id: int,
-    layout_id: int,
-    event_date: date,
+    data: EventCreate,
     request: Request,
-    name: str | None = None,
-    entry_fee: float | None = None,
     admin: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    league = await db.get(League, league_id)
+    league = await db.get(League, data.league_id)
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
 
     event = Event(
-        league_id=league_id,
-        layout_id=layout_id,
-        event_date=event_date,
-        name=name or f"{league.name} — {event_date.strftime('%b %d')}",
-        entry_fee=entry_fee,
+        league_id=data.league_id,
+        layout_id=data.layout_id,
+        event_date=data.event_date,
+        name=data.name or f"{league.name} — {data.event_date.strftime('%b %d')}",
+        entry_fee=data.entry_fee,
         status="upcoming",
     )
     db.add(event)
@@ -64,7 +68,7 @@ async def create_event(
         action="event_create",
         target_type="event",
         target_id=str(event.id),
-        details={"league_id": league_id, "event_date": str(event_date)},
+        details={"league_id": data.league_id, "event_date": str(data.event_date)},
         ip_address=request.client.host if request.client else None,
     )
 
@@ -224,14 +228,18 @@ async def weekly_rounds(
     return result
 
 
+class RoleChange(BaseModel):
+    role: str
+
 @router.post("/users/{user_id}/role")
 async def change_user_role(
     user_id: int,
-    role: str,
+    data: RoleChange,
     request: Request,
     admin: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
+    role = data.role
     if role not in ("admin", "super_admin", "player", "guest"):
         raise HTTPException(status_code=400, detail="Invalid role")
 
