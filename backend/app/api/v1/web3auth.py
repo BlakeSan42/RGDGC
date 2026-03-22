@@ -33,9 +33,11 @@ from app.services.blockchain_service import (
     verify_wallet_signature,
 )
 
+from app.config import get_settings
+
 logger = logging.getLogger(__name__)
 router = APIRouter()
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func=get_remote_address, enabled=get_settings().environment != "testing")
 
 # In-memory nonce store. In production, use Redis with TTL.
 # Keys: lowercase wallet address -> nonce string

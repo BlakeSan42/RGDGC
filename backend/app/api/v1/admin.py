@@ -22,6 +22,7 @@ from app.schemas.admin import (
 from app.schemas.league import EventOut
 from app.services.audit_service import log_action
 from app.services.cache_service import CacheService
+from app.services.push_service import send_push_to_all, send_push_to_user
 
 router = APIRouter()
 
@@ -202,6 +203,18 @@ async def create_announcement(
         details={"title": payload.title, "priority": payload.priority},
         ip_address=request.client.host if request.client else None,
     )
+
+    # Push notification for important/urgent announcements
+    if payload.priority in ("important", "urgent"):
+        try:
+            await send_push_to_all(
+                db,
+                payload.title,
+                payload.body[:100],
+                {"type": "announcement", "id": announcement.id},
+            )
+        except Exception:
+            pass  # Push failure must never break announcement creation
 
     return AnnouncementResponse.model_validate(announcement)
 
@@ -411,3 +424,40 @@ async def round_analytics(
         avg_score=avg_score,
         completion_rate=completion_rate,
     )
+
+
+# ---------------------------------------------------------------------------
+# Test Push Notification
+# ---------------------------------------------------------------------------
+
+
+@router.post("/test-push")
+async def send_test_push(
+    user_id: int,
+    message: str,
+    request: Request,
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Send a test push notification to a specific user (admin only)."""
+    target = await db.get(User, user_id)
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not target.push_token:
+        raise HTTPException(status_code=400, detail="User has no push token registered")
+
+    success = await send_push_to_user(
+        db, user_id, "RGDGC Test", message, {"type": "test"}
+    )
+
+    await log_action(
+        db,
+        admin_id=admin.id,
+        action="test_push",
+        target_type="user",
+        target_id=str(user_id),
+        details={"message": message, "success": success},
+        ip_address=request.client.host if request.client else None,
+    )
+
+    return {"success": success, "user_id": user_id}

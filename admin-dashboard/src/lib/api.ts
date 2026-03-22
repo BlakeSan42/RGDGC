@@ -325,6 +325,37 @@ export async function distributePrizes(leagueId: number): Promise<Transaction[]>
   return data;
 }
 
+// --- Stickers ---
+export async function getStickerStats() {
+  const { data } = await api.get('/stickers/stats');
+  return data;
+}
+
+export async function generateStickerBatch(quantity: number, name: string) {
+  const { data } = await api.post('/stickers/generate-batch', {
+    quantity,
+    batch_name: name,
+  });
+  return data;
+}
+
+export async function getBatchCsv(batchId: string): Promise<Blob> {
+  const { data } = await api.get(`/stickers/batch/${batchId}/csv`, {
+    responseType: 'blob',
+  });
+  return data;
+}
+
+export async function getBatchInventory(batchId: string) {
+  const { data } = await api.get(`/stickers/batch/${batchId}/inventory`);
+  return data;
+}
+
+export async function validateStickerCode(code: string) {
+  const { data } = await api.get(`/stickers/validate/${code}`);
+  return data;
+}
+
 // --- Settings ---
 export async function clearCache(): Promise<{ message: string }> {
   const { data } = await api.post<{ message: string }>('/admin/cache/clear');

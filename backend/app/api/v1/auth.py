@@ -36,7 +36,10 @@ from app.services.social_auth import (
 from jose import JWTError, jwt
 
 router = APIRouter()
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(
+    key_func=get_remote_address,
+    enabled=get_settings().environment != "testing",
+)
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)

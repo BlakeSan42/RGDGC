@@ -22,6 +22,7 @@ const Haptics = Platform.OS === "web"
     }
   : HapticsModule;
 import { puttingApi } from "@/services/api";
+import { useOffline } from "@/context/OfflineContext";
 import { colors, spacing, fontSize, borderRadius } from "@/constants/theme";
 import type { PuttAttempt, PuttProbability } from "@/types";
 
@@ -119,7 +120,8 @@ export default function PuttingPracticeScreen() {
   const [score21, setScore21] = useState(0);
   const [busted, setBusted] = useState(false);
 
-  // Offline queue
+  // Offline queue (centralized via OfflineContext)
+  const { savePutts } = useOffline();
   const offlineQueue = useRef<QueuedPutt[]>([]);
 
   // Animations
@@ -179,24 +181,30 @@ export default function PuttingPracticeScreen() {
     }
   }, [mode]);
 
-  // ── Sync offline queue ──
+  // ── Flush offline queue to centralized storage on interval + unmount ──
+
+  const flushOfflineQueue = useCallback(async () => {
+    if (offlineQueue.current.length > 0) {
+      const batch = [...offlineQueue.current];
+      offlineQueue.current = [];
+      // First try direct API sync
+      try {
+        await puttingApi.batchSync(batch);
+      } catch {
+        // API failed — save to centralized offline storage for later sync
+        await savePutts(batch);
+      }
+    }
+  }, [savePutts]);
 
   useEffect(() => {
-    const interval = setInterval(async () => {
-      if (offlineQueue.current.length > 0) {
-        const batch = [...offlineQueue.current];
-        try {
-          await puttingApi.batchSync(batch);
-          offlineQueue.current = offlineQueue.current.filter(
-            (p) => !batch.includes(p)
-          );
-        } catch {
-          // Still offline, keep in queue
-        }
-      }
-    }, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    const interval = setInterval(flushOfflineQueue, 30000);
+    return () => {
+      clearInterval(interval);
+      // Flush remaining putts on unmount
+      flushOfflineQueue();
+    };
+  }, [flushOfflineQueue]);
 
   // ── Log putt to API (with offline fallback) ──
 

@@ -1,9 +1,15 @@
 """
-Test fixtures — uses a fresh test database on each session.
+Test fixtures — uses a dedicated test database with table truncation between tests.
 """
 
 import os
 from typing import AsyncGenerator
+
+# Configure test environment BEFORE importing app modules
+os.environ["ENVIRONMENT"] = "testing"
+_main_db = "postgresql+asyncpg://rgdgc:rgdgc_dev@localhost:5433/rgdgc"
+TEST_DB_URL = "postgresql+asyncpg://rgdgc:rgdgc_dev@localhost:5433/rgdgc_test"
+os.environ["DATABASE_URL"] = TEST_DB_URL
 
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
@@ -11,38 +17,22 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.models import Base
+import app.db.database as db_module
 from app.db.database import get_db
 from app.main import create_app
 
-_base_url = os.environ.get("DATABASE_URL", "postgresql+asyncpg://rgdgc:rgdgc_dev@localhost:5433/rgdgc")
-TEST_DB_URL = _base_url.rsplit("/", 1)[0] + "/rgdgc_test"
-
-# These are set once in the session fixture, then shared
+# Will be initialized in session fixture (in the correct event loop)
 _engine = None
 _TestSession = None
 
 
-def get_engine():
-    global _engine
-    if _engine is None:
-        _engine = create_async_engine(TEST_DB_URL, echo=False)
-    return _engine
-
-
-def get_test_session():
-    global _TestSession
-    if _TestSession is None:
-        _TestSession = async_sessionmaker(get_engine(), class_=AsyncSession, expire_on_commit=False)
-    return _TestSession
-
-
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def setup_database():
-    """Create test database, enable PostGIS, create tables."""
+    """Create test database and tables once per session."""
     global _engine, _TestSession
 
-    # Create test database if needed
-    admin_engine = create_async_engine(_base_url, isolation_level="AUTOCOMMIT")
+    # Create test DB if it doesn't exist
+    admin_engine = create_async_engine(_main_db, isolation_level="AUTOCOMMIT")
     async with admin_engine.connect() as conn:
         result = await conn.execute(text("SELECT 1 FROM pg_database WHERE datname='rgdgc_test'"))
         if not result.scalar():
@@ -55,30 +45,30 @@ async def setup_database():
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
     await postgis_engine.dispose()
 
-    # Create engine and session factory in THIS event loop
+    # Create engine IN this event loop — critical for asyncpg
     _engine = create_async_engine(TEST_DB_URL, echo=False)
     _TestSession = async_sessionmaker(_engine, class_=AsyncSession, expire_on_commit=False)
 
-    # Create tables
+    # Inject into the app's database module so all code uses the same loop-bound engine
+    db_module._engine = _engine
+    db_module._async_session = _TestSession
+
+    # Create all tables
     async with _engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
     yield
 
-    # Teardown
     async with _engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
     await _engine.dispose()
-    _engine = None
-    _TestSession = None
 
 
 @pytest_asyncio.fixture(autouse=True)
 async def clean_tables():
-    """Truncate all tables before each test."""
-    engine = get_engine()
-    async with engine.begin() as conn:
+    """Truncate all tables before each test for isolation."""
+    async with _engine.begin() as conn:
         await conn.execute(text(
             "DO $$ DECLARE r RECORD; BEGIN "
             "FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public' "
@@ -91,18 +81,20 @@ async def clean_tables():
 
 @pytest_asyncio.fixture
 async def db() -> AsyncGenerator[AsyncSession, None]:
-    TestSession = get_test_session()
-    async with TestSession() as session:
+    async with _TestSession() as session:
         yield session
 
 
+_test_app = None
+
 @pytest_asyncio.fixture
 async def client() -> AsyncGenerator[AsyncClient, None]:
-    app = create_app()
-    TestSession = get_test_session()
+    global _test_app
+    if _test_app is None:
+        _test_app = create_app()
 
     async def override_db():
-        async with TestSession() as session:
+        async with _TestSession() as session:
             try:
                 yield session
                 await session.commit()
@@ -110,11 +102,11 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
                 await session.rollback()
                 raise
 
-    app.dependency_overrides[get_db] = override_db
-    transport = ASGITransport(app=app)
+    _test_app.dependency_overrides[get_db] = override_db
+    transport = ASGITransport(app=_test_app)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
-    app.dependency_overrides.clear()
+    _test_app.dependency_overrides.clear()
 
 
 @pytest_asyncio.fixture
@@ -140,8 +132,7 @@ async def admin_headers(client: AsyncClient) -> dict:
     token = res.json()["access_token"]
     user_id = res.json()["user"]["id"]
 
-    TestSession = get_test_session()
-    async with TestSession() as session:
+    async with _TestSession() as session:
         from app.models.user import User
         user = await session.get(User, user_id)
         user.role = "admin"
@@ -154,9 +145,8 @@ async def admin_headers(client: AsyncClient) -> dict:
 async def seeded_course() -> dict:
     from app.models.course import Course, Layout, Hole
 
-    TestSession = get_test_session()
-    async with TestSession() as session:
-        course = Course(name="Test Course", city="Test City", state="TX")
+    async with _TestSession() as session:
+        course = Course(name="Test Course", city="Kingwood", state="TX")
         session.add(course)
         await session.flush()
 
@@ -178,8 +168,7 @@ async def seeded_course() -> dict:
 async def seeded_league() -> dict:
     from app.models.league import League
 
-    TestSession = get_test_session()
-    async with TestSession() as session:
+    async with _TestSession() as session:
         league = League(
             name="Test League", season="2026", league_type="singles",
             points_rule="field_size", drop_worst=0, is_active=True,

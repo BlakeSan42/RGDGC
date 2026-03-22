@@ -9,6 +9,7 @@ import LeagueManagement from './pages/LeagueManagement';
 import PlayerManagement from './pages/PlayerManagement';
 import PlayerDetail from './pages/PlayerDetail';
 import DiscRegistry from './pages/DiscRegistry';
+import StickerManagement from './pages/StickerManagement';
 import TreasuryDashboard from './pages/TreasuryDashboard';
 import ClubSettings from './pages/ClubSettings';
 
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="players" element={<PlayerManagement />} />
         <Route path="players/:id" element={<PlayerDetail />} />
         <Route path="discs" element={<DiscRegistry />} />
+        <Route path="stickers" element={<StickerManagement />} />
         <Route path="treasury" element={<TreasuryDashboard />} />
         <Route path="settings" element={<ClubSettings />} />
       </Route>

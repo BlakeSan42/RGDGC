@@ -9,12 +9,15 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from app.config import get_settings
-from app.db.database import engine
+from app.db.database import get_engine
 from app.models import Base
 from app.api.v1.router import api_router
 from app.api.public import router as public_router
 
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(
+    key_func=get_remote_address,
+    enabled=get_settings().environment != "testing",
+)
 
 
 @asynccontextmanager
@@ -30,11 +33,14 @@ async def lifespan(app: FastAPI):
             raise RuntimeError("SECRET_KEY must be set in production — do not use default")
 
     if settings.environment == "development":
+        engine = get_engine()
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
     yield
-    # Shutdown
-    await engine.dispose()
+    # Shutdown — skip dispose in testing (engine is managed by test fixtures)
+    if settings.environment != "testing":
+        engine = get_engine()
+        await engine.dispose()
 
 
 def create_app() -> FastAPI:

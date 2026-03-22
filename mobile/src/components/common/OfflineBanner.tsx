@@ -1,9 +1,11 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
-import { useOfflineQueue } from "../../hooks/useOfflineQueue";
+import { useOffline } from "@/context/OfflineContext";
 
 export function OfflineBanner() {
-  const { isOffline, queueSize } = useOfflineQueue();
+  const { isOnline, pendingRoundsCount, pendingPuttsCount, isSyncing } = useOffline();
+  const isOffline = !isOnline;
+  const queueSize = pendingRoundsCount + pendingPuttsCount;
   const slideAnim = useRef(new Animated.Value(-60)).current;
 
   useEffect(() => {
@@ -23,11 +25,13 @@ export function OfflineBanner() {
     >
       <View style={styles.inner}>
         <Text style={styles.text}>
-          You're offline. Changes will sync when reconnected.
+          {isSyncing
+            ? "Syncing your data..."
+            : "You're offline. Changes will sync when reconnected."}
         </Text>
-        {queueSize > 0 && (
+        {queueSize > 0 && !isSyncing && (
           <Text style={styles.queue}>
-            {queueSize} action{queueSize !== 1 ? "s" : ""} queued
+            {queueSize} item{queueSize !== 1 ? "s" : ""} pending
           </Text>
         )}
       </View>

@@ -5,6 +5,7 @@ import {
   Trophy,
   Users,
   Disc3,
+  Tag,
   Wallet,
   Settings,
   X,
@@ -21,6 +22,7 @@ const navItems = [
   { to: '/leagues', icon: Trophy, label: 'Leagues' },
   { to: '/players', icon: Users, label: 'Players' },
   { to: '/discs', icon: Disc3, label: 'Discs' },
+  { to: '/stickers', icon: Tag, label: 'Stickers' },
   { to: '/treasury', icon: Wallet, label: 'Treasury' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];

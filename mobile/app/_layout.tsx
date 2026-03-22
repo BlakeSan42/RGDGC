@@ -1,10 +1,12 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { AuthProvider } from "@/context/AuthContext";
+import { OfflineProvider } from "@/context/OfflineContext";
 
 export default function RootLayout() {
   return (
     <AuthProvider>
+      <OfflineProvider>
       <StatusBar style="auto" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" />
@@ -105,7 +107,12 @@ export default function RootLayout() {
           name="course/map"
           options={{ headerShown: true, title: "Course Map" }}
         />
+        <Stack.Screen
+          name="sync"
+          options={{ headerShown: true, title: "Sync & Offline" }}
+        />
       </Stack>
+      </OfflineProvider>
     </AuthProvider>
   );
 }

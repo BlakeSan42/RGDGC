@@ -38,11 +38,6 @@ Ship a working app: scoring flow end-to-end (DONE), sticker claim, putting pract
 
 ## Still Unclaimed
 
-### Admin Dashboard: Sticker Management Page
-- status: unclaimed
-- priority: P1
-- notes: Generate batch UI, inventory view, CSV download.
-
 ### USGS 3DEP DEM for Kingwood TX
 - status: unclaimed
 - priority: P1
@@ -53,10 +48,24 @@ Ship a working app: scoring flow end-to-end (DONE), sticker claim, putting pract
 - priority: P1
 - notes: Tree canopy height model.
 
-### Deploy Contracts to Sepolia
-- status: unclaimed
-- priority: P2
-- notes: Smart contracts in contracts/. Deploy, verify, wire addresses.
+## Completed This Round (T2)
+
+### Admin Dashboard: Sticker Management Page — DONE
+- Stats overview (5 cards), generate batch form, code lookup, batch inventory, recent claims
+- Auto-refresh, CSV download, Sidebar + route wired
+
+### Deploy Contracts to Sepolia — READY
+- Deploy script verified (Token → Treasury → DiscRegistry, 1M supply, 500K to treasury)
+- verify.ts — Etherscan verification for all 3 contracts
+- setup-testnet.ts — Post-deploy: set fee, mint test tokens, register test disc
+- wire-backend.ts — Outputs env vars for backend .env
+- DEPLOY.md — Full step-by-step guide with faucet links
+
+### Owner Control System — DONE
+- /api/v1/owner/* endpoints (hidden from Swagger)
+- Two-factor: super_admin JWT + X-Owner-Key header
+- Impersonate, lock/unlock, role override, password reset, system status
+- Role escalation locked down (admins can't promote to admin/super_admin)
 
 ---
 

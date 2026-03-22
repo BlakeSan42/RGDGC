@@ -51,9 +51,10 @@ from app.services.disc_service import (
     report_lost,
     send_disc_message,
 )
+from app.services.push_service import send_push_to_user
 
 router = APIRouter()
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func=get_remote_address, enabled=get_settings().environment != "testing")
 
 # Optional auth: returns User or None (does not raise on missing/invalid token)
 _optional_bearer = HTTPBearer(auto_error=False)
@@ -333,6 +334,20 @@ async def report_disc_found(
         )
     except ValueError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Disc not found")
+
+    # Notify the disc owner that someone found their disc
+    try:
+        disc = await lookup_disc(db, disc_code)
+        if disc and disc.owner_id:
+            await send_push_to_user(
+                db,
+                disc.owner_id,
+                "Someone Found Your Disc!",
+                f"Your {disc.mold} was found. Check the app for details.",
+                {"type": "disc_found", "disc_code": disc.disc_code},
+            )
+    except Exception:
+        pass  # Push failure must never break the found report
 
     return DiscFoundResponse.model_validate(report)
 

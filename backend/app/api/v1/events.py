@@ -11,6 +11,7 @@ from app.models.user import User
 from app.schemas.league import EventOut, ResultOut, ResultSubmit
 from app.services.cache_service import CacheService
 from app.services.points_service import finalize_event
+from app.services.push_service import send_push_to_league
 
 router = APIRouter()
 
@@ -145,5 +146,17 @@ async def finalize(
     event = await db.get(Event, event_id)
     if event and event.league_id:
         await CacheService.delete_pattern(f"leaderboard:{event.league_id}:*")
+
+        # Notify league members that results are posted
+        try:
+            await send_push_to_league(
+                db,
+                event.league_id,
+                "Results Posted!",
+                f"{event.name} results are in. Check your standings!",
+                {"type": "event_results", "event_id": event.id},
+            )
+        except Exception:
+            pass  # Push failure must never break finalization
 
     return [ResultOut.model_validate(r) for r in results]

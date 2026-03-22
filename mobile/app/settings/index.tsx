@@ -132,6 +132,17 @@ export default function SettingsScreen() {
         </SettingsRow>
       </View>
 
+      {/* Data */}
+      <Text style={styles.sectionHeader}>DATA</Text>
+      <View style={styles.section}>
+        <SettingsRow
+          label="Sync & Offline"
+          value=""
+          chevron
+          onPress={() => router.push("/sync")}
+        />
+      </View>
+
       {/* About */}
       <Text style={styles.sectionHeader}>ABOUT</Text>
       <View style={styles.section}>

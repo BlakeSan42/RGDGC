@@ -14,6 +14,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { ScoreBadge } from "@/components/common/ScoreBadge";
 import { Button } from "@/components/common/Button";
 import { roundApi, courseApi } from "@/services/api";
+import { useOffline } from "@/context/OfflineContext";
+import { type OfflineRound } from "@/services/offline";
 import { colors, spacing, fontSize, borderRadius } from "@/constants/theme";
 
 const { width } = Dimensions.get("window");
@@ -86,6 +88,7 @@ export default function ScorecardScreen() {
     };
     fetchLayout();
   }, [courseId, layoutId]);
+  const { isOnline, saveRound } = useOffline();
   const [currentHole, setCurrentHole] = useState(0);
   const [completing, setCompleting] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
@@ -112,15 +115,14 @@ export default function ScorecardScreen() {
           hole_number: hole.holeNumber,
           strokes: hole.strokes,
         });
-        setHoles((prev) => {
-          const updated = [...prev];
-          updated[currentHole] = { ...updated[currentHole], submitted: true };
-          return updated;
-        });
       } catch {
-        Alert.alert("Error", "Failed to save score. Try again.");
-        return;
+        // Offline or error — mark as submitted locally, will sync with full round later
       }
+      setHoles((prev) => {
+        const updated = [...prev];
+        updated[currentHole] = { ...updated[currentHole], submitted: true };
+        return updated;
+      });
     }
 
     if (currentHole < numHoles - 1) {
@@ -133,23 +135,20 @@ export default function ScorecardScreen() {
   };
 
   const completeRound = async () => {
-    // Submit any unsubmitted holes first
-    for (let i = 0; i < holes.length; i++) {
-      if (!holes[i].submitted) {
-        try {
+    setCompleting(true);
+
+    // Try online submission first
+    try {
+      // Submit any unsubmitted holes
+      for (let i = 0; i < holes.length; i++) {
+        if (!holes[i].submitted) {
           await roundApi.submitScore(Number(roundId), {
             hole_number: holes[i].holeNumber,
             strokes: holes[i].strokes,
           });
-        } catch {
-          Alert.alert("Error", `Failed to save hole ${holes[i].holeNumber}`);
-          return;
         }
       }
-    }
 
-    setCompleting(true);
-    try {
       const result = await roundApi.complete(Number(roundId));
       Alert.alert(
         "Round Complete!",
@@ -157,7 +156,29 @@ export default function ScorecardScreen() {
         [{ text: "Done", onPress: () => router.replace("/(tabs)") }]
       );
     } catch {
-      Alert.alert("Error", "Failed to complete round.");
+      // Network error — save round offline
+      const offlineRound: OfflineRound = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        layout_id: Number(layoutId),
+        started_at: new Date().toISOString(),
+        scores: holes.map((h) => ({
+          hole_id: h.holeNumber,
+          hole_number: h.holeNumber,
+          strokes: h.strokes,
+        })),
+        completed_at: new Date().toISOString(),
+        total_score: totalScore,
+        total_strokes: totalStrokes,
+        is_practice: false,
+      };
+
+      await saveRound(offlineRound);
+      Alert.alert(
+        "Round Saved!",
+        `Total: ${totalStrokes} (${totalScore > 0 ? "+" : ""}${totalScore === 0 ? "E" : totalScore})\n\nSaved offline. Will sync when you're back online.`,
+        [{ text: "Done", onPress: () => router.replace("/(tabs)") }]
+      );
+    } finally {
       setCompleting(false);
     }
   };

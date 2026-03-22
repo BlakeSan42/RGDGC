@@ -15,11 +15,12 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import get_settings
 from app.db.database import get_db
 from app.services.disc_service import lookup_disc
 
 router = APIRouter(tags=["public"])
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func=get_remote_address, enabled=get_settings().environment != "testing")
 
 # RGDGC deep link scheme (configurable for prod vs dev)
 APP_DEEP_LINK = "rgdgc://disc/{disc_code}"
