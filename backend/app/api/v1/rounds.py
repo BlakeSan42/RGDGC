@@ -31,10 +31,12 @@ async def start_round(
 async def list_rounds(
     limit: int = Query(20, le=100),
     layout_id: int | None = None,
+    user_id: int | None = Query(None, description="Filter by user ID (public). If omitted, returns current user's rounds."),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    stmt = select(Round).where(Round.user_id == user.id).order_by(Round.started_at.desc()).limit(limit)
+    target_user_id = user_id if user_id else user.id
+    stmt = select(Round).where(Round.user_id == target_user_id).order_by(Round.started_at.desc()).limit(limit)
     if layout_id:
         stmt = stmt.where(Round.layout_id == layout_id)
     result = await db.execute(stmt)

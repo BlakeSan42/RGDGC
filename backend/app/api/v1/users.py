@@ -18,7 +18,6 @@ async def get_user_stats(
     user_id: int,
     season: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
-    _current: User = Depends(get_current_user),
 ):
     user = await db.get(User, user_id)
     if not user:

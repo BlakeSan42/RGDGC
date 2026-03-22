@@ -266,17 +266,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     case "get_leaderboard": {
       const leagueId = (args as Record<string, unknown>).league_id;
       const limit = (args as Record<string, unknown>).limit ?? 10;
+      // Backend returns list[LeaderboardEntry], not {league_name, leaderboard}
       const data = (await apiGet(
         `/api/v1/leagues/${leagueId}/leaderboard?limit=${limit}`
-      )) as { league_name?: string; leaderboard?: Array<Record<string, unknown>> };
+      )) as Array<Record<string, unknown>>;
 
-      let result = `**${data.league_name ?? "League"} Standings**\n\n`;
-      const entries = data.leaderboard ?? [];
+      const entries = Array.isArray(data) ? data : [];
+      const leagueName = leagueId === 1 ? "Dubs" : leagueId === 2 ? "Sunday Singles" : "League";
+      let result = `**${leagueName} Standings**\n\n`;
+      if (entries.length === 0) return text(`${result}No results posted yet.`);
       entries.forEach(
         (entry: Record<string, unknown>, i: number) => {
-          const medal =
-            i === 0 ? "1." : i === 1 ? "2." : i === 2 ? "3." : `${i + 1}.`;
-          result += `${medal} ${entry.player_name}: ${entry.total_points} pts (${entry.events_played} events)\n`;
+          result += `${i + 1}. ${entry.username ?? entry.display_name ?? "Player"}: ${entry.total_points} pts (${entry.events_played} events)\n`;
         }
       );
       return text(result);
@@ -312,8 +313,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     // ── Event Results ──
     case "get_event_results": {
       const eventId = (args as Record<string, unknown>).event_id;
-      const data = await apiGet(`/api/v1/events/${eventId}`);
-      return text(JSON.stringify(data, null, 2));
+      // Get event metadata + results separately
+      const event = await apiGet(`/api/v1/events/${eventId}`) as Record<string, unknown>;
+      const results = await apiGet(`/api/v1/events/${eventId}/results`) as Array<Record<string, unknown>>;
+      return text(JSON.stringify({ event, results }, null, 2));
     }
 
     // ── PDGA Rules ──
@@ -337,8 +340,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     // ── Course Info ──
     case "get_course_info": {
       const layoutId = (args as Record<string, unknown>).layout_id;
+      // Layout endpoint is under /courses/layouts/{id}, not /layouts/{id}
       const path = layoutId
-        ? `/api/v1/layouts/${layoutId}`
+        ? `/api/v1/courses/layouts/${layoutId}`
         : `/api/v1/courses`;
       const data = await apiGet(path);
       return text(JSON.stringify(data, null, 2));
