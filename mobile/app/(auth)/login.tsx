@@ -1,16 +1,103 @@
-import { useState } from "react";
-import { View, Text, TextInput, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { useState, useEffect } from "react";
+import { View, Text, TextInput, StyleSheet, Alert, KeyboardAvoidingView, Platform, TouchableOpacity, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import * as Google from "expo-auth-session/providers/google";
+import * as AppleAuthentication from "expo-apple-authentication";
+import * as WebBrowser from "expo-web-browser";
+import Constants from "expo-constants";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/common/Button";
 import { colors, spacing, fontSize, borderRadius } from "@/constants/theme";
 
+WebBrowser.maybeCompleteAuthSession();
+
+const GOOGLE_EXPO_CLIENT_ID = Constants.expoConfig?.extra?.googleExpoClientId ?? process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID ?? "";
+const GOOGLE_IOS_CLIENT_ID = Constants.expoConfig?.extra?.googleIosClientId ?? process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? "";
+const GOOGLE_ANDROID_CLIENT_ID = Constants.expoConfig?.extra?.googleAndroidClientId ?? process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ?? "";
+const GOOGLE_WEB_CLIENT_ID = Constants.expoConfig?.extra?.googleWebClientId ?? process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? "";
+
 export default function LoginScreen() {
-  const { login } = useAuth();
+  const { login, loginWithGoogle, loginWithApple } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
+
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    expoClientId: GOOGLE_EXPO_CLIENT_ID,
+    iosClientId: GOOGLE_IOS_CLIENT_ID,
+    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+    webClientId: GOOGLE_WEB_CLIENT_ID,
+  });
+
+  useEffect(() => {
+    if (response?.type === "success") {
+      const idToken = response.authentication?.idToken;
+      if (idToken) {
+        handleGoogleLogin(idToken);
+      } else {
+        setGoogleLoading(false);
+        Alert.alert("Google Sign-In Failed", "Could not retrieve authentication token. Please try again.");
+      }
+    } else if (response?.type === "error") {
+      setGoogleLoading(false);
+      Alert.alert("Google Sign-In Failed", response.error?.message || "An unexpected error occurred. Please try again.");
+    } else if (response?.type === "dismiss") {
+      setGoogleLoading(false);
+    }
+  }, [response]);
+
+  const handleGoogleLogin = async (idToken: string) => {
+    try {
+      await loginWithGoogle(idToken);
+      router.replace("/(tabs)");
+    } catch (err) {
+      Alert.alert("Login Failed", "Could not sign in with Google. Please try again or use email.");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleGooglePress = async () => {
+    setGoogleLoading(true);
+    try {
+      await promptAsync();
+    } catch (err) {
+      setGoogleLoading(false);
+      Alert.alert("Google Sign-In Failed", "Could not start Google sign-in. Please try again.");
+    }
+  };
+
+  const handleApplePress = async () => {
+    setAppleLoading(true);
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+      const idToken = credential.identityToken;
+      if (!idToken) {
+        Alert.alert("Apple Sign-In Failed", "Could not retrieve authentication token. Please try again.");
+        return;
+      }
+      const fullName = [credential.fullName?.givenName, credential.fullName?.familyName]
+        .filter(Boolean)
+        .join(" ") || undefined;
+      await loginWithApple(idToken, fullName);
+      router.replace("/(tabs)");
+    } catch (err: any) {
+      if (err.code !== "ERR_REQUEST_CANCELED") {
+        Alert.alert("Apple Sign-In Failed", "Could not sign in with Apple. Please try again.");
+      }
+    } finally {
+      setAppleLoading(false);
+    }
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -60,6 +147,46 @@ export default function LoginScreen() {
           />
 
           <Button title="Log In" onPress={handleLogin} loading={loading} size="lg" />
+
+          <View style={styles.dividerContainer}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or continue with</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <TouchableOpacity
+            style={[styles.googleButton, (!request || googleLoading) && styles.googleButtonDisabled]}
+            onPress={handleGooglePress}
+            disabled={!request || googleLoading}
+            activeOpacity={0.7}
+          >
+            {googleLoading ? (
+              <ActivityIndicator size="small" color={colors.text.primary} />
+            ) : (
+              <>
+                <Ionicons name="logo-google" size={20} color="#4285F4" style={styles.googleIcon} />
+                <Text style={styles.googleButtonText}>Continue with Google</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          {Platform.OS === "ios" && (
+            <TouchableOpacity
+              style={[styles.appleButton, appleLoading && styles.appleButtonDisabled]}
+              onPress={handleApplePress}
+              disabled={appleLoading}
+              activeOpacity={0.7}
+            >
+              {appleLoading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <Ionicons name="logo-apple" size={20} color="#FFFFFF" style={styles.appleIcon} />
+                  <Text style={styles.appleButtonText}>Continue with Apple</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -99,5 +226,64 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     backgroundColor: colors.bg.secondary,
     minHeight: 48,
+  },
+  dividerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: spacing.sm,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.gray[300],
+  },
+  dividerText: {
+    paddingHorizontal: spacing.md,
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+  },
+  googleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.bg.primary,
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+    borderRadius: borderRadius.md,
+    minHeight: 48,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+  googleButtonDisabled: {
+    opacity: 0.6,
+  },
+  googleIcon: {
+    marginRight: spacing.sm,
+  },
+  googleButtonText: {
+    fontSize: fontSize.base,
+    fontWeight: "600",
+    color: colors.text.primary,
+  },
+  appleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#000000",
+    borderRadius: borderRadius.md,
+    minHeight: 48,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+  appleButtonDisabled: {
+    opacity: 0.6,
+  },
+  appleIcon: {
+    marginRight: spacing.sm,
+  },
+  appleButtonText: {
+    fontSize: fontSize.base,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
 });

@@ -335,9 +335,9 @@ Example (8 players):
 - Players are **"players"** or **"members"** (not "users" in UI)
 - Leagues: **"Dubs"** (doubles) and **"Sunday Singles"**
 - Currency: **$RGDG** (River Grove Disc Golf Token)
-- Location: **River Grove, IL**
+- Location: **Kingwood, TX** (Houston metro, Harris County)
 - Home course: **River Grove DGC**
-- Layouts: **White** (default), **Red**, **Blue**
+- Layouts: **All 18 plus 3A** (default/tournament), **Standard 18**, **Ryne Theis Memorial**
 - Putting zones: **C1** (0-10m), **C1X** (circle 1 exclusive), **C2** (10-20m)
 
 ## Skills

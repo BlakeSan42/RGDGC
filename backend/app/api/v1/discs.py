@@ -1,0 +1,345 @@
+"""
+API routes for disc registration, QR codes, and lost/found workflow.
+
+Public endpoints (no auth required):
+    GET  /{disc_code}/lookup  — QR scan lookup
+    POST /{disc_code}/found   — Report finding a disc
+    POST /{disc_code}/messages — Send a message (optional auth)
+
+Authenticated endpoints:
+    POST /register             — Register a new disc
+    GET  /my-discs             — List user's discs
+    GET  /{disc_code}          — Disc detail
+    GET  /{disc_code}/qr       — Regenerate QR code
+    POST /{disc_code}/lost     — Mark disc as lost
+    POST /{disc_code}/returned — Confirm disc returned
+    GET  /{disc_code}/messages — Get messages (owner only)
+"""
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import JWTError, jwt
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.config import get_settings
+from app.core.security import get_current_user
+from app.db.database import get_db
+from app.models.user import User
+from app.schemas.disc import (
+    DiscFoundCreate,
+    DiscFoundResponse,
+    DiscMessageCreate,
+    DiscMessageResponse,
+    DiscPublicResponse,
+    DiscQRResponse,
+    DiscRegister,
+    DiscResponse,
+)
+from app.services.disc_service import (
+    DISC_BASE_URL,
+    confirm_returned,
+    generate_qr_svg,
+    get_disc_messages,
+    get_user_discs,
+    lookup_disc,
+    register_disc,
+    report_found,
+    report_lost,
+    send_disc_message,
+)
+
+router = APIRouter(prefix="/discs", tags=["discs"])
+
+# Optional auth: returns User or None (does not raise on missing/invalid token)
+_optional_bearer = HTTPBearer(auto_error=False)
+
+
+async def get_optional_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_optional_bearer),
+    db: AsyncSession = Depends(get_db),
+) -> User | None:
+    """Extract user from token if present and valid; return None otherwise."""
+    if credentials is None:
+        return None
+    settings = get_settings()
+    try:
+        payload = jwt.decode(
+            credentials.credentials,
+            settings.jwt_secret,
+            algorithms=[settings.jwt_algorithm],
+        )
+        user_id = int(payload["sub"])
+        if payload.get("type") != "access":
+            return None
+    except (JWTError, ValueError, KeyError):
+        return None
+
+    result = await db.execute(select(User).where(User.id == user_id, User.is_active.is_(True)))
+    return result.scalar_one_or_none()
+
+
+# ---------------------------------------------------------------------------
+# Authenticated endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.post("/register", response_model=DiscResponse, status_code=status.HTTP_201_CREATED)
+async def register_disc_endpoint(
+    data: DiscRegister,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Register a new disc and generate a unique RGDG code."""
+    disc = await register_disc(db, user.id, data)
+    return DiscResponse(
+        id=disc.id,
+        disc_code=disc.disc_code,
+        owner_id=disc.owner_id,
+        owner_display_name=user.display_name or user.username,
+        manufacturer=disc.manufacturer,
+        mold=disc.mold,
+        plastic=disc.plastic,
+        weight_grams=disc.weight_grams,
+        color=disc.color,
+        photo_url=disc.photo_url,
+        status=disc.status,
+        notes=disc.notes,
+        registered_at=disc.registered_at,
+        updated_at=disc.updated_at,
+    )
+
+
+@router.get("/my-discs", response_model=list[DiscResponse])
+async def list_my_discs(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """List all discs registered to the authenticated player."""
+    discs = await get_user_discs(db, user.id)
+    return [
+        DiscResponse(
+            id=d.id,
+            disc_code=d.disc_code,
+            owner_id=d.owner_id,
+            owner_display_name=user.display_name or user.username,
+            manufacturer=d.manufacturer,
+            mold=d.mold,
+            plastic=d.plastic,
+            weight_grams=d.weight_grams,
+            color=d.color,
+            photo_url=d.photo_url,
+            status=d.status,
+            notes=d.notes,
+            registered_at=d.registered_at,
+            updated_at=d.updated_at,
+        )
+        for d in discs
+    ]
+
+
+@router.get("/{disc_code}", response_model=DiscResponse)
+async def get_disc_detail(
+    disc_code: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get full detail for a registered disc. Requires authentication."""
+    disc = await lookup_disc(db, disc_code)
+    if disc is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Disc not found")
+
+    owner = disc.owner
+    return DiscResponse(
+        id=disc.id,
+        disc_code=disc.disc_code,
+        owner_id=disc.owner_id,
+        owner_display_name=owner.display_name or owner.username if owner else None,
+        manufacturer=disc.manufacturer,
+        mold=disc.mold,
+        plastic=disc.plastic,
+        weight_grams=disc.weight_grams,
+        color=disc.color,
+        photo_url=disc.photo_url,
+        status=disc.status,
+        notes=disc.notes,
+        registered_at=disc.registered_at,
+        updated_at=disc.updated_at,
+    )
+
+
+@router.get("/{disc_code}/qr", response_model=DiscQRResponse)
+async def get_qr_code(
+    disc_code: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Regenerate the QR code SVG for a disc. Requires authentication."""
+    disc = await lookup_disc(db, disc_code)
+    if disc is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Disc not found")
+
+    svg = generate_qr_svg(disc.disc_code)
+    return DiscQRResponse(
+        disc_code=disc.disc_code,
+        qr_svg=svg,
+        qr_url=f"{DISC_BASE_URL}/{disc.disc_code}",
+    )
+
+
+@router.post("/{disc_code}/lost", response_model=DiscResponse)
+async def mark_disc_lost(
+    disc_code: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Mark a disc as lost. Only the disc owner can do this."""
+    try:
+        disc = await report_lost(db, disc_code, user.id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Disc not found")
+    except PermissionError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the disc owner can mark it as lost")
+
+    return DiscResponse(
+        id=disc.id,
+        disc_code=disc.disc_code,
+        owner_id=disc.owner_id,
+        owner_display_name=user.display_name or user.username,
+        manufacturer=disc.manufacturer,
+        mold=disc.mold,
+        plastic=disc.plastic,
+        weight_grams=disc.weight_grams,
+        color=disc.color,
+        photo_url=disc.photo_url,
+        status=disc.status,
+        notes=disc.notes,
+        registered_at=disc.registered_at,
+        updated_at=disc.updated_at,
+    )
+
+
+@router.post("/{disc_code}/returned", response_model=DiscResponse)
+async def confirm_disc_returned(
+    disc_code: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Confirm a disc has been returned. Only the disc owner can do this."""
+    try:
+        disc = await confirm_returned(db, disc_code, user.id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Disc not found")
+    except PermissionError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the disc owner can confirm return")
+
+    return DiscResponse(
+        id=disc.id,
+        disc_code=disc.disc_code,
+        owner_id=disc.owner_id,
+        owner_display_name=user.display_name or user.username,
+        manufacturer=disc.manufacturer,
+        mold=disc.mold,
+        plastic=disc.plastic,
+        weight_grams=disc.weight_grams,
+        color=disc.color,
+        photo_url=disc.photo_url,
+        status=disc.status,
+        notes=disc.notes,
+        registered_at=disc.registered_at,
+        updated_at=disc.updated_at,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Public endpoints (no auth required)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/{disc_code}/lookup", response_model=DiscPublicResponse)
+async def public_disc_lookup(
+    disc_code: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Public endpoint for QR code scans. Returns limited disc info without
+    exposing owner contact details.
+    """
+    disc = await lookup_disc(db, disc_code)
+    if disc is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Disc not found")
+
+    owner = disc.owner
+    return DiscPublicResponse(
+        disc_code=disc.disc_code,
+        manufacturer=disc.manufacturer,
+        mold=disc.mold,
+        plastic=disc.plastic,
+        color=disc.color,
+        status=disc.status,
+        owner_display_name=owner.display_name or owner.username if owner else None,
+    )
+
+
+@router.post("/{disc_code}/found", response_model=DiscFoundResponse, status_code=status.HTTP_201_CREATED)
+async def report_disc_found(
+    disc_code: str,
+    data: DiscFoundCreate,
+    user: User | None = Depends(get_optional_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Report finding a disc. Public endpoint — authentication is optional.
+    If the finder is logged in, their user ID is recorded.
+    """
+    try:
+        report = await report_found(
+            db, disc_code, data, finder_user_id=user.id if user else None
+        )
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Disc not found")
+
+    return DiscFoundResponse.model_validate(report)
+
+
+@router.post("/{disc_code}/messages", response_model=DiscMessageResponse, status_code=status.HTTP_201_CREATED)
+async def create_disc_message(
+    disc_code: str,
+    data: DiscMessageCreate,
+    user: User | None = Depends(get_optional_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Send a message on a disc thread. Authentication is optional.
+    Anonymous users must provide sender_name in the request body.
+    """
+    try:
+        msg = await send_disc_message(
+            db, disc_code, data, sender_user_id=user.id if user else None
+        )
+    except ValueError as e:
+        detail = str(e)
+        if "No disc found" in detail:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Disc not found")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
+
+    return DiscMessageResponse.model_validate(msg)
+
+
+@router.get("/{disc_code}/messages", response_model=list[DiscMessageResponse])
+async def list_disc_messages(
+    disc_code: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get all messages for a disc. Only the disc owner can view messages.
+    """
+    disc = await lookup_disc(db, disc_code)
+    if disc is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Disc not found")
+    if disc.owner_id != user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the disc owner can view messages")
+
+    messages = await get_disc_messages(db, disc_code)
+    return [DiscMessageResponse.model_validate(m) for m in messages]

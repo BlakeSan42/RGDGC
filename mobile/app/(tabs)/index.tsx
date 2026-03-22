@@ -53,7 +53,39 @@ export default function PlayScreen() {
           <Button title="Start Round" onPress={() => router.push("/scoring/select-course")} size="lg" />
           <Button title="Practice" onPress={() => router.push("/scoring/select-course")} variant="secondary" size="lg" />
         </View>
+        <View style={styles.actionRow}>
+          <Button
+            title="Browse Courses"
+            onPress={() => router.push("/courses")}
+            variant="secondary"
+            size="md"
+          />
+          <Button
+            title="Putting Practice"
+            onPress={() => router.push("/practice/putting")}
+            variant="secondary"
+            size="md"
+          />
+        </View>
       </View>
+
+      {/* Join a League CTA — show when user has no league events */}
+      {upcomingEvents.length === 0 && (
+        <View style={styles.section}>
+          <Card elevated>
+            <Text style={styles.emptyTitle}>Join a League</Text>
+            <Text style={styles.emptyText}>
+              Compete in weekly events, earn points, and climb the standings.
+            </Text>
+            <Button
+              title="Browse Leagues"
+              onPress={() => router.push("/leagues")}
+              size="md"
+              style={{ marginTop: spacing.sm }}
+            />
+          </Card>
+        </View>
+      )}
 
       {/* Upcoming Event */}
       {upcomingEvents.length > 0 && (

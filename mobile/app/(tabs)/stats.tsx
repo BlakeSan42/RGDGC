@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, RefreshControl } from "react-native";
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable } from "react-native";
+import { router } from "expo-router";
 import { Card } from "@/components/common/Card";
 import { puttingApi, roundApi } from "@/services/api";
-import { colors, spacing, fontSize } from "@/constants/theme";
+import { colors, spacing, fontSize, borderRadius } from "@/constants/theme";
 import type { PuttingStats as PuttingStatsType, Round } from "@/types";
 
 export default function StatsScreen() {
@@ -57,6 +58,17 @@ export default function StatsScreen() {
           />
           <StatCard label="Total Rounds" value={String(rounds.length)} />
         </View>
+      </View>
+
+      {/* View All Rounds */}
+      <View style={styles.section}>
+        <Pressable
+          style={styles.viewAllBtn}
+          onPress={() => router.push("/rounds/history")}
+        >
+          <Text style={styles.viewAllText}>View All Rounds</Text>
+          <Text style={styles.viewAllArrow}>→</Text>
+        </Pressable>
       </View>
 
       {/* Putting */}
@@ -119,6 +131,16 @@ const styles = StyleSheet.create({
   zoneItem: { alignItems: "center" },
   zonePct: { fontSize: fontSize.xl, fontWeight: "700" },
   zoneLabel: { fontSize: fontSize.sm, color: colors.text.secondary, marginTop: 2 },
+  viewAllBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: borderRadius.md,
+  },
+  viewAllText: { color: colors.text.inverse, fontWeight: "600", fontSize: fontSize.base },
+  viewAllArrow: { color: colors.text.inverse, fontSize: fontSize.lg, marginLeft: spacing.sm },
   emptyTitle: { fontSize: fontSize.lg, fontWeight: "600", color: colors.text.primary, marginBottom: 4 },
   emptyText: { fontSize: fontSize.base, color: colors.text.secondary },
 });

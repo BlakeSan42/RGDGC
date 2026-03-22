@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, RefreshControl } from "react-native";
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable } from "react-native";
+import { useRouter } from "expo-router";
 import { Card } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
 import { leagueApi, eventApi } from "@/services/api";
-import { colors, spacing, fontSize } from "@/constants/theme";
+import { colors, spacing, fontSize, borderRadius } from "@/constants/theme";
 import type { League, LeaderboardEntry, LeagueEvent } from "@/types";
 
 export default function LeagueScreen() {
+  const router = useRouter();
   const [leagues, setLeagues] = useState<League[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [events, setEvents] = useState<LeagueEvent[]>([]);
@@ -61,6 +63,24 @@ export default function LeagueScreen() {
         </View>
       </View>
 
+      {/* Action Buttons */}
+      <View style={styles.actionRow}>
+        <Pressable
+          style={styles.actionBtn}
+          onPress={() => router.push("/leaderboard" as any)}
+        >
+          <Text style={styles.actionBtnText}>Full Leaderboard</Text>
+          <Text style={styles.actionBtnArrow}>{"\u2192"}</Text>
+        </Pressable>
+        <Pressable
+          style={[styles.actionBtn, styles.actionBtnSecondary]}
+          onPress={() => router.push("/compare" as any)}
+        >
+          <Text style={[styles.actionBtnText, styles.actionBtnTextSecondary]}>Compare Players</Text>
+          <Text style={[styles.actionBtnArrow, styles.actionBtnTextSecondary]}>{"\u2192"}</Text>
+        </Pressable>
+      </View>
+
       {/* Leaderboard */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Standings</Text>
@@ -96,7 +116,7 @@ export default function LeagueScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Upcoming Events</Text>
           {events.map((event) => (
-            <Card key={event.id}>
+            <Card key={event.id} onPress={() => router.push(`/event/${event.id}`)}>
               <Text style={styles.eventName}>{event.name || "League Event"}</Text>
               <Text style={styles.eventDate}>
                 {new Date(event.event_date).toLocaleDateString("en-US", {
@@ -133,4 +153,37 @@ const styles = StyleSheet.create({
   eventPlayers: { fontSize: fontSize.xs, color: colors.text.secondary },
   emptyTitle: { fontSize: fontSize.lg, fontWeight: "600", color: colors.text.primary, marginBottom: 4 },
   emptyText: { fontSize: fontSize.base, color: colors.text.secondary },
+  actionRow: {
+    flexDirection: "row",
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  actionBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
+  },
+  actionBtnSecondary: {
+    backgroundColor: "transparent",
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+  },
+  actionBtnText: {
+    color: colors.text.inverse,
+    fontWeight: "600",
+    fontSize: fontSize.sm,
+  },
+  actionBtnTextSecondary: {
+    color: colors.primary,
+  },
+  actionBtnArrow: {
+    color: colors.text.inverse,
+    fontSize: fontSize.base,
+  },
 });

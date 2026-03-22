@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1 import auth, users, courses, rounds, leagues, events, putting, admin
+from app.api.v1 import auth, users, courses, rounds, leagues, events, putting, admin, stickers, geo, discs
 
 api_router = APIRouter()
 
@@ -12,3 +12,6 @@ api_router.include_router(leagues.router, prefix="/leagues", tags=["leagues"])
 api_router.include_router(events.router, prefix="/events", tags=["events"])
 api_router.include_router(putting.router, prefix="/putting", tags=["putting"])
 api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
+api_router.include_router(stickers.router, prefix="/stickers", tags=["stickers"])
+api_router.include_router(geo.router, prefix="/geo", tags=["geo"])
+api_router.include_router(discs.router, prefix="/discs", tags=["discs"])

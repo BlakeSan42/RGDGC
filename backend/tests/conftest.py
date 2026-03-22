@@ -30,7 +30,7 @@ def event_loop():
 
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def create_test_db():
-    """Create test database if it doesn't exist."""
+    """Create test database if it doesn't exist, with PostGIS."""
     admin_url = "postgresql+asyncpg://rgdgc:rgdgc_dev@localhost:5433/rgdgc"
     admin_engine = create_async_engine(admin_url, isolation_level="AUTOCOMMIT")
     async with admin_engine.connect() as conn:
@@ -38,6 +38,12 @@ async def create_test_db():
         if not result.scalar():
             await conn.execute(text("CREATE DATABASE rgdgc_test"))
     await admin_engine.dispose()
+
+    # Enable PostGIS on the test database
+    test_admin = create_async_engine(TEST_DB_URL, isolation_level="AUTOCOMMIT")
+    async with test_admin.connect() as conn:
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
+    await test_admin.dispose()
 
 
 @pytest_asyncio.fixture(autouse=True)

@@ -4,6 +4,9 @@
  *
  * Exposes River Grove Disc Golf Club data to Claude via the
  * Model Context Protocol. Tools map to the RGDGC FastAPI backend.
+ *
+ * Home course: River Grove DGC — Kingwood, TX (Houston metro, Harris County)
+ * Layouts: "All 18 plus 3A" (default/tournament), "Standard 18", "Ryne Theis Memorial"
  */
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -386,8 +389,8 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => ({
     },
     {
       uri: "course://river-grove",
-      name: "River Grove DGC",
-      description: "Course details, layouts, and hole information for River Grove DGC",
+      name: "River Grove DGC — Kingwood, TX",
+      description: "Course details and hole information for River Grove DGC in Kingwood, TX (Houston metro, Harris County). Layouts: All 18 plus 3A (default/tournament), Standard 18, Ryne Theis Memorial.",
       mimeType: "application/json",
     },
   ],

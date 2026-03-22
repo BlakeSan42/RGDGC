@@ -16,7 +16,7 @@
 services:
   # ---------- PostgreSQL ----------
   db:
-    image: postgres:15-alpine
+    image: postgis/postgis:15-3.4-alpine
     container_name: rgdgc-db
     restart: unless-stopped
     ports:

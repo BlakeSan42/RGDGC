@@ -114,9 +114,20 @@ import type {
   LeagueEvent,
   LeaderboardEntry,
   EventResult,
+  EventCheckin,
+  EventDetail,
   PuttAttempt,
   PuttingStats,
   PuttProbability,
+  RegisteredDisc,
+  DiscFoundReport,
+  DiscRegistrationData,
+  SeasonStanding,
+  PuttingLeader,
+  CourseRecord,
+  PlayerComparison,
+  HeadToHeadResult,
+  PlayerProfile,
 } from "@/types";
 
 export const authApi = {
@@ -126,6 +137,16 @@ export const authApi = {
   login: (email: string, password: string) =>
     api<AuthTokens>("/api/v1/auth/login", { method: "POST", body: { email, password }, auth: false }),
 
+  googleAuth: (idToken: string) =>
+    api<AuthTokens>("/api/v1/auth/google", { method: "POST", body: { id_token: idToken }, auth: false }),
+
+  appleAuth: (idToken: string, fullName?: string) =>
+    api<AuthTokens>("/api/v1/auth/apple", {
+      method: "POST",
+      body: { id_token: idToken, full_name: fullName },
+      auth: false,
+    }),
+
   me: () => api<AuthTokens["user"]>("/api/v1/auth/me"),
 };
 
@@ -134,6 +155,8 @@ export const courseApi = {
   get: (id: number) => api<CourseDetail>(`/api/v1/courses/${id}`),
   getLayout: (courseId: number, layoutId: number) =>
     api<LayoutDetail>(`/api/v1/courses/${courseId}/layouts/${layoutId}`),
+  getLayoutById: (layoutId: number) =>
+    api<LayoutDetail>(`/api/v1/courses/layouts/${layoutId}`),
 };
 
 export const roundApi = {
@@ -168,10 +191,53 @@ export const eventApi = {
     if (status) path += `&status=${status}`;
     return api<LeagueEvent[]>(path);
   },
-  get: (id: number) => api<LeagueEvent>(`/api/v1/events/${id}`),
+  get: (id: number) => api<EventDetail>(`/api/v1/events/${id}`),
   results: (id: number) => api<EventResult[]>(`/api/v1/events/${id}/results`),
   checkin: (id: number) =>
     api(`/api/v1/events/${id}/checkin`, { method: "POST" }),
+  checkins: (id: number) =>
+    api<EventCheckin[]>(`/api/v1/events/${id}/checkins`),
+};
+
+export const discApi = {
+  register: (data: DiscRegistrationData) =>
+    api<RegisteredDisc>("/api/v1/discs/register", { method: "POST", body: data }),
+
+  myDiscs: () =>
+    api<RegisteredDisc[]>("/api/v1/discs/my-discs"),
+
+  getDisc: (code: string) =>
+    api<RegisteredDisc>(`/api/v1/discs/${code}`),
+
+  getQR: (code: string) =>
+    api<{ qr_svg: string }>(`/api/v1/discs/${code}/qr`),
+
+  reportLost: (code: string, details?: { last_known_location?: string; notes?: string }) =>
+    api<RegisteredDisc>(`/api/v1/discs/${code}/lost`, { method: "POST", body: details }),
+
+  confirmReturned: (code: string) =>
+    api<RegisteredDisc>(`/api/v1/discs/${code}/returned`, { method: "POST" }),
+
+  foundReports: (code: string) =>
+    api<DiscFoundReport[]>(`/api/v1/discs/${code}/found-reports`),
+};
+
+export const playerApi = {
+  profile: (id: number) => api<PlayerProfile>(`/api/v1/players/${id}`),
+  search: (query: string) => api<PlayerProfile[]>(`/api/v1/players/search?q=${encodeURIComponent(query)}`),
+  compare: (id1: number, id2: number) =>
+    api<{ player1: PlayerComparison; player2: PlayerComparison }>(`/api/v1/players/compare?player1=${id1}&player2=${id2}`),
+  headToHead: (id1: number, id2: number) =>
+    api<HeadToHeadResult[]>(`/api/v1/players/head-to-head?player1=${id1}&player2=${id2}`),
+};
+
+export const leaderboardApi = {
+  seasonStandings: (leagueId: number, limit = 50) =>
+    api<SeasonStanding[]>(`/api/v1/leagues/${leagueId}/leaderboard?limit=${limit}&extended=true`),
+  puttingLeaders: (limit = 50) =>
+    api<PuttingLeader[]>(`/api/v1/putting/leaders?limit=${limit}`),
+  courseRecords: () =>
+    api<CourseRecord[]>(`/api/v1/courses/records`),
 };
 
 export const puttingApi = {

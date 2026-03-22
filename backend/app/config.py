@@ -24,6 +24,16 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: str = "http://localhost:8081,http://localhost:5173"
 
+    # Google OAuth
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    google_ios_client_id: str = ""  # For mobile app
+
+    # Apple Sign-In
+    apple_client_id: str = ""  # Bundle ID, e.g. com.rgdgc.app
+    apple_team_id: str = ""
+    apple_key_id: str = ""
+
     # Blockchain (P1)
     web3_provider_url: str = ""
     rgdg_token_address: str = ""

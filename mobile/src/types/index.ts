@@ -110,12 +110,31 @@ export interface EventResult {
   id: number;
   event_id: number;
   user_id: number;
+  player_name?: string;
   total_strokes: number;
   total_score: number;
   position: number | null;
   points_earned: number | null;
   dnf: boolean;
   dq: boolean;
+}
+
+export interface EventCheckin {
+  user_id: number;
+  username: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  checked_in_at: string;
+}
+
+export interface EventDetail extends LeagueEvent {
+  league_name?: string;
+  course_name?: string;
+  layout_name?: string;
+  format?: string;
+  entry_fee_rgdg?: number;
+  checkin_count?: number;
+  max_players?: number;
 }
 
 export interface LeaderboardEntry {
@@ -165,6 +184,139 @@ export interface PuttProbability {
   personal_average: number | null;
   wind_adjustment: number | null;
   elevation_adjustment: number | null;
+}
+
+// ── Disc Management ──
+export interface RegisteredDisc {
+  id: string;
+  disc_code: string;
+  manufacturer: string;
+  mold: string;
+  plastic: string;
+  weight_grams: number;
+  color: string;
+  photo_url: string | null;
+  status: "active" | "lost" | "found" | "retired";
+  notes: string;
+  registered_at: string;
+}
+
+export interface DiscFoundReport {
+  id: string;
+  disc_code: string;
+  finder_name: string;
+  found_location: string;
+  message: string;
+  found_at: string;
+  resolved: boolean;
+}
+
+export interface DiscRegistrationData {
+  manufacturer: string;
+  mold: string;
+  plastic: string;
+  weight_grams: number;
+  color: string;
+  notes: string;
+}
+
+// ── Achievements ──
+export interface Achievement {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  icon: string; // Ionicon name
+  earned_at: string | null;
+  progress?: number; // 0-1 for in-progress achievements
+  category: 'scoring' | 'putting' | 'league' | 'social' | 'milestone';
+}
+
+export interface PlayerProfile {
+  id: string;
+  display_name: string;
+  username: string;
+  avatar_url: string | null;
+  handicap: number | null;
+  member_since: string;
+  total_rounds: number;
+  average_score: number | null;
+  best_round: number | null;
+  c1x_percentage: number | null;
+  achievements_count: number;
+  recent_achievements: Achievement[];
+}
+
+// ── Leaderboard Extended ──
+export interface SeasonStanding extends LeaderboardEntry {
+  rank_change: number; // positive = moved up, negative = moved down, 0 = same
+  dropped_events: number[];
+  avatar_url: string | null;
+}
+
+export interface PuttingLeader {
+  rank: number;
+  player_id: number;
+  player_name: string;
+  avatar_url: string | null;
+  c1x_percentage: number;
+  c2_percentage: number;
+  total_putts: number;
+  strokes_gained_putting: number;
+  best_round_putting: number | null;
+}
+
+export interface CourseRecord {
+  layout_id: number;
+  layout_name: string;
+  course_name: string;
+  best_score: number;
+  best_strokes: number;
+  record_holder: string;
+  record_holder_id: number;
+  date: string;
+  aces: AceRecord[];
+}
+
+export interface AceRecord {
+  player_name: string;
+  player_id: number;
+  hole_number: number;
+  distance: number | null;
+  date: string;
+  disc_used: string | null;
+}
+
+export interface PlayerComparison {
+  player: PlayerProfile;
+  scoring: {
+    average_score: number | null;
+    best_round: number | null;
+    under_par_rounds: number;
+    aces: number;
+    total_rounds: number;
+  };
+  putting: {
+    c1x_percentage: number | null;
+    c2_percentage: number | null;
+    strokes_gained_putting: number | null;
+  };
+  league: {
+    season_points: number;
+    wins: number;
+    podiums: number;
+    best_finish: number | null;
+  };
+}
+
+export interface HeadToHeadResult {
+  event_id: number;
+  event_name: string;
+  event_date: string;
+  player1_position: number | null;
+  player1_score: number;
+  player2_position: number | null;
+  player2_score: number;
 }
 
 // ── Score Display ──

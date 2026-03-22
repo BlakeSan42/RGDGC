@@ -561,7 +561,7 @@ After payment, you'll be automatically checked in!
         "type": "skill",
         "skill": "weather",
         "params": {
-          "location": "River Grove, IL",
+          "location": "Kingwood, TX",
           "alert_if": ["rain", "storm", "wind>20mph"]
         }
       }
@@ -615,7 +615,7 @@ You are the official AI assistant for River Grove Disc Golf Club. You help membe
 
 ## Key Information
 - Club: River Grove Disc Golf Club (RGDGC)
-- Location: River Grove, IL
+- Location: Kingwood, TX
 - Home Course: River Grove DGC
 - Leagues: "Dubs" (doubles), "Sunday Singles"
 - Season: January - December

@@ -7,6 +7,8 @@ interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
+  loginWithApple: (idToken: string, fullName?: string) => Promise<void>;
   register: (data: {
     email: string;
     username: string;
@@ -45,6 +47,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(result.user);
   };
 
+  const loginWithGoogle = async (idToken: string) => {
+    const result = await authApi.googleAuth(idToken);
+    await setTokens(result.access_token, result.refresh_token);
+    setUser(result.user);
+  };
+
+  const loginWithApple = async (idToken: string, fullName?: string) => {
+    const result = await authApi.appleAuth(idToken, fullName);
+    await setTokens(result.access_token, result.refresh_token);
+    setUser(result.user);
+  };
+
   const register = async (data: {
     email: string;
     username: string;
@@ -68,6 +82,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         isAuthenticated: !!user,
         login,
+        loginWithGoogle,
+        loginWithApple,
         register,
         logout,
       }}

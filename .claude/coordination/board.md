@@ -1,17 +1,78 @@
 # RGDGC Sprint Board — 2026-03-22
 
-## Goal
-Get the platform running end-to-end today: backend serving data, mobile app booting with real screens, admin dashboard scaffolded.
+## Current Sprint Goal
+**Phase A: Sticker System Integration** (NOW) → **Phase B: Geo/Mapping Architecture** (NEXT)
 
 ---
 
-## Active Sprint
+## Phase A: Sticker System (Priority)
 
-### Scaffold Admin Dashboard
-- status: in_progress:terminal-3
+### Move generate_disc_codes.py to scripts/
+- status: done:terminal-3
+- priority: P1
+- notes: Copied to scripts/generate_disc_codes.py.
+
+### Mobile Sticker Claim Screen
+- status: unclaimed
+- priority: P1
+- depends_on: [Integrate Sticker Router]
+- notes: QR scanner → claim flow → add disc details. Uses /api/v1/stickers/claim/{code}. Ties into existing disc registration.
+
+### Admin Dashboard: Sticker Management Page
+- status: unclaimed
+- priority: P1
+- depends_on: [Integrate Sticker Router]
+- notes: Generate batch, view inventory, download CSV. Wire into existing admin-dashboard/src/pages/.
+
+---
+
+## Phase B: Geo/Mapping Architecture (In Progress)
+
+### Enable PostGIS Extension
+- status: done:terminal-3
+- notes: PostGIS 3.4 enabled. Docker image swapped to postgis/postgis:15-3.4-alpine. GeoAlchemy2 + Shapely installed.
+
+### Add Geo Fields to Course/Hole Models
+- status: done:terminal-3
+- notes: Hole: tee_position, basket_position, fairway_line (geometry), tee/basket elevation, elevation_profile. Course: boundary polygon. New CourseFeature model for OB/mandos/trees/water. GiST spatial indexes.
+
+### GeoJSON API Endpoints
+- status: done:terminal-3
+- notes: 3 endpoints live — /geo/courses/{id}/geojson (full FeatureCollection), /geo/courses/{id}/holes/{n}/elevation, /geo/nearest-hole (auto-detect hole from GPS).
+
+### Add @rnmapbox/maps to Mobile
+- status: unclaimed
+- priority: P0
+- depends_on: []
+- notes: Install Mapbox SDK, create course map view with satellite imagery + hole overlays. Free tier (50k loads/month).
+
+### Download USGS 3DEP DEM for Kingwood TX
+- status: unclaimed
 - priority: P1
 - depends_on: []
-- notes: Agent building React + Vite + Tailwind project with pages, sidebar, API client. Running now.
+- notes: 1m resolution bare-earth DEM from USGS National Map. Compute elevation profiles per hole. Kingwood, TX (Harris County, Houston metro). Free data.
+
+### Download Harris County LIDAR via TNRIS
+- status: unclaimed
+- priority: P1
+- depends_on: []
+- notes: Tree canopy height model from point clouds. Source: TNRIS (tnris.org) — Texas Natural Resources Info System. Harris County has excellent LIDAR from FEMA flood mapping. Also check USGS 3DEP. Free.
+
+### Weather.gov API Integration
+- status: unclaimed
+- priority: P1
+- depends_on: []
+- notes: Real-time wind for Kingwood TX. NWS Houston/Galveston forecast office. No API key needed. Feed into putting probability model.
+
+### Seed River Grove DGC GPS Coordinates
+- status: unclaimed
+- priority: P0
+- depends_on: [Add Geo Fields]
+- notes: Need real lat/lng for every tee pad and basket on all 3 layouts (All 18 plus 3A, Standard 18, Ryne Theis Memorial). Can extract from UDisc, satellite imagery, or walk with GPS. Critical for map to show anything.
+
+---
+
+## Still Unclaimed from Previous Sprint
 
 ### Build Mobile Putting Practice
 - status: unclaimed
@@ -22,61 +83,16 @@ Get the platform running end-to-end today: backend serving data, mobile app boot
 ---
 
 ## Completed
-
-### Fix 2 Failing Backend Integration Tests
-- status: done:terminal-2
-- notes: Fixed PuttingStats schema (by_distance→by_zone), fixed timezone-aware datetime in complete_round. 41/41 passing.
-
-### Mobile npm install + Type Check
-- status: done:terminal-2
-- notes: Removed nativewind dependency, tsc --noEmit passes clean.
-
-### MCP Server Build Verification
-- status: done:terminal-2
-- notes: npm install + tsc build — zero errors, dist/ output created.
-
-### Build Mobile Scoring Flow
-- status: done:terminal-2
-- notes: 3 screens (select-course → select-layout → scorecard). Hole-by-hole entry with +/- buttons, quick score buttons, hole navigator, score badges, auto-submit, complete round.
-
-### Generate Alembic Migration
-- status: done:terminal-3
-- notes: 474298be8931_initial_schema.py — all 15 tables. Added missing disc model imports. Stamped head.
-
-### Fix health-check.sh
-- status: done:terminal-3
-- notes: Removed nonexistent containers, fixed ports to 5433/6381/8001, added fallback pg_isready. 6/6 passing.
-
-### Spin Up Backend + DB
-- status: done:terminal-2
-- notes: PostgreSQL on 5433, Redis on 6381, FastAPI on 8001. All running.
-
-### Create Seed Data Script
-- status: done:terminal-2
-
-### Build Mobile Navigation
-- status: done:terminal-2
-
-### Build Mobile Screens — Play/League/Stats/Profile
-- status: done:terminal-2
-
-### Wire MCP to Live Backend
-- status: done:terminal-2
-
-### CLAUDE.md + Infrastructure
-- status: done:terminal-2
-
-### GitHub Repo + Initial Commit
-- status: done:terminal-2
-- notes: https://github.com/BlakeSan42/RGDGC
+(see git log for full history — 18 tasks completed across terminal-1, terminal-2, terminal-3)
 
 ---
 
 ## Backlog
-- OpenClaw bot skills implementation
+- Drone orthomosaic pipeline (PMTiles → R2)
+- 3D terrain rendering (Mapbox v11)
 - AR distance measurement (ARKit/ARCore)
 - Disc golf game engine (flight physics)
-- NFT disc tracking (QR stickers)
+- OpenClaw bot skills
 - Blockchain smart contract deployment
 - Push notifications
 - Offline mode + sync

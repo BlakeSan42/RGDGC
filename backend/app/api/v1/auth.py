@@ -13,12 +13,21 @@ from app.config import get_settings
 from app.db.database import get_db
 from app.models.user import User
 from app.schemas.user import (
+    AppleAuthRequest,
+    GoogleAuthRequest,
     RefreshRequest,
+    SocialAuthResponse,
     TokenResponse,
     UserLogin,
     UserOut,
     UserRegister,
     UserUpdate,
+)
+from app.services.social_auth import (
+    get_or_create_apple_user,
+    get_or_create_google_user,
+    verify_apple_token,
+    verify_google_token,
 )
 
 from jose import JWTError, jwt
@@ -88,6 +97,58 @@ async def refresh(data: RefreshRequest, db: AsyncSession = Depends(get_db)):
     return TokenResponse(
         access_token=create_access_token(user.id),
         refresh_token=create_refresh_token(user.id),
+        user=UserOut.model_validate(user),
+    )
+
+
+@router.post("/google", response_model=SocialAuthResponse)
+async def google_auth(request: GoogleAuthRequest, db: AsyncSession = Depends(get_db)):
+    """Authenticate with Google. Works for both login and registration.
+
+    Flow:
+    1. Mobile/web client obtains a Google ID token via Google Sign-In SDK.
+    2. Client sends the ID token to this endpoint.
+    3. Backend verifies the token with Google, finds or creates the user,
+       and returns RGDGC JWT tokens.
+    """
+    google_info = verify_google_token(request.id_token)
+    user, is_new_user = await get_or_create_google_user(db, google_info)
+
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Account disabled")
+
+    return SocialAuthResponse(
+        access_token=create_access_token(user.id),
+        refresh_token=create_refresh_token(user.id),
+        is_new_user=is_new_user,
+        user=UserOut.model_validate(user),
+    )
+
+
+@router.post("/apple", response_model=SocialAuthResponse)
+async def apple_auth(request: AppleAuthRequest, db: AsyncSession = Depends(get_db)):
+    """Authenticate with Apple Sign-In. Works for both login and registration.
+
+    Flow:
+    1. Mobile client obtains an Apple ID token via Apple Sign-In SDK.
+    2. Client sends the ID token (and optionally full_name) to this endpoint.
+    3. Backend verifies the token with Apple's JWKS, finds or creates the user,
+       and returns RGDGC JWT tokens.
+
+    Note: Apple only provides the user's name on the *first* authorization.
+    The client should capture and send it via the full_name field.
+    """
+    settings = get_settings()
+    apple_info = await verify_apple_token(request.id_token, settings.apple_client_id)
+    user, is_new_user = await get_or_create_apple_user(db, apple_info, request.full_name)
+
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Account disabled")
+
+    return SocialAuthResponse(
+        access_token=create_access_token(user.id),
+        refresh_token=create_refresh_token(user.id),
+        is_new_user=is_new_user,
         user=UserOut.model_validate(user),
     )
 

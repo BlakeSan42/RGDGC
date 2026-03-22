@@ -5,6 +5,7 @@ from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+import geoalchemy2  # noqa: F401 — needed for Alembic to render Geometry columns
 from app.config import get_settings
 from app.models import Base
 

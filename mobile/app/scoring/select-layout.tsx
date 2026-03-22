@@ -33,6 +33,7 @@ export default function SelectLayoutScreen() {
         params: {
           roundId: String(round.id),
           layoutId: String(layout.id),
+          courseId: courseId!,
           courseName: courseName || "Course",
           layoutName: layout.name,
           totalHoles: String(layout.holes),

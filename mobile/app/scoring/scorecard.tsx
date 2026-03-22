@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { ScoreBadge } from "@/components/common/ScoreBadge";
 import { Button } from "@/components/common/Button";
-import { roundApi } from "@/services/api";
+import { roundApi, courseApi } from "@/services/api";
 import { colors, spacing, fontSize, borderRadius } from "@/constants/theme";
 
 const { width } = Dimensions.get("window");
@@ -29,6 +29,7 @@ export default function ScorecardScreen() {
   const {
     roundId,
     layoutId,
+    courseId,
     courseName,
     layoutName,
     totalHoles,
@@ -36,6 +37,7 @@ export default function ScorecardScreen() {
   } = useLocalSearchParams<{
     roundId: string;
     layoutId: string;
+    courseId: string;
     courseName: string;
     layoutName: string;
     totalHoles: string;
@@ -44,23 +46,54 @@ export default function ScorecardScreen() {
 
   const numHoles = Number(totalHoles) || 18;
   const par = Number(totalPar) || 54;
-  const parPerHole = Math.round(par / numHoles); // simplified — all par 3 for now
+  const fallbackPar = Math.round(par / numHoles);
 
   const [holes, setHoles] = useState<HoleState[]>(
     Array.from({ length: numHoles }, (_, i) => ({
       holeNumber: i + 1,
-      par: parPerHole,
-      strokes: parPerHole, // default to par
+      par: fallbackPar,
+      strokes: fallbackPar, // default to par
       submitted: false,
     }))
   );
+
+  // Fetch actual per-hole par data from the layout
+  useEffect(() => {
+    const fetchLayout = async () => {
+      try {
+        const layout = courseId
+          ? await courseApi.getLayout(Number(courseId), Number(layoutId))
+          : await courseApi.getLayoutById(Number(layoutId));
+        if (layout.hole_list?.length) {
+          const sorted = [...layout.hole_list].sort((a, b) => a.hole_number - b.hole_number);
+          setHoles((prev) =>
+            prev.map((h, i) => {
+              const layoutHole = sorted[i];
+              if (!layoutHole) return h;
+              const holePar = layoutHole.par;
+              return {
+                ...h,
+                par: holePar,
+                // Only update strokes to match par if not yet submitted
+                strokes: h.submitted ? h.strokes : holePar,
+              };
+            })
+          );
+        }
+      } catch {
+        // Fall back to evenly divided par (already set)
+      }
+    };
+    fetchLayout();
+  }, [courseId, layoutId]);
   const [currentHole, setCurrentHole] = useState(0);
   const [completing, setCompleting] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
   const current = holes[currentHole];
   const totalStrokes = holes.reduce((sum, h) => sum + h.strokes, 0);
-  const totalScore = totalStrokes - par;
+  const actualTotalPar = holes.reduce((sum, h) => sum + h.par, 0);
+  const totalScore = totalStrokes - actualTotalPar;
 
   const updateStrokes = (delta: number) => {
     setHoles((prev) => {

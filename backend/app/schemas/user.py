@@ -43,3 +43,21 @@ class TokenResponse(BaseModel):
 
 class RefreshRequest(BaseModel):
     refresh_token: str
+
+
+class GoogleAuthRequest(BaseModel):
+    id_token: str  # Google ID token from mobile/web client
+
+
+class AppleAuthRequest(BaseModel):
+    id_token: str
+    authorization_code: str | None = None
+    full_name: str | None = None  # Apple only sends name on first login
+
+
+class SocialAuthResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    is_new_user: bool
+    user: UserOut

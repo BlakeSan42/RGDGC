@@ -1,21 +1,35 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { roundApi } from "@/services/api";
+import { roundApi, courseApi } from "@/services/api";
 import { ScoreBadge } from "@/components/common/ScoreBadge";
 import { colors, spacing, fontSize } from "@/constants/theme";
-import type { RoundDetail } from "@/types";
+import type { RoundDetail, Hole } from "@/types";
 
 export default function RoundDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [round, setRound] = useState<RoundDetail | null>(null);
+  const [layoutHoles, setLayoutHoles] = useState<Hole[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (id) {
       roundApi
         .get(Number(id))
-        .then(setRound)
+        .then(async (roundData) => {
+          setRound(roundData);
+          // Fetch per-hole par data from the layout
+          try {
+            const layout = await courseApi.getLayoutById(roundData.layout_id);
+            if (layout.hole_list?.length) {
+              setLayoutHoles(
+                [...layout.hole_list].sort((a, b) => a.hole_number - b.hole_number)
+              );
+            }
+          } catch {
+            // Layout fetch failed — will fall back to default par
+          }
+        })
         .catch(() => {})
         .finally(() => setLoading(false));
     }
@@ -92,8 +106,7 @@ export default function RoundDetailScreen() {
           {round.scores
             .sort((a, b) => a.hole_id - b.hole_id)
             .map((score, i) => {
-              // We don't have par data in score, use a default
-              const par = 3; // TODO: load from layout
+              const par = layoutHoles[i]?.par ?? 3;
               const relative = score.strokes - par;
               return (
                 <View

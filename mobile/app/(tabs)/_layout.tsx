@@ -1,6 +1,47 @@
-import { Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { Pressable, View, StyleSheet } from "react-native";
 import { colors } from "@/constants/theme";
+
+// Mock unread count — replace with real notification state later
+const MOCK_UNREAD_COUNT = 3;
+
+function NotificationBell() {
+  const router = useRouter();
+  const hasUnread = MOCK_UNREAD_COUNT > 0;
+
+  return (
+    <Pressable
+      onPress={() => router.push("/notifications")}
+      hitSlop={8}
+      style={bellStyles.container}
+    >
+      <Ionicons name="notifications-outline" size={24} color={colors.text.inverse} />
+      {hasUnread && <View style={bellStyles.badge} />}
+    </Pressable>
+  );
+}
+
+const bellStyles = StyleSheet.create({
+  container: {
+    marginRight: 16,
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  badge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#F44336",
+    borderWidth: 2,
+    borderColor: colors.primary,
+  },
+});
 
 export default function TabLayout() {
   return (
@@ -21,6 +62,7 @@ export default function TabLayout() {
         headerTitleStyle: {
           fontWeight: "600",
         },
+        headerRight: () => <NotificationBell />,
       }}
     >
       <Tabs.Screen
@@ -48,6 +90,15 @@ export default function TabLayout() {
           title: "League",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="trophy-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="chat"
+        options={{
+          title: "Chat",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="chatbubble-ellipses-outline" size={size} color={color} />
           ),
         }}
       />

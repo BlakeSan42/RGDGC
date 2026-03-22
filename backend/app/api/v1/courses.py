@@ -27,6 +27,20 @@ async def get_course(course_id: int, db: AsyncSession = Depends(get_db)):
     return CourseDetailOut.model_validate(course)
 
 
+@router.get("/layouts/{layout_id}", response_model=LayoutDetailOut)
+async def get_layout_by_id(layout_id: int, db: AsyncSession = Depends(get_db)):
+    """Get a layout by ID (without needing course_id)."""
+    result = await db.execute(
+        select(Layout)
+        .where(Layout.id == layout_id)
+        .options(selectinload(Layout.hole_list))
+    )
+    layout = result.scalar_one_or_none()
+    if not layout:
+        raise HTTPException(status_code=404, detail="Layout not found")
+    return LayoutDetailOut.model_validate(layout)
+
+
 @router.get("/{course_id}/layouts/{layout_id}", response_model=LayoutDetailOut)
 async def get_layout(course_id: int, layout_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(

@@ -17,6 +17,9 @@ class User(Base):
     phone: Mapped[str | None] = mapped_column(String(20))
     avatar_url: Mapped[str | None] = mapped_column(String(500))
     role: Mapped[str] = mapped_column(String(20), default="player")  # admin, player, guest
+    auth_provider: Mapped[str] = mapped_column(String(20), default="email")  # email, google, apple
+    google_id: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
+    apple_id: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
     wallet_address: Mapped[str | None] = mapped_column(String(42))  # Ethereum address (P1)
     handicap: Mapped[float | None] = mapped_column(Numeric(4, 1))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
