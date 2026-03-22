@@ -8,9 +8,11 @@ import {
   Switch,
   Alert,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
+import { blockchainApi } from "@/services/api";
 import { colors, spacing, fontSize, borderRadius } from "@/constants/theme";
 import Constants from "expo-constants";
 
@@ -19,6 +21,57 @@ type PuttingStyle = "spin" | "push" | "spush";
 export default function SettingsScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
+
+  // Wallet state
+  const [walletAddress, setWalletAddress] = useState<string | null>(
+    user?.wallet_address ?? null
+  );
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [connectingWallet, setConnectingWallet] = useState(false);
+
+  const connectWallet = async () => {
+    if (Platform.OS !== "web") {
+      Alert.alert("Wallet Connect", "Wallet connection is available in the web browser. Use MetaMask on desktop.");
+      return;
+    }
+    try {
+      setConnectingWallet(true);
+      const ethereum = (window as any).ethereum;
+      if (!ethereum) {
+        Alert.alert("MetaMask Required", "Install MetaMask browser extension to connect your wallet.");
+        return;
+      }
+      const accounts = await ethereum.request({ method: "eth_requestAccounts" });
+      const address = accounts[0];
+
+      // Get nonce from backend
+      const { message } = await blockchainApi.getNonce(address);
+
+      // Sign with MetaMask
+      const signature = await ethereum.request({
+        method: "personal_sign",
+        params: [message, address],
+      });
+
+      // Link wallet to account
+      await blockchainApi.linkWallet(address, signature);
+      setWalletAddress(address);
+
+      // Get balance
+      try {
+        const { balance } = await blockchainApi.getBalance();
+        setWalletBalance(balance);
+      } catch {
+        // Balance fetch is optional
+      }
+
+      Alert.alert("Wallet Connected", `Connected: ${address.slice(0, 6)}...${address.slice(-4)}`);
+    } catch (err: any) {
+      Alert.alert("Connection Failed", err.message || "Could not connect wallet");
+    } finally {
+      setConnectingWallet(false);
+    }
+  };
 
   // Preference state (would persist via AsyncStorage in production)
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -75,6 +128,38 @@ export default function SettingsScreen() {
         <SettingsRow label="Change Password" chevron onPress={handleChangePassword} />
         <Divider />
         <SettingsRow label="Linked Accounts" value="Apple, Google" chevron onPress={() => {}} />
+      </View>
+
+      {/* Wallet */}
+      <Text style={styles.sectionHeader}>WALLET</Text>
+      <View style={styles.section}>
+        {walletAddress ? (
+          <>
+            <SettingsRow
+              label="Address"
+              value={`${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`}
+            />
+            <Divider />
+            <SettingsRow
+              label="$RGDG Balance"
+              value={walletBalance !== null ? `${walletBalance.toLocaleString()} RGDG` : "—"}
+            />
+          </>
+        ) : (
+          <Pressable
+            style={[styles.row, { justifyContent: "center" }]}
+            onPress={connectWallet}
+            disabled={connectingWallet}
+          >
+            {connectingWallet ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Text style={[styles.rowLabel, { color: colors.primary, textAlign: "center", fontWeight: "600" }]}>
+                Connect Wallet (MetaMask)
+              </Text>
+            )}
+          </Pressable>
+        )}
       </View>
 
       {/* Preferences */}

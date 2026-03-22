@@ -9,6 +9,8 @@ GET /disc/{disc_code} — Returns a styled, mobile-responsive HTML page showing:
     - App download fallback
 """
 
+from html import escape as html_escape
+
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 from slowapi import Limiter
@@ -49,6 +51,15 @@ def _render_disc_page(
         "retired": ("#424242", "#F5F5F5"),
     }
     fg, bg = status_badge_colors.get(status, ("#424242", "#F5F5F5"))
+
+    # XSS protection: escape all user-controlled values before HTML rendering
+    disc_code = html_escape(disc_code)
+    mold = html_escape(mold or "")
+    manufacturer = html_escape(manufacturer or "")
+    plastic = html_escape(plastic or "")
+    color = html_escape(color or "")
+    status = html_escape(status or "")
+    owner_name = html_escape(owner_name or "")
 
     disc_description = mold
     if manufacturer:
@@ -460,6 +471,12 @@ def _render_scorecard_page(
     breakdown: dict,
 ) -> str:
     """Render the public scorecard HTML page with inline CSS."""
+
+    # XSS protection
+    player_name = html_escape(player_name or "Player")
+    course_name = html_escape(course_name or "Course")
+    layout_name = html_escape(layout_name or "Layout")
+    date_str = html_escape(date_str or "")
 
     score_display = f"{total_score:+d}" if total_score != 0 else "E"
 

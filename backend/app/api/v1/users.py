@@ -104,6 +104,29 @@ async def list_users(
     return [UserOut.model_validate(u) for u in result.scalars().all()]
 
 
+@router.post("/me/wallet")
+async def link_wallet(
+    data: dict,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Link a wallet address to the current user's account."""
+    wallet_address = data.get("wallet_address", "").strip()
+    if not wallet_address or len(wallet_address) != 42 or not wallet_address.startswith("0x"):
+        raise HTTPException(status_code=400, detail="Invalid wallet address")
+
+    # Check if wallet is already linked to another user
+    existing = await db.execute(
+        select(User).where(User.wallet_address == wallet_address, User.id != user.id)
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=409, detail="Wallet already linked to another account")
+
+    user.wallet_address = wallet_address
+    await db.flush()
+    return {"wallet_address": wallet_address}
+
+
 @router.put("/me", response_model=UserOut)
 async def update_profile(
     data: UserUpdate,

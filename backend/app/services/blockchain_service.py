@@ -53,6 +53,16 @@ ERC20_ABI = [
         "stateMutability": "view",
         "type": "function",
     },
+    {
+        "inputs": [
+            {"name": "to", "type": "address"},
+            {"name": "amount", "type": "uint256"},
+        ],
+        "name": "mint",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function",
+    },
 ]
 
 TREASURY_ABI = [
@@ -75,6 +85,16 @@ TREASURY_ABI = [
         "name": "rgdgToken",
         "outputs": [{"name": "", "type": "address"}],
         "stateMutability": "view",
+        "type": "function",
+    },
+    {
+        "inputs": [
+            {"name": "recipients", "type": "address[]"},
+            {"name": "amounts", "type": "uint256[]"},
+        ],
+        "name": "distributePrizes",
+        "outputs": [],
+        "stateMutability": "nonpayable",
         "type": "function",
     },
     # FeePaid event for verifying payments
@@ -349,3 +369,143 @@ def is_valid_address(address: str) -> bool:
         # Fallback: basic regex check
         import re
         return bool(re.match(r"^0x[a-fA-F0-9]{40}$", address))
+
+
+# ---------------------------------------------------------------------------
+#  Admin write operations (require deployer private key)
+# ---------------------------------------------------------------------------
+
+def _get_deployer_account():
+    """Return (w3, account) for the deployer/owner wallet.
+
+    The deployer private key must be configured in settings.
+    """
+    settings = get_settings()
+    if not settings.deployer_private_key:
+        raise BlockchainUnavailableError(
+            "deployer_private_key is not configured. "
+            "Set DEPLOYER_PRIVATE_KEY in the environment to sign admin transactions."
+        )
+    w3 = _get_web3()
+    try:
+        from eth_account import Account
+        account = Account.from_key(settings.deployer_private_key)
+        return w3, account
+    except ImportError:
+        raise BlockchainUnavailableError(
+            "eth-account package is not installed. Run: pip install eth-account"
+        )
+    except Exception as exc:
+        raise BlockchainUnavailableError(f"Invalid deployer private key: {exc}") from exc
+
+
+def _send_signed_tx(w3, account, tx_data: dict) -> str:
+    """Build, sign, and send a transaction. Returns the tx hash hex string."""
+    tx_data.update({
+        "from": account.address,
+        "nonce": w3.eth.get_transaction_count(account.address),
+        "chainId": w3.eth.chain_id,
+    })
+    # Estimate gas if not set
+    if "gas" not in tx_data:
+        tx_data["gas"] = w3.eth.estimate_gas(tx_data)
+    # Use EIP-1559 if supported, otherwise legacy gas price
+    try:
+        latest = w3.eth.get_block("latest")
+        if hasattr(latest, "baseFeePerGas") and latest.baseFeePerGas is not None:
+            base_fee = latest.baseFeePerGas
+            tx_data["maxFeePerGas"] = base_fee * 2
+            tx_data["maxPriorityFeePerGas"] = w3.to_wei(1, "gwei")
+        else:
+            tx_data["gasPrice"] = w3.eth.gas_price
+    except Exception:
+        tx_data["gasPrice"] = w3.eth.gas_price
+
+    signed = w3.eth.account.sign_transaction(tx_data, private_key=account.key)
+    tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+    return tx_hash.hex()
+
+
+def mint_tokens(to_address: str, amount: float) -> tuple[str, int]:
+    """Mint RGDG tokens to an address. Only the contract owner can call mint().
+
+    Args:
+        to_address: Recipient address (typically the treasury).
+        amount: Number of tokens in whole units (converted to wei internally).
+
+    Returns:
+        (tx_hash, block_number) of the confirmed transaction.
+    """
+    try:
+        w3, account = _get_deployer_account()
+        contract = _get_token_contract()
+        checksum_to = w3.to_checksum_address(to_address)
+        amount_wei = w3.to_wei(amount, "ether")
+
+        tx_data = contract.functions.mint(checksum_to, amount_wei).build_transaction({"from": account.address})
+        tx_hash = _send_signed_tx(w3, account, tx_data)
+
+        # Wait for confirmation
+        receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+        if receipt["status"] != 1:
+            raise BlockchainUnavailableError(
+                f"Mint transaction {tx_hash} reverted on-chain"
+            )
+
+        logger.info(
+            "Minted %s RGDG to %s — tx %s (block %s)",
+            amount, to_address, tx_hash, receipt["blockNumber"],
+        )
+        return tx_hash, receipt["blockNumber"]
+    except BlockchainUnavailableError:
+        raise
+    except Exception as exc:
+        logger.error("Failed to mint tokens: %s", exc)
+        raise BlockchainUnavailableError(f"Mint transaction failed: {exc}") from exc
+
+
+def distribute_prizes(
+    recipients: list[str], amounts: list[float]
+) -> tuple[str, int]:
+    """Call distributePrizes on the treasury contract.
+
+    Args:
+        recipients: List of winner wallet addresses.
+        amounts: List of prize amounts in whole RGDG units.
+
+    Returns:
+        (tx_hash, block_number) of the confirmed transaction.
+    """
+    if len(recipients) != len(amounts):
+        raise ValueError("recipients and amounts must have the same length")
+    if not recipients:
+        raise ValueError("recipients must not be empty")
+
+    try:
+        w3, account = _get_deployer_account()
+        treasury_contract = _get_treasury_contract()
+
+        checksum_recipients = [w3.to_checksum_address(addr) for addr in recipients]
+        amounts_wei = [w3.to_wei(a, "ether") for a in amounts]
+
+        tx_data = treasury_contract.functions.distributePrizes(
+            checksum_recipients, amounts_wei
+        ).build_transaction({"from": account.address})
+        tx_hash = _send_signed_tx(w3, account, tx_data)
+
+        receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+        if receipt["status"] != 1:
+            raise BlockchainUnavailableError(
+                f"distributePrizes transaction {tx_hash} reverted on-chain"
+            )
+
+        logger.info(
+            "Distributed prizes to %d recipients — tx %s (block %s)",
+            len(recipients), tx_hash, receipt["blockNumber"],
+        )
+        return tx_hash, receipt["blockNumber"]
+    except BlockchainUnavailableError:
+        raise
+    except Exception as exc:
+        logger.error("Failed to distribute prizes: %s", exc)
+        raise BlockchainUnavailableError(f"Prize distribution failed: {exc}") from exc

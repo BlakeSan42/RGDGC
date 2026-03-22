@@ -67,6 +67,26 @@ class TransactionListResponse(BaseModel):
     per_page: int
 
 
+# --- Mint ---
+
+class MintRequest(BaseModel):
+    amount: float = Field(..., gt=0, description="Number of RGDG tokens to mint (whole units)")
+    reason: str = Field(..., min_length=1, max_length=200, description="Reason for minting")
+
+
+# --- Distribute ---
+
+class DistributeResultItem(BaseModel):
+    user_id: int
+    username: str | None
+    wallet_address: str
+    position: int
+    amount: float
+    tx_type: str = "prize"
+
+    model_config = {"from_attributes": True}
+
+
 # --- Treasury ---
 
 class TreasuryStatsResponse(BaseModel):

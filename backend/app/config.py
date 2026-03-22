@@ -58,6 +58,7 @@ class Settings(BaseSettings):
     rgdg_token_address: str = ""  # Deployed RGDGToken contract address
     treasury_address: str = ""  # Deployed RGDGTreasury contract address
     disc_registry_address: str = ""  # Deployed DiscRegistry contract address
+    deployer_private_key: str = ""  # Private key for signing mint/distribute txs
     web3_chain_id: int = 11155111  # Sepolia testnet by default
 
     model_config = {"env_file": ".env", "extra": "ignore"}

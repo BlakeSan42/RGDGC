@@ -83,6 +83,14 @@
 - Fraud success: **58%**
 - KSA insolvency risk: **8%**
 
+### Player Profile Simulation (1,000 Iterations — NEW)
+- 8 player personas modeled: Kingwood Regular, Weekend Warrior, Young Gun, Retired Ace, Family Casual, Houston Traveler, Curious Newbie, League Organizer
+- Median app downloads: **1,725**
+- Median tow incidents prevented/year: **217**
+- Median money saved from tow alerts/year: **$58,888**
+- #1 beneficiary: Weekend Warriors (no K-sticker, $32K saved/year)
+- Social impact score: **94.4/100**
+
 ### Strategy
 - **Phase 1:** Demonstrate (volunteer, build, events, hire youth)
 - **Phase 2:** Coalition (village boards, chamber, Flickinger, Rehak)

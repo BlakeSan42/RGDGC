@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class RoundCreate(BaseModel):
@@ -10,15 +10,15 @@ class RoundCreate(BaseModel):
 
 
 class ScoreSubmit(BaseModel):
-    hole_number: int
-    strokes: int
-    putts: int | None = None
-    ob_strokes: int = 0
+    hole_number: int = Field(..., ge=1, le=30)
+    strokes: int = Field(..., ge=1, le=20)
+    putts: int | None = Field(None, ge=0, le=15)
+    ob_strokes: int = Field(0, ge=0, le=10)
     fairway_hit: bool | None = None
-    disc_used: str | None = None
-    circle_hit: str | None = None  # "c1", "c2", "parked", "none"
+    disc_used: str | None = Field(None, max_length=100)
+    circle_hit: str | None = Field(None, pattern=r"^(c1|c2|parked|none)$")
     scramble: bool | None = None
-    drive_distance: int | None = None  # feet
+    drive_distance: int | None = Field(None, ge=0, le=1500)  # feet
 
 
 class HoleScoreOut(BaseModel):

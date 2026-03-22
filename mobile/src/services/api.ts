@@ -314,6 +314,34 @@ export const userApi = {
     api("/api/v1/users/me/push-token", { method: "POST", body: { token, platform } }),
 };
 
+export const blockchainApi = {
+  getNonce: (walletAddress: string) =>
+    api<{ nonce: string; message: string }>("/api/v1/auth/web3/nonce", {
+      method: "POST",
+      body: { wallet_address: walletAddress },
+      auth: false,
+    }),
+
+  verifyWallet: (walletAddress: string, signature: string) =>
+    api<AuthTokens>("/api/v1/auth/web3/verify", {
+      method: "POST",
+      body: { wallet_address: walletAddress, signature },
+      auth: false,
+    }),
+
+  linkWallet: (walletAddress: string, signature: string) =>
+    api<{ wallet_address: string }>("/api/v1/users/me/wallet", {
+      method: "POST",
+      body: { wallet_address: walletAddress, signature },
+    }),
+
+  getBalance: () =>
+    api<{ balance: number; wallet_address: string }>("/api/v1/blockchain/balance"),
+
+  getTreasury: () =>
+    api<{ balance: number; event_fee: number }>("/api/v1/blockchain/treasury"),
+};
+
 export const puttingApi = {
   logAttempt: (data: PuttAttempt) =>
     api("/api/v1/putting/attempt", { method: "POST", body: data }),

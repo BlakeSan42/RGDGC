@@ -9,6 +9,9 @@ import {
   Wallet,
   Settings,
   X,
+  Shield,
+  CarFront,
+  BookOpen,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -16,7 +19,7 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-const navItems = [
+const navItems: Array<{ to: string; icon: any; label: string; end?: boolean; divider?: boolean }> = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
   { to: '/events', icon: Calendar, label: 'Events' },
   { to: '/leagues', icon: Trophy, label: 'Leagues' },
@@ -25,6 +28,9 @@ const navItems = [
   { to: '/stickers', icon: Tag, label: 'Stickers' },
   { to: '/treasury', icon: Wallet, label: 'Treasury' },
   { to: '/settings', icon: Settings, label: 'Settings' },
+  { to: '/ksa-intel', icon: Shield, label: 'KSA Intel', divider: true },
+  { to: '/ksa-intel/articles', icon: BookOpen, label: 'Knowledge Base' },
+  { to: '/ksa-intel/towing', icon: CarFront, label: 'Tow Tracking' },
 ];
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
@@ -68,22 +74,30 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Navigation */}
         <nav className="mt-4 px-3 space-y-1">
           {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              onClick={onClose}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-forest-800 text-white'
-                    : 'text-forest-200 hover:bg-forest-800 hover:text-white'
-                }`
-              }
-            >
-              <item.icon className="w-5 h-5 flex-shrink-0" />
-              {item.label}
-            </NavLink>
+            <div key={item.to}>
+              {item.divider && (
+                <div className="mt-4 mb-2 px-3 pt-3 border-t border-forest-700">
+                  <p className="text-[10px] uppercase tracking-wider text-forest-400 font-semibold">
+                    Intelligence
+                  </p>
+                </div>
+              )}
+              <NavLink
+                to={item.to}
+                end={item.end}
+                onClick={onClose}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-forest-800 text-white'
+                      : 'text-forest-200 hover:bg-forest-800 hover:text-white'
+                  }`
+                }
+              >
+                <item.icon className="w-5 h-5 flex-shrink-0" />
+                {item.label}
+              </NavLink>
+            </div>
           ))}
         </nav>
 

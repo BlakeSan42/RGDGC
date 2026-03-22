@@ -1,0 +1,374 @@
+================================================================================
+RGDGC — LAUNCH CHECKLIST
+================================================================================
+Last updated: 2026-03-22
+Everything below is a Blake task. The code is done. These are credentials,
+accounts, and deploy commands that only you can run.
+
+Time estimate: ~2 hours total if you do them in order.
+
+================================================================================
+STEP 1: GENERATE SECRETS (5 minutes)
+================================================================================
+
+Run these commands and save the output somewhere safe (password manager):
+
+  cd /Users/blakesanders/RGDGC
+
+  # Generate SECRET_KEY
+  python3 -c "import secrets; print('SECRET_KEY=' + secrets.token_hex(32))"
+
+  # Generate JWT_SECRET
+  python3 -c "import secrets; print('JWT_SECRET=' + secrets.token_hex(32))"
+
+  # Generate OWNER_KEY (your super-secret admin override key)
+  python3 -c "import secrets; print('OWNER_KEY=' + secrets.token_hex(32))"
+
+Put all three in your .env file:
+
+  cp .env.example .env
+  # Edit .env and paste the three values above
+
+
+================================================================================
+STEP 2: DEPLOY BACKEND TO RAILWAY (15 minutes)
+================================================================================
+
+A. Create Railway account
+   1. Go to https://railway.app
+   2. Sign up with GitHub
+   3. Click "New Project" → "Deploy from GitHub Repo"
+   4. Select the RGDGC repo
+   5. Railway auto-detects the backend directory
+
+B. Add PostgreSQL
+   1. In your Railway project → "New" → "Database" → "PostgreSQL"
+   2. Wait for it to provision (~30 seconds)
+   3. Click the database → "Variables" tab → copy DATABASE_URL
+   4. It looks like: postgresql://postgres:xxx@xxx.railway.internal:5432/railway
+
+C. Add Redis
+   1. "New" → "Database" → "Redis"
+   2. Copy REDIS_URL from its variables tab
+
+D. Configure backend service
+   1. Click your backend service → "Variables" tab
+   2. Add these variables (click "Raw Editor" for bulk paste):
+
+      DATABASE_URL=<paste from step B, change to +asyncpg>
+      REDIS_URL=<paste from step C>
+      SECRET_KEY=<from Step 1>
+      JWT_SECRET=<from Step 1>
+      OWNER_KEY=<from Step 1>
+      ENVIRONMENT=production
+      CORS_ORIGINS=https://admin.rgdgc.com,https://rgdgc.com,rgdgc://
+
+   3. Set the root directory to "backend" in service settings
+   4. Set start command: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+
+E. Deploy
+   1. Railway auto-deploys on push to main
+   2. Or click "Deploy" manually
+   3. Wait for build to complete (~2-3 minutes)
+   4. Click the generated URL → add /health to verify
+   5. You should see: {"status":"healthy","service":"rgdgc-api"}
+
+F. Run migrations
+   1. In Railway → backend service → "Settings" → "Execute Command"
+   2. Run: alembic upgrade head
+   3. Then run: python scripts/seed_data.py
+
+G. Note your backend URL
+   Save it — you'll need it for the mobile app and admin dashboard.
+   It looks like: https://rgdgc-backend-production.up.railway.app
+
+
+================================================================================
+STEP 3: DEPLOY ADMIN DASHBOARD (10 minutes)
+================================================================================
+
+Option A: Vercel (recommended)
+   1. Go to https://vercel.com
+   2. Sign up with GitHub
+   3. "New Project" → select RGDGC repo
+   4. Set root directory to "admin-dashboard"
+   5. Add environment variable:
+      VITE_API_URL=<your Railway backend URL>/api/v1
+      VITE_GOOGLE_CLIENT_ID=<from Google Console, if set up>
+   6. Deploy
+   7. Note the URL (e.g., https://rgdgc-admin.vercel.app)
+
+Option B: Netlify
+   Same steps, different platform. Both work fine.
+
+
+================================================================================
+STEP 4: SET UP EXPO & BUILD MOBILE APP (20 minutes)
+================================================================================
+
+A. Install EAS CLI (if not done)
+   npm install -g eas-cli
+
+B. Log in to Expo
+   eas login
+   # Create account at https://expo.dev if needed
+
+C. Initialize project
+   cd /Users/blakesanders/RGDGC/mobile
+   eas init
+   # Save the Project ID it gives you
+
+D. Update app.json with project ID
+   Edit mobile/app.json → extra → eas → projectId
+   Paste the UUID from step C
+
+E. Create .env for production
+   cat > .env << 'EOF'
+   EXPO_PUBLIC_API_URL=<your Railway backend URL>
+   EXPO_PUBLIC_EAS_PROJECT_ID=<from step C>
+   EXPO_PUBLIC_MAPBOX_TOKEN=<from Mapbox, see CREDENTIALS_SETUP.txt>
+   EOF
+
+F. Configure build profiles
+   eas build:configure
+   # Creates eas.json — defaults are fine
+
+G. Test with Expo Go first (fastest)
+   npx expo start
+   # Scan QR code with Expo Go on your iPhone
+   # Verify: register, login, browse courses, start a round
+
+H. Build for TestFlight (iOS)
+   eas build --platform ios --profile preview
+   # This takes ~15 minutes
+   # When done, it gives you a link to install via TestFlight
+
+I. Build for Android internal testing
+   eas build --platform android --profile preview
+   # Download the APK and install on your Android device
+
+J. Production builds (when ready for App Store)
+   eas build --platform ios --profile production
+   eas submit --platform ios
+   # Requires Apple Developer account ($99/year)
+
+   eas build --platform android --profile production
+   eas submit --platform android
+   # Requires Google Play Console ($25 one-time)
+
+
+================================================================================
+STEP 5: SET UP STRIPE (10 minutes, optional for launch)
+================================================================================
+
+You can launch without Stripe. Players can check in for free events.
+Add Stripe later when you want to charge league fees.
+
+A. Create Stripe account
+   1. Go to https://dashboard.stripe.com/register
+   2. Complete business verification
+
+B. Get test keys
+   1. Dashboard → Developers → API Keys
+   2. Copy "Publishable key" (pk_test_...)
+   3. Copy "Secret key" (sk_test_...)
+
+C. Set up webhook
+   1. Developers → Webhooks → "Add endpoint"
+   2. URL: <your Railway backend URL>/api/v1/payments/webhook
+   3. Events to listen for: checkout.session.completed
+   4. Copy the "Signing secret" (whsec_...)
+
+D. Add to Railway env vars
+   STRIPE_SECRET_KEY=sk_test_...
+   STRIPE_PUBLISHABLE_KEY=pk_test_...
+   STRIPE_WEBHOOK_SECRET=whsec_...
+
+
+================================================================================
+STEP 6: SET UP DISCORD BOT (10 minutes, optional)
+================================================================================
+
+A. Create Discord application
+   1. Go to https://discord.com/developers/applications
+   2. "New Application" → name: "RGDGC Clawd"
+   3. Go to "Bot" tab → "Add Bot"
+   4. Copy the bot token
+
+B. Invite bot to your server
+   1. Go to "OAuth2" → "URL Generator"
+   2. Scopes: bot, applications.commands
+   3. Permissions: Send Messages, Read Message History, Embed Links
+   4. Copy the invite URL → open in browser → select your server
+
+C. Get Anthropic API key
+   1. Go to https://console.anthropic.com
+   2. API Keys → Create Key
+   3. Copy the key (sk-ant-...)
+
+D. Deploy the bot
+   Add to Railway as a separate service:
+   - Root directory: openclaw-skills
+   - Start command: python main.py
+   - Environment variables:
+     RGDGC_API_URL=<Railway backend URL>
+     DISCORD_BOT_TOKEN=<from step A>
+     ANTHROPIC_API_KEY=<from step C>
+
+
+================================================================================
+STEP 7: GOOGLE OAUTH (15 minutes, recommended)
+================================================================================
+
+See docs/CREDENTIALS_SETUP.txt for full instructions.
+Short version:
+
+1. Google Cloud Console → create project "RGDGC"
+2. OAuth consent screen → External → add email/profile/openid scopes
+3. Create 3 OAuth client IDs (Web, iOS, Android)
+4. Add to Railway env vars:
+   GOOGLE_CLIENT_ID=<web client ID>
+   GOOGLE_CLIENT_SECRET=<web client secret>
+   GOOGLE_IOS_CLIENT_ID=<iOS client ID>
+5. Add to mobile .env:
+   EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=<web client ID>
+   EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=<iOS client ID>
+   EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=<android client ID>
+
+
+================================================================================
+STEP 8: PROMOTE YOURSELF TO SUPER_ADMIN (2 minutes)
+================================================================================
+
+After the backend is deployed and seeded:
+
+  # Option A: Via the API (use Swagger docs)
+  1. Open <backend URL>/docs
+  2. Register your real account
+  3. Connect to the Railway database:
+     railway connect postgres
+  4. Run: UPDATE users SET role = 'super_admin' WHERE email = 'your@email.com';
+
+  # Option B: Via the owner endpoint (if you set OWNER_KEY)
+  1. Login to get your JWT token
+  2. curl -X POST <backend URL>/api/v1/owner/override-role \
+       -H "Authorization: Bearer <your token>" \
+       -H "X-Owner-Key: <your OWNER_KEY>" \
+       -H "Content-Type: application/json" \
+       -d '{"user_id": <your user id>, "role": "super_admin"}'
+
+
+================================================================================
+STEP 9: INVITE YOUR CO-ADMINS (5 minutes)
+================================================================================
+
+1. Have them download Expo Go and scan the QR code (or install TestFlight build)
+2. They register accounts in the app
+3. You promote them to admin:
+
+   curl -X POST <backend URL>/api/v1/admin/users/<their_user_id>/role \
+     -H "Authorization: Bearer <your super_admin token>" \
+     -H "Content-Type: application/json" \
+     -d '{"role": "admin"}'
+
+4. Give them the admin dashboard URL
+5. They log in with the same credentials
+
+See docs/ADMIN_ACCESS_GUIDE.txt for full details.
+
+
+================================================================================
+STEP 10: ANNOUNCE TO YOUR CLUB (5 minutes)
+================================================================================
+
+Post to your Facebook group:
+
+  ---
+  🥏 RGDGC App is LIVE!
+
+  Download Expo Go on your phone and scan this QR code to try the new
+  River Grove Disc Golf Club app:
+
+  [QR code from Expo]
+
+  What you can do:
+  ✓ Score your rounds hole-by-hole
+  ✓ Check league standings (Dubs + Sunday Singles)
+  ✓ Register your discs with glow-in-the-dark QR stickers
+  ✓ Check in for upcoming events
+  ✓ Track your putting stats
+  ✓ Chat with Clawd, our AI assistant
+
+  Coming soon: App Store + Play Store downloads
+
+  Questions? Ask in the app or message me.
+  ---
+
+
+================================================================================
+PRIORITY ORDER (if you're short on time)
+================================================================================
+
+  MUST DO (30 min):
+  [  ] Step 1: Generate secrets
+  [  ] Step 2: Deploy backend to Railway
+  [  ] Step 4G: Test with Expo Go on your phone
+
+  SHOULD DO (30 min):
+  [  ] Step 3: Deploy admin dashboard
+  [  ] Step 8: Promote yourself to super_admin
+  [  ] Step 10: Announce to club
+
+  NICE TO HAVE (60 min):
+  [  ] Step 7: Google OAuth
+  [  ] Step 5: Stripe payments
+  [  ] Step 6: Discord bot
+  [  ] Step 9: Invite co-admins
+  [  ] Step 4H-J: App Store builds
+
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Backend won't start on Railway:
+  - Check logs in Railway dashboard
+  - Make sure DATABASE_URL starts with postgresql+asyncpg://
+  - Make sure all required env vars are set
+
+Mobile app can't connect to backend:
+  - Check EXPO_PUBLIC_API_URL points to your Railway URL
+  - Make sure CORS_ORIGINS includes your mobile scheme (rgdgc://)
+  - Try: curl <backend URL>/health from your laptop
+
+Admin dashboard shows "Network Error":
+  - Check VITE_API_URL points to Railway backend URL with /api/v1
+  - Check CORS_ORIGINS includes the admin dashboard domain
+
+Login fails:
+  - The seeded admin account is: admin@rgdgc.com / admin123
+  - For production, register a new account and promote via SQL
+
+Google OAuth not working:
+  - Check all 3 client IDs are set (web, iOS, Android)
+  - Check authorized origins include your domains
+  - iOS: make sure bundle ID matches com.rgdgc.app
+
+Disc QR scan doesn't work:
+  - The QR points to disc.rgdgc.com/{code}
+  - You need to set up that domain to redirect to your backend
+  - Or update the QR URL in config to use your Railway domain
+
+
+================================================================================
+SUPPORT
+================================================================================
+
+  Backend Swagger docs: <backend URL>/docs
+  Admin dashboard: <admin URL>
+  This file: docs/LAUNCH_CHECKLIST.txt
+  Credentials setup: docs/CREDENTIALS_SETUP.txt
+  Admin access guide: docs/ADMIN_ACCESS_GUIDE.txt
+  Contract deployment: contracts/DEPLOY.md
+
+  All code is in the RGDGC repo. Claude Code can help debug any issues.

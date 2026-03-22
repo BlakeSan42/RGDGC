@@ -138,4 +138,5 @@ def verify_owner_key(request_key: str) -> bool:
     owner_key = settings.owner_key
     if not owner_key:
         return False
-    return request_key == owner_key
+    import hmac
+    return hmac.compare_digest(request_key, owner_key)
