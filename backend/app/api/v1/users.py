@@ -7,7 +7,7 @@ from app.db.database import get_db
 from app.models.user import User
 from app.models.round import Round
 from app.models.league import Result, Event
-from app.schemas.user import DeleteAccountRequest, PushTokenRequest, UserOut, UserUpdate
+from app.schemas.user import DeleteAccountRequest, PushTokenRequest, UserOut, UserPublicOut, UserUpdate
 from app.services.stats_service import get_player_stats, get_hole_averages
 from app.services.storage_service import delete_file, upload_file
 
@@ -18,6 +18,7 @@ router = APIRouter()
 async def get_user_stats(
     user_id: int,
     season: str | None = Query(None),
+    _current: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Comprehensive player stats including per-hole analytics and scoring distribution."""
@@ -80,6 +81,7 @@ async def get_user_stats(
 async def get_user_hole_averages(
     user_id: int,
     layout_id: int = Query(..., description="Layout to get hole averages for"),
+    _current: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Average score per hole on a layout for a specific player."""

@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1 import auth, users, courses, rounds, leagues, events, putting, admin, stickers, geo, discs, chat, weather, blockchain, web3auth, owner, payments, treasury
+from app.api.v1 import auth, users, courses, rounds, leagues, events, putting, admin, stickers, geo, discs, chat, weather, blockchain, web3auth, owner, payments, treasury, tokens
 
 api_router = APIRouter()
 
@@ -21,6 +21,14 @@ api_router.include_router(weather.router, prefix="/weather", tags=["weather"])
 api_router.include_router(blockchain.router, prefix="/blockchain", tags=["blockchain"])
 api_router.include_router(payments.router, prefix="/payments", tags=["payments"])
 api_router.include_router(treasury.router, prefix="/treasury", tags=["treasury"])
+api_router.include_router(tokens.router, prefix="/tokens", tags=["tokens"])
+
+# Analytics router — club leader dashboard
+try:
+    from app.api.v1 import analytics
+    api_router.include_router(analytics.router, prefix="/admin", tags=["analytics"])
+except (ImportError, AttributeError):
+    pass
 
 # KSA router — import only if module exists (added by another terminal)
 try:

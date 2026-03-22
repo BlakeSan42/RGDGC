@@ -88,7 +88,8 @@ async def login(request: Request, data: UserLogin, db: AsyncSession = Depends(ge
 
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh(data: RefreshRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("10/minute")
+async def refresh(request: Request, data: RefreshRequest, db: AsyncSession = Depends(get_db)):
     # Check if refresh token has been blacklisted (logout)
     from app.core.security import is_token_blacklisted
     if await is_token_blacklisted(data.refresh_token):
@@ -196,19 +197,5 @@ async def logout(request: Request, user: User = Depends(get_current_user)):
 async def get_me(user: User = Depends(get_current_user)):
     return UserOut.model_validate(user)
 
-
-@router.put("/me", response_model=UserOut)
-async def update_me(
-    data: UserUpdate,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    if data.display_name is not None:
-        user.display_name = data.display_name
-    if data.phone is not None:
-        user.phone = data.phone
-    if data.avatar_url is not None:
-        user.avatar_url = data.avatar_url
-
-    await db.flush()
-    return UserOut.model_validate(user)
+# NOTE: PUT /me is handled by users.py (with proper username uniqueness check).
+# Do not duplicate here.

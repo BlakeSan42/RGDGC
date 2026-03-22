@@ -83,6 +83,14 @@ async def checkin(
     event.num_players = len(list(count_result.scalars().all())) + 1
 
     await db.flush()
+
+    # Award $RGDG tokens for event attendance (fire and forget)
+    try:
+        from app.services.token_service import award_event_attendance
+        await award_event_attendance(db, user.id, event_id)
+    except Exception:
+        pass  # Token reward failure must never break check-in
+
     return {"message": "Checked in", "event_id": event_id, "players": event.num_players}
 
 

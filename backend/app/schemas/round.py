@@ -78,7 +78,7 @@ class ShareLinkOut(BaseModel):
 
 class GroupCreateRequest(BaseModel):
     layout_id: int
-    player_ids: list[int]
+    player_ids: list[int] = Field(..., min_length=1, max_length=20)
     event_id: int | None = None
 
 

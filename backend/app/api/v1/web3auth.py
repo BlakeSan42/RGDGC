@@ -39,9 +39,40 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address, enabled=get_settings().environment != "testing")
 
-# In-memory nonce store. In production, use Redis with TTL.
-# Keys: lowercase wallet address -> nonce string
-_nonce_store: dict[str, str] = {}
+# Redis-backed nonce store with TTL (replaces in-memory dict)
+import redis.asyncio as aioredis
+
+NONCE_TTL = 300  # 5 minutes
+NONCE_PREFIX = "web3_nonce:"
+
+
+async def _get_redis():
+    settings = get_settings()
+    return aioredis.from_url(settings.redis_url, decode_responses=True)
+
+
+async def _store_nonce(address: str, nonce: str):
+    try:
+        r = await _get_redis()
+        await r.setex(f"{NONCE_PREFIX}{address}", NONCE_TTL, nonce)
+        await r.aclose()
+    except Exception:
+        logger.warning("Redis unavailable for nonce store, using fallback")
+        _nonce_fallback[address] = nonce
+
+
+async def _get_nonce(address: str) -> str | None:
+    try:
+        r = await _get_redis()
+        nonce = await r.getdel(f"{NONCE_PREFIX}{address}")  # get and delete atomically
+        await r.aclose()
+        return nonce
+    except Exception:
+        return _nonce_fallback.pop(address, None)
+
+
+# Fallback for when Redis is down (bounded size)
+_nonce_fallback: dict[str, str] = {}
 
 
 @router.post("/web3/nonce", response_model=WalletNonceResponse)
@@ -57,9 +88,13 @@ async def web3_nonce(request: Request, data: WalletNonceRequest):
             detail="Invalid Ethereum address.",
         )
 
+    # Cap fallback store size to prevent memory DoS
+    if len(_nonce_fallback) > 1000:
+        _nonce_fallback.clear()
+
     nonce = generate_nonce()
     address_lower = data.wallet_address.lower()
-    _nonce_store[address_lower] = nonce
+    await _store_nonce(address_lower, nonce)
 
     message = (
         f"Sign this message to log in to River Grove Disc Golf Club.\n\n"
@@ -83,8 +118,8 @@ async def web3_verify(
     """
     address_lower = data.wallet_address.lower()
 
-    # Validate nonce
-    stored_nonce = _nonce_store.get(address_lower)
+    # Validate nonce (Redis-backed with atomic get-and-delete)
+    stored_nonce = await _get_nonce(address_lower)
     if not stored_nonce or stored_nonce != data.nonce:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -248,13 +248,13 @@ async def change_user_role(
         raise HTTPException(status_code=404, detail="User not found")
 
     # --- PERMISSION CHECKS ---
-    # Only super_admin can promote to super_admin
-    if role == "super_admin" and admin.role != "super_admin":
-        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    # Only super_admin can promote to admin or super_admin
+    if role in ("admin", "super_admin") and admin.role != "super_admin":
+        raise HTTPException(status_code=403, detail="Only super_admin can promote to admin roles")
 
     # Only super_admin can demote another admin or super_admin
     if user.role in ("admin", "super_admin") and admin.role != "super_admin":
-        raise HTTPException(status_code=403, detail="Insufficient permissions")
+        raise HTTPException(status_code=403, detail="Only super_admin can modify admin roles")
 
     # Admins cannot change their own role (prevents self-escalation)
     if user.id == admin.id and admin.role != "super_admin":

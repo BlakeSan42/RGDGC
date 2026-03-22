@@ -16,14 +16,27 @@ class UserLogin(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    display_name: str | None = None
-    username: str | None = None
-    phone: str | None = None
-    bio: str | None = None
-    avatar_url: str | None = None
+    display_name: str | None = Field(None, max_length=100)
+    username: str | None = Field(None, min_length=3, max_length=50, pattern=r"^[a-zA-Z0-9_-]+$")
+    phone: str | None = Field(None, max_length=20)
+    bio: str | None = Field(None, max_length=500)
+    avatar_url: str | None = Field(None, max_length=500, pattern=r"^(https?://|/uploads/).+")
+
+
+class UserPublicOut(BaseModel):
+    """Safe for returning to other users — no email, phone, or PII."""
+    id: int
+    username: str
+    display_name: str | None
+    avatar_url: str | None
+    role: str
+    handicap: float | None
+
+    model_config = {"from_attributes": True}
 
 
 class UserOut(BaseModel):
+    """Full profile — only return for the user's own /me endpoint."""
     id: int
     email: str
     username: str

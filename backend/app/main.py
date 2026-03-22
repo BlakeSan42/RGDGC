@@ -25,12 +25,12 @@ async def lifespan(app: FastAPI):
     # Startup: create tables (dev only — use Alembic in production)
     settings = get_settings()
 
-    # Reject default secrets in production
-    if settings.environment == "production":
-        if "change-in-production" in settings.jwt_secret:
-            raise RuntimeError("JWT_SECRET must be set in production — do not use default")
-        if "change-in-production" in settings.secret_key:
-            raise RuntimeError("SECRET_KEY must be set in production — do not use default")
+    # Reject default secrets in any non-dev/non-test environment
+    if settings.environment not in ("development", "test"):
+        if "change-in-production" in settings.jwt_secret or len(settings.jwt_secret) < 32:
+            raise RuntimeError("JWT_SECRET must be a strong random string in production")
+        if "change-in-production" in settings.secret_key or len(settings.secret_key) < 32:
+            raise RuntimeError("SECRET_KEY must be a strong random string in production")
 
     if settings.environment == "development":
         engine = get_engine()

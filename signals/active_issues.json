@@ -1,0 +1,48 @@
+{
+  "updated": "2026-03-22T22:00:00Z",
+  "issues": [
+    {
+      "id": "SHIP-001",
+      "severity": "P0",
+      "title": "Railway deployment not executed",
+      "description": "Backend is deployable but has not been deployed to Railway. Needs production env vars.",
+      "status": "open",
+      "owner": null,
+      "files": ["backend/Procfile", "backend/railway.json"]
+    },
+    {
+      "id": "SHIP-002",
+      "severity": "P0",
+      "title": "Expo production build not tested",
+      "description": "Mobile app compiles (0 TS errors, 39 screens) but no EAS production build or physical device test.",
+      "status": "open",
+      "owner": null,
+      "files": ["mobile/eas.json", "mobile/app.json"]
+    },
+    {
+      "id": "SHIP-003",
+      "severity": "P0",
+      "title": "OpenClaw bot needs Discord token",
+      "description": "7 skills built and API-verified, but bot cannot go live without Discord bot token + Anthropic API key.",
+      "status": "blocked",
+      "owner": "blake",
+      "files": ["openclaw-skills/.env"]
+    },
+    {
+      "id": "GEO-001",
+      "severity": "P1",
+      "title": "Harris County LIDAR not downloaded",
+      "description": "Tree canopy height model needed for course obstacle mapping. Source: TNRIS.",
+      "status": "open",
+      "owner": null
+    },
+    {
+      "id": "MOBILE-001",
+      "severity": "P1",
+      "title": "Mapbox native build not tested",
+      "description": "Map screen works in code but requires native build (npx expo run:ios) to render. Expo Go cannot load @rnmapbox/maps.",
+      "status": "open",
+      "owner": "blake"
+    }
+  ]
+}

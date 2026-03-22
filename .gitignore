@@ -50,4 +50,4 @@ signals/*.jsonl
 !signals/.processed_transcripts
 
 # Private / confidential research
-docs/KSA-Research/
+docs/KSA-Research*/
