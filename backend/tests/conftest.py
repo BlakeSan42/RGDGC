@@ -2,10 +2,9 @@
 Test fixtures — uses a fresh test database on each session.
 """
 
-import asyncio
+import os
 from typing import AsyncGenerator
 
-import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
@@ -13,58 +12,72 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.models import Base
 from app.db.database import get_db
-from app.main import app
-
-import os
+from app.main import create_app
 
 _base_url = os.environ.get("DATABASE_URL", "postgresql+asyncpg://rgdgc:rgdgc_dev@localhost:5433/rgdgc")
-# Derive test DB URL from the base — replace the database name with rgdgc_test
 TEST_DB_URL = _base_url.rsplit("/", 1)[0] + "/rgdgc_test"
 
-engine = create_async_engine(TEST_DB_URL, echo=False)
-TestSession = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+# These are set once in the session fixture, then shared
+_engine = None
+_TestSession = None
 
 
-@pytest.fixture(scope="session")
-def event_loop():
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
+def get_engine():
+    global _engine
+    if _engine is None:
+        _engine = create_async_engine(TEST_DB_URL, echo=False)
+    return _engine
+
+
+def get_test_session():
+    global _TestSession
+    if _TestSession is None:
+        _TestSession = async_sessionmaker(get_engine(), class_=AsyncSession, expire_on_commit=False)
+    return _TestSession
 
 
 @pytest_asyncio.fixture(scope="session", autouse=True)
-async def create_test_db():
-    """Create test database if it doesn't exist, with PostGIS."""
-    admin_url = _base_url
-    admin_engine = create_async_engine(admin_url, isolation_level="AUTOCOMMIT")
+async def setup_database():
+    """Create test database, enable PostGIS, create tables."""
+    global _engine, _TestSession
+
+    # Create test database if needed
+    admin_engine = create_async_engine(_base_url, isolation_level="AUTOCOMMIT")
     async with admin_engine.connect() as conn:
         result = await conn.execute(text("SELECT 1 FROM pg_database WHERE datname='rgdgc_test'"))
         if not result.scalar():
             await conn.execute(text("CREATE DATABASE rgdgc_test"))
     await admin_engine.dispose()
 
-    # Enable PostGIS on the test database
-    test_admin = create_async_engine(TEST_DB_URL, isolation_level="AUTOCOMMIT")
-    async with test_admin.connect() as conn:
+    # Enable PostGIS
+    postgis_engine = create_async_engine(TEST_DB_URL, isolation_level="AUTOCOMMIT")
+    async with postgis_engine.connect() as conn:
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
-    await test_admin.dispose()
+    await postgis_engine.dispose()
 
+    # Create engine and session factory in THIS event loop
+    _engine = create_async_engine(TEST_DB_URL, echo=False)
+    _TestSession = async_sessionmaker(_engine, class_=AsyncSession, expire_on_commit=False)
 
-@pytest_asyncio.fixture(scope="session", autouse=True)
-async def setup_tables():
-    """Create all tables once at session start."""
-    async with engine.begin() as conn:
+    # Create tables
+    async with _engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
+
     yield
-    async with engine.begin() as conn:
+
+    # Teardown
+    async with _engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+    await _engine.dispose()
+    _engine = None
+    _TestSession = None
 
 
 @pytest_asyncio.fixture(autouse=True)
 async def clean_tables():
-    """Truncate all tables between tests — faster than drop/create, no race conditions."""
-    yield
+    """Truncate all tables before each test."""
+    engine = get_engine()
     async with engine.begin() as conn:
         await conn.execute(text(
             "DO $$ DECLARE r RECORD; BEGIN "
@@ -73,16 +86,21 @@ async def clean_tables():
             "EXECUTE 'TRUNCATE TABLE ' || quote_ident(r.tablename) || ' CASCADE'; "
             "END LOOP; END $$;"
         ))
+    yield
 
 
 @pytest_asyncio.fixture
 async def db() -> AsyncGenerator[AsyncSession, None]:
+    TestSession = get_test_session()
     async with TestSession() as session:
         yield session
 
 
 @pytest_asyncio.fixture
 async def client() -> AsyncGenerator[AsyncClient, None]:
+    app = create_app()
+    TestSession = get_test_session()
+
     async def override_db():
         async with TestSession() as session:
             try:
@@ -113,7 +131,6 @@ async def auth_headers(client: AsyncClient) -> dict:
 
 @pytest_asyncio.fixture
 async def admin_headers(client: AsyncClient) -> dict:
-    # Register then promote to admin
     res = await client.post("/api/v1/auth/register", json={
         "email": "admin_test@rgdgc.com",
         "username": "admin_test",
@@ -123,7 +140,7 @@ async def admin_headers(client: AsyncClient) -> dict:
     token = res.json()["access_token"]
     user_id = res.json()["user"]["id"]
 
-    # Directly update role in DB
+    TestSession = get_test_session()
     async with TestSession() as session:
         from app.models.user import User
         user = await session.get(User, user_id)
@@ -137,8 +154,9 @@ async def admin_headers(client: AsyncClient) -> dict:
 async def seeded_course() -> dict:
     from app.models.course import Course, Layout, Hole
 
+    TestSession = get_test_session()
     async with TestSession() as session:
-        course = Course(name="Test Course", city="Test City", state="IL")
+        course = Course(name="Test Course", city="Test City", state="TX")
         session.add(course)
         await session.flush()
 
@@ -160,6 +178,7 @@ async def seeded_course() -> dict:
 async def seeded_league() -> dict:
     from app.models.league import League
 
+    TestSession = get_test_session()
     async with TestSession() as session:
         league = League(
             name="Test League", season="2026", league_type="singles",

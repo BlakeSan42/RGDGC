@@ -75,7 +75,7 @@ jobs:
           SECRET_KEY: test-secret
           JWT_SECRET: test-jwt-secret
           ENVIRONMENT: test
-        run: pytest tests/test_points.py tests/test_putting_model.py -v --tb=short
+        run: pytest tests/unit/ -v --tb=short
 
   # ── Mobile: type-check ──
   mobile:
