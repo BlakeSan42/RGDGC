@@ -50,8 +50,8 @@ export default function PlayScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <View style={styles.actionRow}>
-          <Button title="Start Round" onPress={() => {}} size="lg" />
-          <Button title="Practice" onPress={() => {}} variant="secondary" size="lg" />
+          <Button title="Start Round" onPress={() => router.push("/scoring/select-course")} size="lg" />
+          <Button title="Practice" onPress={() => router.push("/scoring/select-course")} variant="secondary" size="lg" />
         </View>
       </View>
 

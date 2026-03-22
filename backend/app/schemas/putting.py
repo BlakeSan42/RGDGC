@@ -27,7 +27,7 @@ class PuttingStats(BaseModel):
     c1_percentage: float
     c1x_percentage: float
     c2_percentage: float
-    by_distance: dict[str, dict]  # "5-10ft": {"attempts": 20, "makes": 18, "pct": 90.0}
+    by_zone: dict[str, dict] = {}  # {"c1": {"attempts": 20, "makes": 18, "percentage": 90.0}}
 
 
 class PuttProbability(BaseModel):

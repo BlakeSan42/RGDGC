@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
@@ -114,7 +114,7 @@ async def complete_round(
 
     round_.total_strokes = total_strokes
     round_.total_score = total_strokes - total_par
-    round_.completed_at = datetime.now(timezone.utc)
+    round_.completed_at = datetime.utcnow()
 
     await db.flush()
     return RoundDetailOut.model_validate(round_)
