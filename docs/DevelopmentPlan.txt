@@ -1,0 +1,1996 @@
+# River Grove Disc Golf Club (RGDGC) - Complete Development Plan
+
+## Executive Summary
+
+This document outlines a comprehensive disc golf application for River Grove Disc Golf Club, inspired by UDisc’s functionality but with added blockchain integration for club membership, payments, and rewards. The application will be a world-class, mobile-first Progressive Web App (PWA) designed for Claude Code to implement.
+
+-----
+
+## Table of Contents
+
+1. [UDisc Feature Analysis](#1-udisc-feature-analysis)
+1. [RGDGC Feature Prioritization](#2-rgdgc-feature-prioritization)
+1. [System Architecture](#3-system-architecture)
+1. [Backend Design](#4-backend-design)
+1. [Frontend Design](#5-frontend-design)
+1. [Blockchain Integration (P1)](#6-blockchain-integration-p1)
+1. [Claude MCP Bot Integration](#7-claude-mcp-bot-integration)
+1. [Database Schema](#8-database-schema)
+1. [API Specification](#9-api-specification)
+1. [Implementation Roadmap](#10-implementation-roadmap)
+1. [Deployment Guide](#11-deployment-guide)
+
+-----
+
+## 1. UDisc Feature Analysis
+
+### Core UDisc Features (from research)
+
+|Feature Category    |Functionality               |UDisc Implementation                 |
+|--------------------|----------------------------|-------------------------------------|
+|**Scorekeeping**    |Course-specific scorecards  |15,000+ courses with hole maps       |
+|                    |Multiple scoring modes      |Strokes, full stats, map-based       |
+|                    |Singles, doubles, teams     |Any group size supported             |
+|                    |Real-time distance to basket|GPS integration                      |
+|                    |Share completed rounds      |Social media, email                  |
+|**Course Discovery**|Course directory            |17,000+ courses worldwide            |
+|                    |Sorting/filtering           |Distance, rating, location, amenities|
+|                    |Reviews & conditions        |Community-driven updates             |
+|                    |Hole maps                   |100,000+ photographic maps           |
+|                    |Wish list & tracking        |Personal course history              |
+|**Statistics**      |Performance analytics       |Putting, driving, GIR                |
+|                    |Round history               |Aces, averages, best rounds          |
+|                    |Activity tracking           |Steps, distance, weather             |
+|                    |Round ratings               |PDGA-style rating system             |
+|**Leagues**         |League management           |Free platform for organizers         |
+|                    |Check-in system             |App-based, no paper                  |
+|                    |Live leaderboards           |Real-time scoring                    |
+|                    |Season standings            |Points accumulation                  |
+|                    |Handicap calculation        |Automatic handicap system            |
+|**Additional**      |Throw measurement           |GPS-based distance                   |
+|                    |Disc bag management         |Catalog discs                        |
+|                    |Practice drills             |Putting, accuracy                    |
+|                    |Rule book                   |Searchable PDGA rules                |
+|                    |Smartwatch support          |Apple Watch, Wear OS                 |
+
+-----
+
+## 2. RGDGC Feature Prioritization
+
+### P0 - Must Have (MVP Launch)
+
+These are the core features that make the app useful from day one:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        P0 FEATURES                               │
+├─────────────────────────────────────────────────────────────────┤
+│ USER MANAGEMENT                                                  │
+│ ├─ Registration (email, name, phone)                            │
+│ ├─ Login/logout (JWT auth)                                      │
+│ ├─ User roles (Admin, Player, Guest)                            │
+│ ├─ Profile management                                           │
+│ └─ Avatar/photo upload                                          │
+├─────────────────────────────────────────────────────────────────┤
+│ COURSE MANAGEMENT                                                │
+│ ├─ River Grove course details                                   │
+│ ├─ Hole-by-hole information (par, distance, map)                │
+│ ├─ Multiple layouts support                                     │
+│ └─ Course conditions (admin updates)                            │
+├─────────────────────────────────────────────────────────────────┤
+│ SCOREKEEPING                                                     │
+│ ├─ Create round (select players, layout)                        │
+│ ├─ Enter scores hole-by-hole                                    │
+│ ├─ Calculate totals vs par                                      │
+│ ├─ Save/complete rounds                                         │
+│ ├─ View round history                                           │
+│ └─ Share round results                                          │
+├─────────────────────────────────────────────────────────────────┤
+│ LEAGUE SYSTEM                                                    │
+│ ├─ Create leagues (Dubs, Sunday Singles)                        │
+│ ├─ Dynamic points (field size = max points)                     │
+│ ├─ Season-long accumulation                                     │
+│ ├─ Real-time leaderboard                                        │
+│ ├─ Event management                                             │
+│ └─ Results history                                              │
+├─────────────────────────────────────────────────────────────────┤
+│ PLAYER STATISTICS                                                │
+│ ├─ Personal round history                                       │
+│ ├─ Average score by layout                                      │
+│ ├─ Best/worst rounds                                            │
+│ ├─ League standings history                                     │
+│ └─ Basic performance trends                                     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### P1 - Should Have (Post-MVP)
+
+Enhanced features including blockchain integration:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        P1 FEATURES                               │
+├─────────────────────────────────────────────────────────────────┤
+│ BLOCKCHAIN INTEGRATION                                           │
+│ ├─ MetaMask wallet login                                        │
+│ ├─ $RGDG token (ERC-20 on testnet)                              │
+│ ├─ Token purchase (fiat → $RGDG)                                │
+│ ├─ Pay league fees with tokens                                  │
+│ ├─ Admin treasury management                                    │
+│ └─ Transaction history                                          │
+├─────────────────────────────────────────────────────────────────┤
+│ ADVANCED SCORING                                                 │
+│ ├─ Full statistics mode (fairway hits, putts, OB)               │
+│ ├─ Map-based scoring                                            │
+│ ├─ Real-time GPS distance                                       │
+│ ├─ Throw measurement                                            │
+│ └─ Weather conditions tracking                                  │
+├─────────────────────────────────────────────────────────────────┤
+│ HANDICAP SYSTEM                                                  │
+│ ├─ Automatic calculation                                        │
+│ ├─ Layout-specific handicaps                                    │
+│ ├─ Handicap leagues support                                     │
+│ └─ Historical handicap tracking                                 │
+├─────────────────────────────────────────────────────────────────┤
+│ NOTIFICATIONS                                                    │
+│ ├─ Push notifications (PWA)                                     │
+│ ├─ League reminders                                             │
+│ ├─ Results notifications                                        │
+│ └─ Prize notifications                                          │
+├─────────────────────────────────────────────────────────────────┤
+│ SOCIAL FEATURES                                                  │
+│ ├─ Friend system                                                │
+│ ├─ Activity feed                                                │
+│ ├─ Achievement badges                                           │
+│ └─ Club announcements                                           │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### P2 - Nice to Have (Future)
+
+```
+- Disc bag management
+- Practice mode & drills
+- Multiple course support
+- Tournament brackets
+- Live streaming integration
+- Smartwatch companion app
+- PDGA integration
+- Video replay analysis
+```
+
+-----
+
+## 3. System Architecture
+
+### High-Level Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           CLIENT LAYER                                   │
+├───────────────────┬───────────────────┬─────────────────────────────────┤
+│   React PWA       │   Native Apps     │     Claude MCP Bot              │
+│   (Mobile-first)  │   (Future)        │     (Discord/Telegram)          │
+└─────────┬─────────┴─────────┬─────────┴───────────────┬─────────────────┘
+          │                   │                         │
+          ▼                   ▼                         ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           API GATEWAY                                    │
+│                    (FastAPI + JWT Auth + Web3 Auth)                      │
+└─────────────────────────────────────────────────────────────────────────┘
+          │
+          ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         SERVICE LAYER                                    │
+├─────────────┬─────────────┬─────────────┬─────────────┬─────────────────┤
+│   User      │   Course    │   Scoring   │   League    │   Blockchain    │
+│   Service   │   Service   │   Service   │   Service   │   Service       │
+└──────┬──────┴──────┬──────┴──────┬──────┴──────┬──────┴────────┬────────┘
+       │             │             │             │               │
+       ▼             ▼             ▼             ▼               ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          DATA LAYER                                      │
+├─────────────────────────────┬───────────────────────────────────────────┤
+│      PostgreSQL             │           Redis Cache                      │
+│   (Primary Database)        │        (Sessions, Leaderboards)            │
+└─────────────────────────────┴───────────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      BLOCKCHAIN LAYER (P1)                               │
+├─────────────────────────────┬───────────────────────────────────────────┤
+│   Ethereum Testnet          │        Smart Contracts                     │
+│   (Sepolia/Goerli)          │    ($RGDG Token + Treasury)                │
+└─────────────────────────────┴───────────────────────────────────────────┘
+```
+
+### Technology Stack
+
+|Layer         |Technology        |Rationale                                         |
+|--------------|------------------|--------------------------------------------------|
+|**Frontend**  |React + TypeScript|Component-based, strong typing, huge ecosystem    |
+|              |TailwindCSS       |Utility-first, mobile-responsive, fast development|
+|              |PWA (Vite)        |Installable, offline support, push notifications  |
+|              |ethers.js         |Web3 integration for MetaMask                     |
+|**Backend**   |FastAPI (Python)  |Fast, async, auto-docs, Pydantic validation       |
+|              |SQLAlchemy 2.0    |ORM with async support                            |
+|              |Alembic           |Database migrations                               |
+|              |Celery + Redis    |Background tasks, caching                         |
+|**Database**  |PostgreSQL        |Robust, ACID, JSON support, full-text search      |
+|              |Redis             |Session store, leaderboard cache, pub/sub         |
+|**Blockchain**|Solidity          |ERC-20 token standard                             |
+|              |Hardhat           |Smart contract development                        |
+|              |Sepolia Testnet   |Free testing environment                          |
+|**DevOps**    |Docker            |Containerization                                  |
+|              |GitHub Actions    |CI/CD                                             |
+|              |Railway/Render    |Cloud deployment                                  |
+
+-----
+
+## 4. Backend Design
+
+### Directory Structure
+
+```
+rgdgc-backend/
+├── app/
+│   ├── __init__.py
+│   ├── main.py                 # FastAPI application
+│   ├── config.py               # Settings & environment
+│   ├── dependencies.py         # Dependency injection
+│   │
+│   ├── api/
+│   │   ├── __init__.py
+│   │   ├── v1/
+│   │   │   ├── __init__.py
+│   │   │   ├── router.py       # API router aggregation
+│   │   │   ├── auth.py         # Authentication endpoints
+│   │   │   ├── users.py        # User management
+│   │   │   ├── courses.py      # Course endpoints
+│   │   │   ├── rounds.py       # Scoring endpoints
+│   │   │   ├── leagues.py      # League management
+│   │   │   ├── events.py       # Event/match endpoints
+│   │   │   ├── leaderboard.py  # Standings endpoints
+│   │   │   ├── stats.py        # Statistics endpoints
+│   │   │   └── blockchain.py   # Web3 endpoints (P1)
+│   │   └── websocket.py        # Real-time updates
+│   │
+│   ├── core/
+│   │   ├── __init__.py
+│   │   ├── security.py         # JWT, password hashing
+│   │   ├── web3_auth.py        # MetaMask authentication (P1)
+│   │   └── permissions.py      # Role-based access
+│   │
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── user.py             # User model
+│   │   ├── course.py           # Course & holes
+│   │   ├── round.py            # Round & scores
+│   │   ├── league.py           # League model
+│   │   ├── event.py            # Event model
+│   │   ├── result.py           # Results model
+│   │   └── transaction.py      # Blockchain transactions (P1)
+│   │
+│   ├── schemas/
+│   │   ├── __init__.py
+│   │   ├── user.py             # User Pydantic schemas
+│   │   ├── course.py           # Course schemas
+│   │   ├── round.py            # Round schemas
+│   │   ├── league.py           # League schemas
+│   │   ├── event.py            # Event schemas
+│   │   └── blockchain.py       # Web3 schemas (P1)
+│   │
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── user_service.py     # User business logic
+│   │   ├── scoring_service.py  # Score calculations
+│   │   ├── points_service.py   # League points logic
+│   │   ├── leaderboard_service.py  # Standings generation
+│   │   ├── handicap_service.py # Handicap calculations
+│   │   ├── stats_service.py    # Statistics generation
+│   │   └── blockchain_service.py   # Web3 interactions (P1)
+│   │
+│   ├── db/
+│   │   ├── __init__.py
+│   │   ├── database.py         # SQLAlchemy setup
+│   │   ├── session.py          # Session management
+│   │   └── init_db.py          # Database initialization
+│   │
+│   └── utils/
+│       ├── __init__.py
+│       ├── helpers.py          # Utility functions
+│       └── notifications.py    # Push notification helpers
+│
+├── alembic/                    # Database migrations
+│   ├── versions/
+│   └── env.py
+│
+├── tests/
+│   ├── __init__.py
+│   ├── conftest.py             # Test fixtures
+│   ├── test_auth.py
+│   ├── test_rounds.py
+│   ├── test_leagues.py
+│   └── test_points.py
+│
+├── contracts/                  # Solidity contracts (P1)
+│   ├── RGDGToken.sol
+│   ├── Treasury.sol
+│   └── scripts/
+│       └── deploy.js
+│
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+├── alembic.ini
+├── pytest.ini
+└── README.md
+```
+
+### Core Services Implementation
+
+#### Points Calculation Service (Updated for Disc Golf)
+
+```python
+# app/services/points_service.py
+"""
+Points calculation for RGDGC leagues.
+
+Scoring System:
+- Points = Number of participants - finish position + 1
+- Example: 8 players → 1st=8pts, 2nd=7pts, ..., 8th=1pt
+- Ties: Same rank, next position skipped
+- DNF/DQ: 0 points
+"""
+
+from typing import List, Dict, Optional
+from dataclasses import dataclass
+from enum import Enum
+
+
+class FinishStatus(Enum):
+    COMPLETED = "completed"
+    DNF = "dnf"  # Did not finish
+    DQ = "dq"    # Disqualified
+
+
+@dataclass
+class PlayerResult:
+    player_id: int
+    player_name: str
+    total_score: int  # Strokes relative to par
+    raw_strokes: int  # Total strokes
+    status: FinishStatus = FinishStatus.COMPLETED
+
+
+@dataclass
+class RankedResult:
+    player_id: int
+    player_name: str
+    total_score: int
+    raw_strokes: int
+    finish_position: int
+    points_earned: int
+    status: FinishStatus
+
+
+def calculate_positions(results: List[PlayerResult]) -> List[RankedResult]:
+    """
+    Calculate finish positions and points from raw scores.
+    
+    Lower score = better (golf scoring).
+    Ties receive the same position.
+    """
+    # Separate completed from DNF/DQ
+    completed = [r for r in results if r.status == FinishStatus.COMPLETED]
+    incomplete = [r for r in results if r.status != FinishStatus.COMPLETED]
+    
+    # Sort completed by score (ascending - lower is better in golf)
+    sorted_results = sorted(completed, key=lambda x: x.total_score)
+    
+    num_participants = len(results)
+    ranked_results = []
+    
+    current_position = 1
+    i = 0
+    
+    while i < len(sorted_results):
+        # Find all players tied at this score
+        current_score = sorted_results[i].total_score
+        tied_players = []
+        
+        while i < len(sorted_results) and sorted_results[i].total_score == current_score:
+            tied_players.append(sorted_results[i])
+            i += 1
+        
+        # All tied players get the same position and points
+        points = calculate_points(num_participants, current_position)
+        
+        for player in tied_players:
+            ranked_results.append(RankedResult(
+                player_id=player.player_id,
+                player_name=player.player_name,
+                total_score=player.total_score,
+                raw_strokes=player.raw_strokes,
+                finish_position=current_position,
+                points_earned=points,
+                status=player.status
+            ))
+        
+        # Next position accounts for ties
+        current_position += len(tied_players)
+    
+    # DNF/DQ players get 0 points
+    for player in incomplete:
+        ranked_results.append(RankedResult(
+            player_id=player.player_id,
+            player_name=player.player_name,
+            total_score=player.total_score,
+            raw_strokes=player.raw_strokes,
+            finish_position=len(sorted_results) + 1,  # Last position
+            points_earned=0,
+            status=player.status
+        ))
+    
+    return ranked_results
+
+
+def calculate_points(num_participants: int, position: int) -> int:
+    """
+    Calculate points for a given position.
+    
+    Formula: points = num_participants - position + 1
+    
+    Examples:
+        8 players: 1st=8, 2nd=7, 3rd=6, ..., 8th=1
+        12 players: 1st=12, 2nd=11, ..., 12th=1
+    """
+    if position > num_participants:
+        return 0
+    
+    points = num_participants - position + 1
+    return max(points, 0)
+
+
+def calculate_doubles_points(
+    team_results: List[Dict],
+    num_teams: int
+) -> List[Dict]:
+    """
+    Calculate points for doubles/team events.
+    
+    Each team member receives the same points.
+    Points based on team finishing position.
+    """
+    ranked_teams = []
+    
+    # Sort teams by score
+    sorted_teams = sorted(team_results, key=lambda x: x["total_score"])
+    
+    current_position = 1
+    i = 0
+    
+    while i < len(sorted_teams):
+        current_score = sorted_teams[i]["total_score"]
+        tied_teams = []
+        
+        while i < len(sorted_teams) and sorted_teams[i]["total_score"] == current_score:
+            tied_teams.append(sorted_teams[i])
+            i += 1
+        
+        points = calculate_points(num_teams, current_position)
+        
+        for team in tied_teams:
+            ranked_teams.append({
+                **team,
+                "finish_position": current_position,
+                "points_per_player": points
+            })
+        
+        current_position += len(tied_teams)
+    
+    return ranked_teams
+
+
+def generate_leaderboard(
+    season_results: List[Dict],
+    drop_worst: int = 0
+) -> List[Dict]:
+    """
+    Generate season leaderboard from all event results.
+    
+    Args:
+        season_results: List of all player results for the season
+        drop_worst: Number of worst rounds to drop (optional)
+    
+    Returns:
+        Sorted leaderboard with accumulated stats
+    """
+    # Aggregate by player
+    player_stats = {}
+    
+    for result in season_results:
+        player_id = result["player_id"]
+        
+        if player_id not in player_stats:
+            player_stats[player_id] = {
+                "player_id": player_id,
+                "player_name": result["player_name"],
+                "events_played": 0,
+                "total_points": 0,
+                "all_points": [],
+                "wins": 0,
+                "podiums": 0,
+                "top_5": 0,
+                "best_finish": None,
+                "worst_finish": None,
+            }
+        
+        stats = player_stats[player_id]
+        stats["events_played"] += 1
+        stats["all_points"].append(result["points_earned"])
+        
+        position = result["finish_position"]
+        
+        if stats["best_finish"] is None or position < stats["best_finish"]:
+            stats["best_finish"] = position
+        if stats["worst_finish"] is None or position > stats["worst_finish"]:
+            stats["worst_finish"] = position
+        
+        if position == 1:
+            stats["wins"] += 1
+        if position <= 3:
+            stats["podiums"] += 1
+        if position <= 5:
+            stats["top_5"] += 1
+    
+    # Calculate totals (with optional drop worst)
+    leaderboard = []
+    
+    for player_id, stats in player_stats.items():
+        points_list = sorted(stats["all_points"], reverse=True)
+        
+        if drop_worst > 0 and len(points_list) > drop_worst:
+            counted_points = points_list[:-drop_worst]
+        else:
+            counted_points = points_list
+        
+        stats["total_points"] = sum(counted_points)
+        stats["counted_events"] = len(counted_points)
+        stats["average_points"] = round(
+            stats["total_points"] / max(len(counted_points), 1), 2
+        )
+        
+        del stats["all_points"]  # Remove raw list
+        leaderboard.append(stats)
+    
+    # Sort by total points (desc), then wins, then average
+    leaderboard.sort(
+        key=lambda x: (-x["total_points"], -x["wins"], -x["average_points"])
+    )
+    
+    # Assign ranks with tie handling
+    current_rank = 1
+    prev_points = None
+    
+    for i, entry in enumerate(leaderboard):
+        if prev_points is not None and entry["total_points"] == prev_points:
+            entry["rank"] = leaderboard[i - 1]["rank"]
+        else:
+            entry["rank"] = current_rank
+        
+        prev_points = entry["total_points"]
+        current_rank = i + 2
+    
+    return leaderboard
+```
+
+-----
+
+## 5. Frontend Design
+
+### Directory Structure
+
+```
+rgdgc-frontend/
+├── public/
+│   ├── manifest.json           # PWA manifest
+│   ├── sw.js                   # Service worker
+│   ├── icons/                  # App icons
+│   └── images/
+│       └── course/             # Hole maps & photos
+│
+├── src/
+│   ├── main.tsx                # Entry point
+│   ├── App.tsx                 # Root component
+│   ├── vite-env.d.ts
+│   │
+│   ├── components/
+│   │   ├── common/
+│   │   │   ├── Button.tsx
+│   │   │   ├── Card.tsx
+│   │   │   ├── Input.tsx
+│   │   │   ├── Modal.tsx
+│   │   │   ├── LoadingSpinner.tsx
+│   │   │   └── Avatar.tsx
+│   │   │
+│   │   ├── layout/
+│   │   │   ├── Header.tsx
+│   │   │   ├── BottomNav.tsx
+│   │   │   ├── Sidebar.tsx
+│   │   │   └── PageContainer.tsx
+│   │   │
+│   │   ├── auth/
+│   │   │   ├── LoginForm.tsx
+│   │   │   ├── RegisterForm.tsx
+│   │   │   ├── WalletConnect.tsx  # MetaMask (P1)
+│   │   │   └── ProtectedRoute.tsx
+│   │   │
+│   │   ├── scoring/
+│   │   │   ├── Scorecard.tsx
+│   │   │   ├── HoleScore.tsx
+│   │   │   ├── PlayerSelector.tsx
+│   │   │   ├── RoundSummary.tsx
+│   │   │   └── ScoreInput.tsx
+│   │   │
+│   │   ├── league/
+│   │   │   ├── LeagueCard.tsx
+│   │   │   ├── Leaderboard.tsx
+│   │   │   ├── EventCard.tsx
+│   │   │   ├── StandingsTable.tsx
+│   │   │   └── PointsBreakdown.tsx
+│   │   │
+│   │   ├── course/
+│   │   │   ├── CourseOverview.tsx
+│   │   │   ├── HoleMap.tsx
+│   │   │   ├── LayoutSelector.tsx
+│   │   │   └── CourseConditions.tsx
+│   │   │
+│   │   ├── profile/
+│   │   │   ├── UserProfile.tsx
+│   │   │   ├── StatsOverview.tsx
+│   │   │   ├── RoundHistory.tsx
+│   │   │   └── AchievementBadges.tsx
+│   │   │
+│   │   └── blockchain/           # P1
+│   │       ├── WalletStatus.tsx
+│   │       ├── TokenBalance.tsx
+│   │       ├── PaymentModal.tsx
+│   │       └── TransactionHistory.tsx
+│   │
+│   ├── pages/
+│   │   ├── Home.tsx
+│   │   ├── Login.tsx
+│   │   ├── Register.tsx
+│   │   ├── Dashboard.tsx
+│   │   ├── Course.tsx
+│   │   ├── PlayRound.tsx
+│   │   ├── RoundDetails.tsx
+│   │   ├── Leagues.tsx
+│   │   ├── LeagueDetails.tsx
+│   │   ├── Leaderboard.tsx
+│   │   ├── Profile.tsx
+│   │   ├── Settings.tsx
+│   │   ├── Admin/
+│   │   │   ├── Dashboard.tsx
+│   │   │   ├── ManageLeagues.tsx
+│   │   │   ├── ManageUsers.tsx
+│   │   │   ├── EnterScores.tsx
+│   │   │   └── Treasury.tsx       # P1
+│   │   └── Wallet.tsx             # P1
+│   │
+│   ├── hooks/
+│   │   ├── useAuth.ts
+│   │   ├── useApi.ts
+│   │   ├── useScoring.ts
+│   │   ├── useLeaderboard.ts
+│   │   ├── useWeb3.ts             # P1
+│   │   └── useNotifications.ts
+│   │
+│   ├── context/
+│   │   ├── AuthContext.tsx
+│   │   ├── RoundContext.tsx
+│   │   └── Web3Context.tsx        # P1
+│   │
+│   ├── services/
+│   │   ├── api.ts                 # Axios instance
+│   │   ├── auth.ts
+│   │   ├── rounds.ts
+│   │   ├── leagues.ts
+│   │   ├── users.ts
+│   │   └── blockchain.ts          # P1
+│   │
+│   ├── types/
+│   │   ├── index.ts
+│   │   ├── user.ts
+│   │   ├── course.ts
+│   │   ├── round.ts
+│   │   ├── league.ts
+│   │   └── blockchain.ts          # P1
+│   │
+│   ├── utils/
+│   │   ├── formatters.ts
+│   │   ├── validators.ts
+│   │   └── constants.ts
+│   │
+│   └── styles/
+│       └── globals.css            # Tailwind imports
+│
+├── index.html
+├── vite.config.ts
+├── tailwind.config.js
+├── tsconfig.json
+├── package.json
+└── README.md
+```
+
+### Mobile-First UI Design
+
+```
+┌─────────────────────────────────────────┐
+│ ⛳ RGDGC               👤 Profile       │  Header
+├─────────────────────────────────────────┤
+│                                         │
+│  ┌─────────────────────────────────┐    │
+│  │  📊 Your Season Stats           │    │
+│  │  ─────────────────────          │    │
+│  │  Rank: #4 of 24                 │    │
+│  │  Points: 87 pts                 │    │
+│  │  Events: 12 played              │    │
+│  └─────────────────────────────────┘    │
+│                                         │
+│  ┌─────────────────────────────────┐    │
+│  │  🏆 Standings                   │    │  Leaderboard
+│  │  ─────────────────────          │    │  Card
+│  │  1. 🥇 Mike J.     102 pts      │    │
+│  │  2. 🥈 Sarah K.     98 pts      │    │
+│  │  3. 🥉 John D.      95 pts      │    │
+│  │  4.    You          87 pts      │    │
+│  │  5.    Tom B.       82 pts      │    │
+│  │  ──────────────────────         │    │
+│  │  [View Full Standings →]        │    │
+│  └─────────────────────────────────┘    │
+│                                         │
+│  ┌─────────────────────────────────┐    │
+│  │  📅 Upcoming Event              │    │  Next Event
+│  │  ─────────────────────          │    │
+│  │  Sunday Singles                 │    │
+│  │  Mar 24, 2025 @ 10:00 AM        │    │
+│  │  ────────────────────           │    │
+│  │  [   Check In   ] [  Details  ] │    │
+│  └─────────────────────────────────┘    │
+│                                         │
+│  ┌─────────────────────────────────┐    │
+│  │  ▶️ Quick Actions               │    │
+│  │  ─────────────────────          │    │
+│  │  [  Start Round  ]              │    │
+│  │  [  View Course  ]              │    │
+│  │  [  My History   ]              │    │
+│  └─────────────────────────────────┘    │
+│                                         │
+├─────────────────────────────────────────┤
+│  🏠    📊    ▶️     🏆    👤           │  Bottom Nav
+│  Home  Stats  Play  Leagues  Profile   │
+└─────────────────────────────────────────┘
+```
+
+-----
+
+## 6. Blockchain Integration (P1)
+
+### Overview
+
+The blockchain integration adds:
+
+1. **MetaMask Login** - Web3 authentication alternative
+1. **$RGDG Token** - Club utility token (ERC-20)
+1. **Treasury** - Admin-controlled fund management
+1. **Payments** - Pay league fees with tokens
+
+### $RGDG Token Economics
+
+```
+Token Name:     River Grove Disc Golf Token
+Symbol:         RGDG
+Decimals:       18
+Network:        Sepolia Testnet (then mainnet)
+Total Supply:   1,000,000 RGDG (fixed)
+
+Distribution:
+├── Treasury:      700,000 RGDG (70%) - Sold to members
+├── Founders:      100,000 RGDG (10%) - Club admins
+├── Rewards Pool:  150,000 RGDG (15%) - League prizes
+└── Development:    50,000 RGDG (5%)  - Future features
+```
+
+### Smart Contracts
+
+#### RGDGToken.sol (ERC-20)
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+
+/**
+ * @title RGDGToken
+ * @dev ERC-20 token for River Grove Disc Golf Club
+ * 
+ * Features:
+ * - Fixed supply (minted at deployment)
+ * - Role-based access control
+ * - Pausable in emergencies
+ * - Burnable by holders
+ */
+contract RGDGToken is ERC20, ERC20Burnable, AccessControl, Pausable {
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    bytes32 public constant TREASURER_ROLE = keccak256("TREASURER_ROLE");
+    
+    uint256 public constant INITIAL_SUPPLY = 1_000_000 * 10**18; // 1M tokens
+    
+    // Events
+    event TokensPurchased(address indexed buyer, uint256 amount, uint256 ethPaid);
+    event PriceUpdated(uint256 newPrice);
+    
+    // Token price in wei (e.g., 0.001 ETH per token)
+    uint256 public tokenPrice = 0.001 ether;
+    
+    constructor(address treasury) ERC20("River Grove Disc Golf", "RGDG") {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(ADMIN_ROLE, msg.sender);
+        _grantRole(TREASURER_ROLE, treasury);
+        
+        // Mint initial supply to treasury
+        _mint(treasury, INITIAL_SUPPLY);
+    }
+    
+    /**
+     * @dev Purchase tokens with ETH
+     */
+    function buyTokens() external payable whenNotPaused {
+        require(msg.value > 0, "Must send ETH");
+        
+        uint256 tokenAmount = (msg.value * 10**18) / tokenPrice;
+        require(tokenAmount > 0, "Insufficient ETH for minimum purchase");
+        
+        // Transfer from treasury (requires treasury approval)
+        address treasury = getRoleMember(TREASURER_ROLE, 0);
+        require(balanceOf(treasury) >= tokenAmount, "Insufficient treasury balance");
+        
+        _transfer(treasury, msg.sender, tokenAmount);
+        
+        // Send ETH to treasury
+        payable(treasury).transfer(msg.value);
+        
+        emit TokensPurchased(msg.sender, tokenAmount, msg.value);
+    }
+    
+    /**
+     * @dev Update token price (admin only)
+     */
+    function setTokenPrice(uint256 newPrice) external onlyRole(ADMIN_ROLE) {
+        require(newPrice > 0, "Price must be positive");
+        tokenPrice = newPrice;
+        emit PriceUpdated(newPrice);
+    }
+    
+    /**
+     * @dev Pause all transfers (emergency)
+     */
+    function pause() external onlyRole(ADMIN_ROLE) {
+        _pause();
+    }
+    
+    function unpause() external onlyRole(ADMIN_ROLE) {
+        _unpause();
+    }
+    
+    /**
+     * @dev Hook to check pause state
+     */
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal override whenNotPaused {
+        super._beforeTokenTransfer(from, to, amount);
+    }
+}
+```
+
+#### Treasury.sol
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+/**
+ * @title Treasury
+ * @dev Manages RGDGC club funds and league fee collection
+ */
+contract Treasury is AccessControl, ReentrancyGuard {
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    
+    IERC20 public immutable rgdgToken;
+    
+    // Fee configuration
+    uint256 public leagueFee = 5 * 10**18;  // 5 RGDG per event
+    uint256 public membershipFee = 50 * 10**18;  // 50 RGDG annual
+    
+    // Tracking
+    mapping(address => bool) public isActiveMember;
+    mapping(address => uint256) public memberExpiry;
+    mapping(bytes32 => bool) public paidEvents;  // eventId => paid
+    
+    // Events
+    event LeagueFeePaid(address indexed player, bytes32 eventId, uint256 amount);
+    event MembershipPurchased(address indexed member, uint256 expiry);
+    event FeeUpdated(string feeType, uint256 newAmount);
+    event FundsWithdrawn(address indexed admin, uint256 amount);
+    
+    constructor(address _rgdgToken) {
+        rgdgToken = IERC20(_rgdgToken);
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(ADMIN_ROLE, msg.sender);
+    }
+    
+    /**
+     * @dev Pay league event fee
+     */
+    function payLeagueFee(bytes32 eventId) external nonReentrant {
+        bytes32 paymentKey = keccak256(abi.encodePacked(msg.sender, eventId));
+        require(!paidEvents[paymentKey], "Already paid for this event");
+        
+        require(
+            rgdgToken.transferFrom(msg.sender, address(this), leagueFee),
+            "Token transfer failed"
+        );
+        
+        paidEvents[paymentKey] = true;
+        emit LeagueFeePaid(msg.sender, eventId, leagueFee);
+    }
+    
+    /**
+     * @dev Check if player has paid for event
+     */
+    function hasPlayerPaid(address player, bytes32 eventId) external view returns (bool) {
+        return paidEvents[keccak256(abi.encodePacked(player, eventId))];
+    }
+    
+    /**
+     * @dev Purchase annual membership
+     */
+    function purchaseMembership() external nonReentrant {
+        require(
+            rgdgToken.transferFrom(msg.sender, address(this), membershipFee),
+            "Token transfer failed"
+        );
+        
+        uint256 newExpiry;
+        if (memberExpiry[msg.sender] > block.timestamp) {
+            // Extend existing membership
+            newExpiry = memberExpiry[msg.sender] + 365 days;
+        } else {
+            // New membership
+            newExpiry = block.timestamp + 365 days;
+        }
+        
+        memberExpiry[msg.sender] = newExpiry;
+        isActiveMember[msg.sender] = true;
+        
+        emit MembershipPurchased(msg.sender, newExpiry);
+    }
+    
+    /**
+     * @dev Update fees (admin only)
+     */
+    function setLeagueFee(uint256 newFee) external onlyRole(ADMIN_ROLE) {
+        leagueFee = newFee;
+        emit FeeUpdated("league", newFee);
+    }
+    
+    function setMembershipFee(uint256 newFee) external onlyRole(ADMIN_ROLE) {
+        membershipFee = newFee;
+        emit FeeUpdated("membership", newFee);
+    }
+    
+    /**
+     * @dev Withdraw funds (admin only)
+     */
+    function withdrawTokens(uint256 amount) external onlyRole(ADMIN_ROLE) nonReentrant {
+        require(rgdgToken.transfer(msg.sender, amount), "Transfer failed");
+        emit FundsWithdrawn(msg.sender, amount);
+    }
+    
+    /**
+     * @dev Withdraw ETH (admin only)
+     */
+    function withdrawETH() external onlyRole(ADMIN_ROLE) nonReentrant {
+        uint256 balance = address(this).balance;
+        require(balance > 0, "No ETH balance");
+        payable(msg.sender).transfer(balance);
+    }
+    
+    /**
+     * @dev Check treasury balances
+     */
+    function getBalances() external view returns (uint256 tokenBalance, uint256 ethBalance) {
+        tokenBalance = rgdgToken.balanceOf(address(this));
+        ethBalance = address(this).balance;
+    }
+    
+    // Allow receiving ETH
+    receive() external payable {}
+}
+```
+
+### Testnet Deployment Plan
+
+```
+DEPLOYMENT STEPS (Sepolia Testnet)
+
+1. Prerequisites
+   ├── Node.js >= 18
+   ├── Hardhat installed
+   ├── Sepolia testnet ETH (from faucet)
+   └── Alchemy/Infura API key
+
+2. Environment Setup
+   ├── PRIVATE_KEY=<deployer-wallet-private-key>
+   ├── SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/<key>
+   └── ETHERSCAN_API_KEY=<for-verification>
+
+3. Deploy Sequence
+   a. Deploy Treasury contract
+   b. Deploy RGDGToken with Treasury address
+   c. Grant TREASURER_ROLE to Treasury
+   d. Verify contracts on Etherscan
+   e. Test basic functions
+
+4. Frontend Integration
+   ├── Add contract ABIs to frontend
+   ├── Configure chain ID (11155111 for Sepolia)
+   ├── Add network switching logic
+   └── Test MetaMask connection
+
+5. Testing Checklist
+   □ Token transfers
+   □ Buy tokens with ETH
+   □ Pay league fees
+   □ Admin withdrawals
+   □ Pause/unpause
+```
+
+-----
+
+## 7. Claude MCP Bot Integration
+
+### Overview
+
+A Claude-powered bot that integrates with Discord/Telegram to:
+
+- Report league standings
+- Announce results
+- Answer rules questions
+- Help with round entry
+
+### MCP Server Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    RGDGC MCP Server                              │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  Tools Available:                                                │
+│  ├── get_leaderboard(league_id, limit)                          │
+│  ├── get_player_stats(player_id)                                │
+│  ├── get_upcoming_events()                                      │
+│  ├── get_event_results(event_id)                                │
+│  ├── lookup_rule(query)                                         │
+│  ├── get_course_info(layout_id)                                 │
+│  └── calculate_handicap(player_id)                              │
+│                                                                  │
+│  Resources:                                                      │
+│  ├── pdga_rules.txt                                             │
+│  ├── course_layouts.json                                        │
+│  └── league_history.json                                        │
+│                                                                  │
+│  Prompts:                                                        │
+│  ├── announce_results                                           │
+│  ├── weekly_summary                                             │
+│  └── standings_update                                           │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+          │
+          ▼
+┌─────────────────────────────────────────────────────────────────┐
+│               Claude Desktop / Claude Code                       │
+│                                                                  │
+│  Use Cases:                                                      │
+│  - "What are the current Dubs standings?"                       │
+│  - "Who won last Sunday's singles?"                             │
+│  - "What's the rule for a disc OB?"                             │
+│  - "Generate a weekly standings announcement"                    │
+│  - "Calculate my handicap for the short layout"                 │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### MCP Server Implementation
+
+```typescript
+// mcp-server/src/index.ts
+import { Server } from "@modelcontextprotocol/sdk/server";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio";
+
+const server = new Server({
+  name: "rgdgc-mcp",
+  version: "1.0.0",
+});
+
+// Tool: Get Leaderboard
+server.setRequestHandler("tools/call", async (request) => {
+  if (request.params.name === "get_leaderboard") {
+    const { league_id, limit = 10 } = request.params.arguments;
+    
+    // Call RGDGC API
+    const response = await fetch(
+      `${API_BASE}/api/v1/leaderboard/${league_id}?limit=${limit}`
+    );
+    const data = await response.json();
+    
+    // Format for Claude
+    let result = `📊 **${data.league_name} Standings**\n\n`;
+    data.entries.forEach((entry, i) => {
+      const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`;
+      result += `${medal} ${entry.player_name}: ${entry.total_points} pts (${entry.events_played} events)\n`;
+    });
+    
+    return { content: [{ type: "text", text: result }] };
+  }
+  
+  // ... other tools
+});
+
+// Resource: PDGA Rules
+server.setRequestHandler("resources/read", async (request) => {
+  if (request.params.uri === "rules://pdga") {
+    const rules = await loadPDGARules();
+    return { contents: [{ uri: request.params.uri, text: rules }] };
+  }
+});
+
+// Start server
+const transport = new StdioServerTransport();
+server.connect(transport);
+```
+
+### Bot Use Cases
+
+1. **Discord Integration**
+- `/standings dubs` - Show Dubs leaderboard
+- `/results last` - Show most recent event results
+- `/rule ob` - Explain OB rules
+- Auto-post weekly standings summary
+1. **Admin Commands**
+- `/announce "Custom message"` - Post to announcements
+- `/remind event_id` - Send event reminders
+- `/prize event_id` - Calculate and announce prizes
+1. **Player Commands**
+- `/mystats` - Personal statistics
+- `/handicap` - Current handicap
+- `/history` - Recent round history
+
+-----
+
+## 8. Database Schema
+
+### Entity Relationship Diagram
+
+```
+┌──────────────┐       ┌──────────────┐       ┌──────────────┐
+│    users     │       │   courses    │       │   layouts    │
+├──────────────┤       ├──────────────┤       ├──────────────┤
+│ id           │       │ id           │       │ id           │
+│ email        │       │ name         │       │ course_id    │──┐
+│ username     │       │ location     │       │ name         │  │
+│ password_hash│       │ description  │       │ holes        │  │
+│ role         │       │ photo_url    │       │ par          │  │
+│ wallet_addr  │       │ created_at   │       │ total_dist   │  │
+│ is_active    │       └──────┬───────┘       └──────────────┘  │
+│ created_at   │              │                                  │
+└──────┬───────┘              │                                  │
+       │                      │                                  │
+       │    ┌─────────────────┴──────────────────┐               │
+       │    │                                    │               │
+       ▼    ▼                                    ▼               │
+┌──────────────┐       ┌──────────────┐       ┌──────────────┐   │
+│    rounds    │       │    holes     │       │   leagues    │   │
+├──────────────┤       ├──────────────┤       ├──────────────┤   │
+│ id           │       │ id           │       │ id           │   │
+│ user_id      │──┐    │ layout_id    │───────┤ name         │   │
+│ layout_id    │──┼────│ number       │       │ season       │   │
+│ started_at   │  │    │ par          │       │ type         │   │
+│ completed_at │  │    │ distance     │       │ points_rule  │   │
+│ total_score  │  │    │ description  │       │ drop_worst   │   │
+│ weather      │  │    │ photo_url    │       │ is_active    │   │
+│ notes        │  │    └──────────────┘       └──────┬───────┘   │
+└──────────────┘  │                                   │           │
+       │          │                                   │           │
+       │          │    ┌──────────────────────────────┘           │
+       │          │    │                                          │
+       ▼          │    ▼                                          │
+┌──────────────┐  │  ┌──────────────┐       ┌──────────────┐      │
+│ hole_scores  │  │  │   events     │       │   results    │      │
+├──────────────┤  │  ├──────────────┤       ├──────────────┤      │
+│ id           │  │  │ id           │       │ id           │      │
+│ round_id     │──┘  │ league_id    │──┐    │ event_id     │──────┤
+│ hole_id      │     │ layout_id    │──┼────│ user_id      │──────┤
+│ strokes      │     │ name         │  │    │ team_id      │      │
+│ putts        │     │ date         │  │    │ total_score  │      │
+│ fairway_hit  │     │ status       │  │    │ position     │      │
+│ ob_strokes   │     │ notes        │  │    │ points       │      │
+│ created_at   │     └──────────────┘  │    │ raw_strokes  │      │
+└──────────────┘                       │    └──────────────┘      │
+                                       │                          │
+                   ┌───────────────────┘                          │
+                   │                                              │
+                   ▼                                              │
+              ┌──────────────┐       ┌──────────────┐            │
+              │    teams     │       │ team_members │            │
+              ├──────────────┤       ├──────────────┤            │
+              │ id           │       │ id           │            │
+              │ event_id     │───────│ team_id      │            │
+              │ name         │       │ user_id      │────────────┘
+              └──────────────┘       └──────────────┘
+
+
+              ┌──────────────┐       ┌──────────────┐
+              │ transactions │       │  prizes      │
+              ├──────────────┤       ├──────────────┤
+              │ id           │       │ id           │
+              │ user_id      │       │ league_id    │
+              │ type         │       │ position     │
+              │ amount       │       │ amount_usd   │
+              │ tx_hash      │       │ amount_rgdg  │
+              │ status       │       └──────────────┘
+              │ created_at   │
+              └──────────────┘
+```
+
+### SQL Schema (PostgreSQL)
+
+```sql
+-- Users table
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password_hash VARCHAR(255),
+    display_name VARCHAR(100),
+    phone VARCHAR(20),
+    avatar_url TEXT,
+    role VARCHAR(20) DEFAULT 'player' CHECK (role IN ('admin', 'player', 'guest')),
+    wallet_address VARCHAR(42),  -- Ethereum address (P1)
+    handicap DECIMAL(4,1),
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Courses table
+CREATE TABLE courses (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    location VARCHAR(255),
+    city VARCHAR(100),
+    state VARCHAR(50),
+    country VARCHAR(50) DEFAULT 'USA',
+    latitude DECIMAL(10, 7),
+    longitude DECIMAL(10, 7),
+    description TEXT,
+    photo_url TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Course layouts (multiple per course)
+CREATE TABLE layouts (
+    id SERIAL PRIMARY KEY,
+    course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
+    name VARCHAR(50) NOT NULL,  -- "Red", "White", "Blue", "Championship"
+    holes INTEGER DEFAULT 18,
+    total_par INTEGER NOT NULL,
+    total_distance INTEGER,  -- feet
+    difficulty VARCHAR(20),  -- "beginner", "intermediate", "advanced"
+    is_default BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Individual holes
+CREATE TABLE holes (
+    id SERIAL PRIMARY KEY,
+    layout_id INTEGER REFERENCES layouts(id) ON DELETE CASCADE,
+    hole_number INTEGER NOT NULL,
+    par INTEGER NOT NULL CHECK (par >= 2 AND par <= 6),
+    distance INTEGER,  -- feet
+    description TEXT,
+    photo_url TEXT,
+    UNIQUE(layout_id, hole_number)
+);
+
+-- Rounds (single player sessions)
+CREATE TABLE rounds (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    layout_id INTEGER REFERENCES layouts(id),
+    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP,
+    total_score INTEGER,  -- relative to par
+    total_strokes INTEGER,
+    weather VARCHAR(50),
+    wind VARCHAR(50),
+    temperature INTEGER,
+    notes TEXT,
+    is_practice BOOLEAN DEFAULT FALSE
+);
+
+-- Hole-by-hole scores
+CREATE TABLE hole_scores (
+    id SERIAL PRIMARY KEY,
+    round_id INTEGER REFERENCES rounds(id) ON DELETE CASCADE,
+    hole_id INTEGER REFERENCES holes(id),
+    strokes INTEGER NOT NULL,
+    putts INTEGER,
+    fairway_hit BOOLEAN,
+    green_in_regulation BOOLEAN,
+    ob_strokes INTEGER DEFAULT 0,
+    penalty_strokes INTEGER DEFAULT 0,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(round_id, hole_id)
+);
+
+-- Leagues
+CREATE TABLE leagues (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    season VARCHAR(20),  -- "2025", "Spring 2025"
+    league_type VARCHAR(20) CHECK (league_type IN ('singles', 'doubles', 'teams')),
+    points_rule VARCHAR(50) DEFAULT 'field_size',  -- how points are calculated
+    drop_worst INTEGER DEFAULT 0,  -- number of worst events to drop
+    max_events INTEGER,  -- cap on events counted
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- League events (individual matches/weeks)
+CREATE TABLE events (
+    id SERIAL PRIMARY KEY,
+    league_id INTEGER REFERENCES leagues(id) ON DELETE CASCADE,
+    layout_id INTEGER REFERENCES layouts(id),
+    name VARCHAR(100),
+    event_date DATE NOT NULL,
+    status VARCHAR(20) DEFAULT 'upcoming' CHECK (status IN ('upcoming', 'active', 'completed', 'cancelled')),
+    num_players INTEGER,
+    entry_fee DECIMAL(10,2),
+    entry_fee_rgdg INTEGER,  -- P1: token fee
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Teams (for doubles/team events)
+CREATE TABLE teams (
+    id SERIAL PRIMARY KEY,
+    event_id INTEGER REFERENCES events(id) ON DELETE CASCADE,
+    name VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Team membership
+CREATE TABLE team_members (
+    id SERIAL PRIMARY KEY,
+    team_id INTEGER REFERENCES teams(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id),
+    UNIQUE(team_id, user_id)
+);
+
+-- Event results
+CREATE TABLE results (
+    id SERIAL PRIMARY KEY,
+    event_id INTEGER REFERENCES events(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id),
+    team_id INTEGER REFERENCES teams(id),
+    round_id INTEGER REFERENCES rounds(id),  -- optional link to full round
+    total_strokes INTEGER NOT NULL,
+    total_score INTEGER NOT NULL,  -- relative to par
+    position INTEGER,
+    points_earned INTEGER,
+    handicap_used DECIMAL(4,1),
+    handicap_score INTEGER,  -- adjusted score
+    dnf BOOLEAN DEFAULT FALSE,
+    dq BOOLEAN DEFAULT FALSE,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Prize structure
+CREATE TABLE prizes (
+    id SERIAL PRIMARY KEY,
+    league_id INTEGER REFERENCES leagues(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    amount_usd DECIMAL(10,2),
+    amount_rgdg INTEGER,  -- P1: token prizes
+    UNIQUE(league_id, position)
+);
+
+-- Blockchain transactions (P1)
+CREATE TABLE transactions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    tx_type VARCHAR(30) CHECK (tx_type IN ('purchase', 'league_fee', 'membership', 'prize_payout', 'transfer')),
+    amount DECIMAL(20,8) NOT NULL,
+    token VARCHAR(10) DEFAULT 'RGDG',
+    tx_hash VARCHAR(66),  -- Ethereum transaction hash
+    from_address VARCHAR(42),
+    to_address VARCHAR(42),
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'failed')),
+    event_id INTEGER REFERENCES events(id),
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for performance
+CREATE INDEX idx_rounds_user ON rounds(user_id);
+CREATE INDEX idx_rounds_layout ON rounds(layout_id);
+CREATE INDEX idx_results_event ON results(event_id);
+CREATE INDEX idx_results_user ON results(user_id);
+CREATE INDEX idx_events_league ON events(league_id);
+CREATE INDEX idx_events_date ON events(event_date);
+CREATE INDEX idx_transactions_user ON transactions(user_id);
+CREATE INDEX idx_transactions_status ON transactions(status);
+```
+
+-----
+
+## 9. API Specification
+
+### Authentication Endpoints
+
+```yaml
+POST /api/v1/auth/register:
+  summary: Register new user
+  body:
+    email: string (required)
+    username: string (required)
+    password: string (required)
+    display_name: string
+  response: { user, access_token, refresh_token }
+
+POST /api/v1/auth/login:
+  summary: Login with email/password
+  body:
+    email: string
+    password: string
+  response: { user, access_token, refresh_token }
+
+POST /api/v1/auth/web3/nonce:       # P1
+  summary: Get nonce for wallet signature
+  body:
+    wallet_address: string
+  response: { nonce, message }
+
+POST /api/v1/auth/web3/verify:      # P1
+  summary: Verify signed message
+  body:
+    wallet_address: string
+    signature: string
+  response: { user, access_token }
+
+POST /api/v1/auth/refresh:
+  summary: Refresh access token
+  body:
+    refresh_token: string
+  response: { access_token }
+
+POST /api/v1/auth/logout:
+  summary: Invalidate tokens
+```
+
+### User Endpoints
+
+```yaml
+GET /api/v1/users:
+  summary: List users (admin)
+  query: { page, limit, role, active_only }
+  response: { users[], total, page }
+
+GET /api/v1/users/me:
+  summary: Get current user profile
+  response: { user }
+
+PUT /api/v1/users/me:
+  summary: Update profile
+  body: { display_name, phone, avatar_url }
+  response: { user }
+
+GET /api/v1/users/{id}:
+  summary: Get user by ID
+  response: { user }
+
+GET /api/v1/users/{id}/stats:
+  summary: Get user statistics
+  query: { season, league_id }
+  response: { stats }
+```
+
+### Course Endpoints
+
+```yaml
+GET /api/v1/courses:
+  summary: List courses
+  response: { courses[] }
+
+GET /api/v1/courses/{id}:
+  summary: Get course details
+  response: { course, layouts[] }
+
+GET /api/v1/courses/{id}/layouts:
+  summary: List layouts for course
+  response: { layouts[] }
+
+GET /api/v1/layouts/{id}:
+  summary: Get layout with holes
+  response: { layout, holes[] }
+```
+
+### Scoring Endpoints
+
+```yaml
+POST /api/v1/rounds:
+  summary: Start a new round
+  body:
+    layout_id: integer
+    player_ids: integer[] (optional, for multiplayer)
+  response: { round }
+
+GET /api/v1/rounds/{id}:
+  summary: Get round details
+  response: { round, scores[] }
+
+POST /api/v1/rounds/{id}/scores:
+  summary: Submit hole score
+  body:
+    hole_number: integer
+    strokes: integer
+    putts: integer (optional)
+    ob_strokes: integer (optional)
+  response: { score, round_totals }
+
+PUT /api/v1/rounds/{id}/complete:
+  summary: Mark round as complete
+  response: { round, summary }
+
+GET /api/v1/rounds:
+  summary: List user's rounds
+  query: { limit, layout_id, date_from, date_to }
+  response: { rounds[], total }
+```
+
+### League Endpoints
+
+```yaml
+GET /api/v1/leagues:
+  summary: List active leagues
+  response: { leagues[] }
+
+GET /api/v1/leagues/{id}:
+  summary: Get league details
+  response: { league, events[], prizes[] }
+
+GET /api/v1/leagues/{id}/leaderboard:
+  summary: Get league standings
+  query: { limit }
+  response: { leaderboard[] }
+
+GET /api/v1/leagues/{id}/events:
+  summary: List league events
+  query: { status, limit }
+  response: { events[] }
+```
+
+### Event Endpoints
+
+```yaml
+GET /api/v1/events/{id}:
+  summary: Get event details
+  response: { event, results[] }
+
+POST /api/v1/events/{id}/checkin:
+  summary: Check into event
+  response: { checkin }
+
+POST /api/v1/events/{id}/results:
+  summary: Submit event results (admin)
+  body:
+    results: [{ user_id, total_strokes, dnf, dq }]
+  response: { results[] }
+
+PUT /api/v1/events/{id}/finalize:
+  summary: Finalize event, calculate points (admin)
+  response: { event, results[] }
+```
+
+### Blockchain Endpoints (P1)
+
+```yaml
+GET /api/v1/blockchain/balance:
+  summary: Get user's RGDG balance
+  response: { balance, wallet_address }
+
+POST /api/v1/blockchain/purchase:
+  summary: Initiate token purchase
+  body:
+    amount_eth: string
+  response: { tx_data }
+
+POST /api/v1/blockchain/pay-fee:
+  summary: Pay event fee with RGDG
+  body:
+    event_id: integer
+  response: { tx_data }
+
+GET /api/v1/blockchain/transactions:
+  summary: Get transaction history
+  query: { type, limit }
+  response: { transactions[] }
+
+GET /api/v1/blockchain/treasury:
+  summary: Get treasury stats (admin)
+  response: { balances, stats }
+```
+
+-----
+
+## 10. Implementation Roadmap
+
+### Phase 1: Foundation (Weeks 1-2)
+
+```
+□ Project Setup
+  ├── Initialize backend (FastAPI)
+  ├── Initialize frontend (React + Vite)
+  ├── Setup PostgreSQL database
+  ├── Configure Docker development environment
+  └── Setup CI/CD pipeline
+
+□ Core Models & Database
+  ├── User model & auth
+  ├── Course & layout models
+  ├── Round & scoring models
+  ├── Run migrations
+  └── Seed River Grove course data
+
+□ Authentication System
+  ├── JWT implementation
+  ├── Registration flow
+  ├── Login flow
+  ├── Password reset
+  └── Role-based permissions
+```
+
+### Phase 2: Core Features (Weeks 3-4)
+
+```
+□ Course Module
+  ├── Course detail pages
+  ├── Layout selection
+  ├── Hole information display
+  └── Hole map integration
+
+□ Scoring Module
+  ├── Start round flow
+  ├── Hole-by-hole scoring UI
+  ├── Live score calculation
+  ├── Round completion
+  └── Round history view
+
+□ User Profile
+  ├── Profile page
+  ├── Personal stats
+  ├── Round history
+  └── Avatar upload
+```
+
+### Phase 3: League System (Weeks 5-6)
+
+```
+□ League Management
+  ├── League listing page
+  ├── League detail page
+  ├── Event management (admin)
+  └── Check-in system
+
+□ Points & Standings
+  ├── Points calculation engine
+  ├── Leaderboard generation
+  ├── Real-time updates
+  └── Historical standings
+
+□ Results & Prizes
+  ├── Results entry (admin)
+  ├── Results display
+  ├── Prize configuration
+  └── Prize announcements
+```
+
+### Phase 4: Polish & PWA (Week 7)
+
+```
+□ Mobile Optimization
+  ├── Responsive testing
+  ├── Touch interactions
+  └── Performance optimization
+
+□ PWA Features
+  ├── Service worker
+  ├── Offline support
+  ├── Install prompt
+  └── Push notifications
+
+□ Testing & QA
+  ├── Unit tests
+  ├── Integration tests
+  ├── User acceptance testing
+  └── Bug fixes
+```
+
+### Phase 5: Blockchain (P1) (Weeks 8-10)
+
+```
+□ Smart Contracts
+  ├── RGDG token contract
+  ├── Treasury contract
+  ├── Testnet deployment
+  └── Contract verification
+
+□ Web3 Integration
+  ├── MetaMask connection
+  ├── Wallet login flow
+  ├── Token balance display
+  └── Transaction handling
+
+□ Payment System
+  ├── Token purchase flow
+  ├── League fee payment
+  ├── Admin treasury UI
+  └── Transaction history
+```
+
+### Phase 6: Bot Integration (P1) (Week 11)
+
+```
+□ MCP Server
+  ├── Server setup
+  ├── Tool implementations
+  ├── Resource definitions
+  └── Testing with Claude
+
+□ Platform Integration
+  ├── Discord bot (optional)
+  ├── Telegram bot (optional)
+  └── Automated announcements
+```
+
+-----
+
+## 11. Deployment Guide
+
+### Prerequisites
+
+```bash
+# Server requirements
+- Ubuntu 22.04+ / Debian 12+
+- Docker & Docker Compose
+- 2GB RAM minimum
+- PostgreSQL 15+
+- Redis 7+
+- Node.js 18+ (for contract deployment)
+
+# Domain & SSL
+- Domain name configured
+- SSL certificate (Let's Encrypt)
+```
+
+### Environment Variables
+
+```bash
+# .env.production
+
+# Database
+DATABASE_URL=postgresql://user:pass@localhost:5432/rgdgc
+REDIS_URL=redis://localhost:6379
+
+# Security
+SECRET_KEY=<random-64-char-string>
+JWT_SECRET=<random-64-char-string>
+JWT_EXPIRY=3600
+
+# Frontend
+VITE_API_URL=https://api.rgdgc.com
+VITE_WS_URL=wss://api.rgdgc.com/ws
+
+# Blockchain (P1)
+WEB3_PROVIDER_URL=https://eth-sepolia.g.alchemy.com/v2/<key>
+RGDG_TOKEN_ADDRESS=0x...
+TREASURY_ADDRESS=0x...
+ADMIN_WALLET_ADDRESS=0x...
+
+# Notifications
+VAPID_PUBLIC_KEY=<push-notification-key>
+VAPID_PRIVATE_KEY=<push-notification-secret>
+```
+
+### Docker Compose
+
+```yaml
+# docker-compose.prod.yml
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - SECRET_KEY=${SECRET_KEY}
+    depends_on:
+      - db
+      - redis
+    restart: always
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    restart: always
+
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+      - POSTGRES_DB=rgdgc
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    restart: always
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./certs:/etc/nginx/certs
+    depends_on:
+      - backend
+      - frontend
+    restart: always
+
+volumes:
+  postgres_data:
+  redis_data:
+```
+
+### Deployment Commands
+
+```bash
+# Initial setup
+git clone https://github.com/rgdgc/app.git
+cd app
+cp .env.example .env.production
+# Edit .env.production with your values
+
+# Build and deploy
+docker-compose -f docker-compose.prod.yml build
+docker-compose -f docker-compose.prod.yml up -d
+
+# Run migrations
+docker-compose exec backend alembic upgrade head
+
+# Seed initial data
+docker-compose exec backend python -m app.db.seed
+
+# Check logs
+docker-compose logs -f backend
+
+# Smart contract deployment (P1)
+cd contracts
+npx hardhat run scripts/deploy.js --network sepolia
+```
+
+-----
+
+## Appendix A: Claude Code Instructions
+
+When implementing this project, Claude Code should:
+
+1. **Start with the backend** - Build API endpoints first for testing
+1. **Use type hints everywhere** - Python type hints, TypeScript types
+1. **Write tests alongside code** - Minimum 80% coverage target
+1. **Follow the file structure exactly** - As documented above
+1. **Implement P0 features first** - MVP before blockchain
+1. **Mobile-first CSS** - Always design for mobile screens
+1. **Document API changes** - Keep OpenAPI spec updated
+1. **Commit frequently** - Small, focused commits
+
+### Key Implementation Notes
+
+- Use Pydantic v2 for all schemas
+- Use SQLAlchemy 2.0 async patterns
+- Use React Query for data fetching
+- Use Zustand for state management
+- Use ethers.js v6 for Web3 (not web3.js)
+- Use Hardhat for contract development
+- Use Tailwind CSS with custom theme
+- Implement proper error handling at every layer
+
+-----
+
+## Appendix B: Quick Reference
+
+### Points Calculation Formula
+
+```
+points = num_participants - finish_position + 1
+
+Example (8 players):
+1st place: 8 - 1 + 1 = 8 points
+2nd place: 8 - 2 + 1 = 7 points
+8th place: 8 - 8 + 1 = 1 point
+```
+
+### User Roles
+
+|Role  |Permissions                                         |
+|------|----------------------------------------------------|
+|Guest |View courses, leaderboards (read-only)              |
+|Player|All guest + play rounds, enter leagues              |
+|Admin |All player + manage leagues, enter results, treasury|
+
+### API Response Codes
+
+|Code|Meaning         |
+|----|----------------|
+|200 |Success         |
+|201 |Created         |
+|400 |Bad request     |
+|401 |Unauthorized    |
+|403 |Forbidden       |
+|404 |Not found       |
+|422 |Validation error|
+|500 |Server error    |
+
+-----
+
+*Document Version: 1.0*
+*Last Updated: March 2025*
+*For: River Grove Disc Golf Club*

@@ -1,0 +1,1050 @@
+# RGDGC Disc NFT Tracking System
+
+## Overview
+
+This document outlines a system for creating NFT-backed disc ownership tracking using physical QR code stickers. The system bridges physical disc assets with blockchain-based provenance, enabling ownership verification, lost/found recovery, and collectible disc trading.
+
+---
+
+## 1. The Vision: Physical-Digital Bridge
+
+### 1.1 Problem Statement
+
+Disc golfers face several challenges:
+- **Lost discs** — Average player loses 7+ discs annually
+- **Ownership disputes** — "That's my disc!" with no proof
+- **Collectible provenance** — Rare/signed discs have no verifiable history
+- **Resale trust** — No way to verify authenticity of rare discs
+
+### 1.2 Solution: NFT-Backed Disc Registry
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│     PHYSICAL DISC              QR STICKER           NFT     │
+│     ┌─────────┐               ┌─────────┐      ┌─────────┐ │
+│     │  🥏     │ ───attached─► │ ▣▣▣▣▣▣  │ ◄──► │ Token   │ │
+│     │         │               │ ▣▣▣▣▣▣  │      │  #1234  │ │
+│     │ Disc    │               │ ▣▣▣▣▣▣  │      │         │ │
+│     └─────────┘               └─────────┘      └─────────┘ │
+│                                    │                  │     │
+│                                    ▼                  ▼     │
+│                            ┌─────────────────────────────┐  │
+│                            │     RGDGC API / Database    │  │
+│                            │  • Ownership history        │  │
+│                            │  • Lost/Found status        │  │
+│                            │  • Flight stats (optional)  │  │
+│                            │  • Photos, condition        │  │
+│                            └─────────────────────────────┘  │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 1.3 Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **Ownership Proof** | Blockchain-verified ownership history |
+| **Lost/Found Recovery** | Scan QR → see owner info → return disc |
+| **Collectible Trading** | Verify authenticity of rare/signed discs |
+| **Flight History** | Optional: link rounds thrown with disc |
+| **Community Trust** | Build reputation as disc returner |
+
+---
+
+## 2. Physical Component: Weatherproof Glow-in-the-Dark QR Stickers
+
+### 2.1 Material Requirements
+
+For disc golf use, stickers must survive:
+- **Weather**: Rain, snow, sun, humidity
+- **Impact**: Tree hits, ground strikes, basket chains
+- **UV exposure**: Years of outdoor use
+- **Temperature**: -20°F to 120°F range
+- **Water submersion**: Pond retrieval
+
+### 2.2 Recommended Materials
+
+**Option A: Industrial-Grade Photoluminescent Vinyl (Best)**
+
+| Material | Product Example | Features |
+|----------|-----------------|----------|
+| **Base** | ORAJET 3930 Photoluminescent Vinyl | 6-mil thickness, 5-year outdoor durability |
+| **Adhesive** | Permanent solvent-polyacrylate | Won't peel from disc plastic |
+| **Glow** | Phosphorescent (charges from light) | Glows 30-60+ minutes after charging |
+| **Print** | Solvent/Eco-solvent/UV ink | QR code printed on glow vinyl |
+| **Laminate** | Clear UV-protective overlaminate | Scratch + UV + water protection |
+
+**Specifications:**
+- **Glow duration**: 30-60 minutes bright, up to 750 minutes visible decay
+- **Glow color**: Luminescent green (best contrast in dark)
+- **Recharge cycles**: Unlimited (charges from any light source)
+- **Outdoor life**: 5+ years with laminate
+- **Temperature range**: -40°F to 200°F
+- **Waterproof**: Yes, fully submersible
+
+**Option B: Layered Approach (DIY/Cheaper)**
+
+```
+┌─────────────────────────────────────────┐
+│  Clear UV Laminate (top)                │  ← Protection layer
+├─────────────────────────────────────────┤
+│  Printed QR Code (white/black)          │  ← Scannable day or night
+├─────────────────────────────────────────┤
+│  Glow-in-Dark Vinyl (middle)            │  ← Charges + glows
+├─────────────────────────────────────────┤
+│  Adhesive Layer (bottom)                │  ← Sticks to disc
+└─────────────────────────────────────────┘
+```
+
+### 2.3 Sticker Design
+
+```
+┌─────────────────────────────────────────┐
+│                                         │
+│   ┌───────────────┐   RGDGC DISC       │
+│   │ ▣▣▣▣▣▣▣▣▣▣▣  │   REGISTRY          │
+│   │ ▣▣▣▣▣▣▣▣▣▣▣  │                     │
+│   │ ▣▣▣▣▣▣▣▣▣▣▣  │   Scan to:          │
+│   │ ▣▣▣▣▣▣▣▣▣▣▣  │   • Verify owner    │
+│   │ ▣▣▣▣▣▣▣▣▣▣▣  │   • Report found    │
+│   └───────────────┘   • View history    │
+│                                         │
+│         🥏 #DISC-0001234                │
+│                                         │
+│      ✨ GLOW-IN-DARK ✨                 │
+│                                         │
+└─────────────────────────────────────────┘
+
+Size: 1.5" x 1.5" (minimum for reliable scanning)
+Shape: Circle (matches disc aesthetic) or rounded square
+Location: Center of disc underside (inside rim)
+```
+
+### 2.4 Glow-in-the-Dark Science
+
+**Photoluminescence (not radioactive!):**
+- Contains strontium aluminate or zinc sulfide pigments
+- Absorbs photons from light → stores energy → releases as visible light
+- Completely safe, non-toxic, CPSIA compliant
+- Recharges indefinitely under any light source (sun, room lights, flashlight)
+
+**Best for disc golf:**
+- Night rounds: Find your disc in the dark
+- Dusk rounds: Visible as light fades
+- Woods: Stand out against dark backgrounds
+- Lost disc: Easier to spot when searching
+
+### 2.5 Sourcing Options
+
+**Professional Printing (Recommended for quality):**
+
+| Vendor | Product | Cost Estimate |
+|--------|---------|---------------|
+| **Sticker Mule** | Custom glow vinyl + laminate | ~$1.50-2.50/sticker (100+) |
+| **StickyBrand** | Bombproof™ weatherproof vinyl | ~$1.00-2.00/sticker (100+) |
+| **SignWarehouse** | ORAJET 3930 photoluminescent | ~$50/roll (DIY cutting) |
+| **Car Stickers** | Glow-in-dark custom stickers | ~$0.80-1.50/sticker (500+) |
+
+**DIY Option:**
+1. Buy photoluminescent printable vinyl (Hayes Paper, Silhouette, etc.)
+2. Print QR codes with inkjet printer
+3. Apply clear laminate layer
+4. Cut with Cricut/Silhouette or by hand
+
+**Bulk RGDGC Order:**
+- 500+ stickers with club branding
+- Estimated cost: $400-600 for 500 stickers (~$0.80-1.20 each)
+- Include in membership or sell for $3-5 each
+
+---
+
+## 3. Smart Contract Architecture
+
+### 3.1 Contract Overview
+
+We'll use **ERC-721** (NFT standard) since each disc is unique and non-fungible.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    DISC NFT ECOSYSTEM                       │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────────────┐    ┌─────────────────────┐        │
+│  │   DiscRegistry.sol  │◄──►│   RGDGToken.sol     │        │
+│  │   (ERC-721 NFTs)    │    │   (ERC-20 Rewards)  │        │
+│  └─────────────────────┘    └─────────────────────┘        │
+│            │                          │                     │
+│            ▼                          ▼                     │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │                   Functions                          │   │
+│  │  • mintDisc(owner, metadata)                        │   │
+│  │  • transferDisc(from, to, tokenId)                  │   │
+│  │  • reportLost(tokenId)                              │   │
+│  │  • reportFound(tokenId, finder)                     │   │
+│  │  • claimReward(tokenId) → $RGDG tokens              │   │
+│  │  • getDiscHistory(tokenId)                          │   │
+│  │  • verifyOwnership(tokenId, address)                │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 3.2 DiscRegistry Smart Contract
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
+
+/**
+ * @title DiscRegistry
+ * @dev ERC-721 NFT contract for tracking disc golf disc ownership and provenance
+ */
+contract DiscRegistry is ERC721, ERC721URIStorage, ERC721Enumerable, Ownable {
+    using Counters for Counters.Counter;
+    
+    Counters.Counter private _tokenIds;
+    
+    // Disc status enum
+    enum DiscStatus { Active, Lost, Found, Retired }
+    
+    // Disc metadata structure
+    struct Disc {
+        string discId;           // Physical disc ID (matches QR code)
+        string manufacturer;     // e.g., "Innova", "Discraft"
+        string mold;            // e.g., "Destroyer", "Buzz"
+        string plastic;         // e.g., "Star", "ESP"
+        uint16 weight;          // Weight in grams
+        DiscStatus status;
+        uint256 registeredAt;
+        uint256 lostAt;
+        address finder;         // Address of person who found lost disc
+        string[] notes;         // Condition notes, signatures, etc.
+    }
+    
+    // Ownership history entry
+    struct OwnershipRecord {
+        address owner;
+        uint256 timestamp;
+        string transferType;    // "mint", "sale", "gift", "return"
+    }
+    
+    // Mappings
+    mapping(uint256 => Disc) public discs;
+    mapping(uint256 => OwnershipRecord[]) public ownershipHistory;
+    mapping(string => uint256) public discIdToToken;  // Physical ID → Token ID
+    mapping(address => uint256) public finderReputationScore;
+    
+    // Events
+    event DiscRegistered(uint256 indexed tokenId, string discId, address owner);
+    event DiscLost(uint256 indexed tokenId, address owner, uint256 timestamp);
+    event DiscFound(uint256 indexed tokenId, address finder, uint256 timestamp);
+    event DiscReturned(uint256 indexed tokenId, address finder, address owner);
+    event RewardClaimed(uint256 indexed tokenId, address finder, uint256 amount);
+    
+    // Reward token interface
+    IERC20 public rewardToken;
+    uint256 public finderReward = 10 * 10**18;  // 10 $RGDG tokens
+    
+    constructor(address _rewardToken) ERC721("RGDGC Disc Registry", "DISC") {
+        rewardToken = IERC20(_rewardToken);
+    }
+    
+    /**
+     * @dev Register a new disc and mint NFT
+     */
+    function registerDisc(
+        address owner,
+        string memory discId,
+        string memory manufacturer,
+        string memory mold,
+        string memory plastic,
+        uint16 weight,
+        string memory tokenURI
+    ) public onlyOwner returns (uint256) {
+        require(discIdToToken[discId] == 0, "Disc already registered");
+        
+        _tokenIds.increment();
+        uint256 newTokenId = _tokenIds.current();
+        
+        _safeMint(owner, newTokenId);
+        _setTokenURI(newTokenId, tokenURI);
+        
+        discs[newTokenId] = Disc({
+            discId: discId,
+            manufacturer: manufacturer,
+            mold: mold,
+            plastic: plastic,
+            weight: weight,
+            status: DiscStatus.Active,
+            registeredAt: block.timestamp,
+            lostAt: 0,
+            finder: address(0),
+            notes: new string[](0)
+        });
+        
+        discIdToToken[discId] = newTokenId;
+        
+        // Record initial ownership
+        ownershipHistory[newTokenId].push(OwnershipRecord({
+            owner: owner,
+            timestamp: block.timestamp,
+            transferType: "mint"
+        }));
+        
+        emit DiscRegistered(newTokenId, discId, owner);
+        return newTokenId;
+    }
+    
+    /**
+     * @dev Report a disc as lost
+     */
+    function reportLost(uint256 tokenId) public {
+        require(ownerOf(tokenId) == msg.sender, "Not disc owner");
+        require(discs[tokenId].status == DiscStatus.Active, "Disc not active");
+        
+        discs[tokenId].status = DiscStatus.Lost;
+        discs[tokenId].lostAt = block.timestamp;
+        
+        emit DiscLost(tokenId, msg.sender, block.timestamp);
+    }
+    
+    /**
+     * @dev Report finding a lost disc (called by finder)
+     */
+    function reportFound(uint256 tokenId) public {
+        require(discs[tokenId].status == DiscStatus.Lost, "Disc not marked lost");
+        require(msg.sender != ownerOf(tokenId), "Owner cannot report found");
+        
+        discs[tokenId].status = DiscStatus.Found;
+        discs[tokenId].finder = msg.sender;
+        
+        emit DiscFound(tokenId, msg.sender, block.timestamp);
+    }
+    
+    /**
+     * @dev Report finding disc by physical disc ID (from QR scan)
+     */
+    function reportFoundByDiscId(string memory discId) public {
+        uint256 tokenId = discIdToToken[discId];
+        require(tokenId != 0, "Disc not registered");
+        
+        // Allow reporting even if not marked lost (owner may not know yet)
+        if (discs[tokenId].status == DiscStatus.Active) {
+            discs[tokenId].status = DiscStatus.Found;
+        }
+        
+        discs[tokenId].finder = msg.sender;
+        emit DiscFound(tokenId, msg.sender, block.timestamp);
+    }
+    
+    /**
+     * @dev Confirm disc returned and reward finder
+     */
+    function confirmReturn(uint256 tokenId) public {
+        require(ownerOf(tokenId) == msg.sender, "Not disc owner");
+        require(discs[tokenId].status == DiscStatus.Found, "Disc not in found status");
+        require(discs[tokenId].finder != address(0), "No finder recorded");
+        
+        address finder = discs[tokenId].finder;
+        
+        // Reset disc status
+        discs[tokenId].status = DiscStatus.Active;
+        discs[tokenId].lostAt = 0;
+        discs[tokenId].finder = address(0);
+        
+        // Increase finder reputation
+        finderReputationScore[finder]++;
+        
+        // Transfer reward tokens to finder
+        if (rewardToken.balanceOf(address(this)) >= finderReward) {
+            rewardToken.transfer(finder, finderReward);
+            emit RewardClaimed(tokenId, finder, finderReward);
+        }
+        
+        emit DiscReturned(tokenId, finder, msg.sender);
+    }
+    
+    /**
+     * @dev Transfer disc with history tracking
+     */
+    function transferWithHistory(
+        address from,
+        address to,
+        uint256 tokenId,
+        string memory transferType
+    ) public {
+        require(ownerOf(tokenId) == from, "Not current owner");
+        require(msg.sender == from || isApprovedForAll(from, msg.sender), "Not authorized");
+        
+        _transfer(from, to, tokenId);
+        
+        ownershipHistory[tokenId].push(OwnershipRecord({
+            owner: to,
+            timestamp: block.timestamp,
+            transferType: transferType
+        }));
+    }
+    
+    /**
+     * @dev Get full ownership history
+     */
+    function getOwnershipHistory(uint256 tokenId) 
+        public 
+        view 
+        returns (OwnershipRecord[] memory) 
+    {
+        return ownershipHistory[tokenId];
+    }
+    
+    /**
+     * @dev Get disc info by physical disc ID
+     */
+    function getDiscByPhysicalId(string memory discId) 
+        public 
+        view 
+        returns (Disc memory, address owner) 
+    {
+        uint256 tokenId = discIdToToken[discId];
+        require(tokenId != 0, "Disc not registered");
+        return (discs[tokenId], ownerOf(tokenId));
+    }
+    
+    /**
+     * @dev Add note to disc (condition, signatures, etc.)
+     */
+    function addNote(uint256 tokenId, string memory note) public {
+        require(ownerOf(tokenId) == msg.sender, "Not disc owner");
+        discs[tokenId].notes.push(note);
+    }
+    
+    /**
+     * @dev Retire a disc (damaged, lost forever, etc.)
+     */
+    function retireDisc(uint256 tokenId) public {
+        require(ownerOf(tokenId) == msg.sender, "Not disc owner");
+        discs[tokenId].status = DiscStatus.Retired;
+    }
+    
+    /**
+     * @dev Admin: Set finder reward amount
+     */
+    function setFinderReward(uint256 amount) public onlyOwner {
+        finderReward = amount;
+    }
+    
+    /**
+     * @dev Admin: Fund contract with reward tokens
+     */
+    function fundRewards(uint256 amount) public onlyOwner {
+        rewardToken.transferFrom(msg.sender, address(this), amount);
+    }
+    
+    // Required overrides for ERC721 extensions
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId,
+        uint256 batchSize
+    ) internal override(ERC721, ERC721Enumerable) {
+        super._beforeTokenTransfer(from, to, tokenId, batchSize);
+    }
+    
+    function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
+        super._burn(tokenId);
+    }
+    
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override(ERC721, ERC721URIStorage)
+        returns (string memory)
+    {
+        return super.tokenURI(tokenId);
+    }
+    
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(ERC721, ERC721Enumerable, ERC721URIStorage)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
+    }
+}
+```
+
+### 3.3 NFT Metadata Structure
+
+Each disc NFT has associated metadata stored on IPFS:
+
+```json
+{
+  "name": "Innova Destroyer - #DISC-0001234",
+  "description": "Star Destroyer 175g owned by @discgolfer_blake",
+  "image": "ipfs://QmXxx.../disc-photo.jpg",
+  "external_url": "https://app.rgdgc.com/disc/DISC-0001234",
+  "attributes": [
+    {
+      "trait_type": "Manufacturer",
+      "value": "Innova"
+    },
+    {
+      "trait_type": "Mold",
+      "value": "Destroyer"
+    },
+    {
+      "trait_type": "Plastic",
+      "value": "Star"
+    },
+    {
+      "trait_type": "Weight",
+      "value": 175
+    },
+    {
+      "trait_type": "Flight Numbers",
+      "value": "12/5/-1/3"
+    },
+    {
+      "trait_type": "Color",
+      "value": "Blue Swirl"
+    },
+    {
+      "trait_type": "Condition",
+      "value": "8/10"
+    },
+    {
+      "trait_type": "Special Features",
+      "value": "Paul McBeth Signature"
+    },
+    {
+      "trait_type": "Registration Date",
+      "display_type": "date",
+      "value": 1711152000
+    }
+  ],
+  "properties": {
+    "physical_id": "DISC-0001234",
+    "qr_code_hash": "sha256:abc123...",
+    "registration_tx": "0x...",
+    "rounds_thrown": 47,
+    "aces_thrown": 1
+  }
+}
+```
+
+---
+
+## 4. System Architecture
+
+### 4.1 Full Stack Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         USER FLOW                           │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌───────────┐     ┌───────────┐     ┌───────────┐        │
+│  │  Owner    │     │  Finder   │     │  Buyer    │        │
+│  │  App      │     │  Scanner  │     │  Verify   │        │
+│  └─────┬─────┘     └─────┬─────┘     └─────┬─────┘        │
+│        │                 │                 │               │
+│        ▼                 ▼                 ▼               │
+│  ┌─────────────────────────────────────────────────────┐  │
+│  │                    RGDGC API                        │  │
+│  │  /api/v1/discs/register                             │  │
+│  │  /api/v1/discs/{id}/lost                            │  │
+│  │  /api/v1/discs/{id}/found                           │  │
+│  │  /api/v1/discs/{id}/verify                          │  │
+│  │  /api/v1/discs/{id}/history                         │  │
+│  └─────────────────────────────────────────────────────┘  │
+│                          │                                 │
+│            ┌─────────────┼─────────────┐                   │
+│            ▼             ▼             ▼                   │
+│  ┌───────────────┐ ┌─────────────┐ ┌─────────────┐        │
+│  │  PostgreSQL   │ │  Ethereum   │ │    IPFS     │        │
+│  │  (off-chain)  │ │  (on-chain) │ │ (metadata)  │        │
+│  └───────────────┘ └─────────────┘ └─────────────┘        │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 4.2 QR Code URL Structure
+
+When a QR code is scanned, it directs to:
+
+```
+https://disc.rgdgc.com/DISC-0001234
+
+OR
+
+https://app.rgdgc.com/found?disc=DISC-0001234
+```
+
+The landing page shows:
+1. **Public info**: Disc type, photo, status (active/lost)
+2. **Owner contact** (if lost): "This disc belongs to @discgolfer_blake"
+3. **Found button**: Report you found this disc
+4. **Verify ownership** (for buyers): Check provenance
+
+### 4.3 API Endpoints for Disc Registry
+
+```python
+# backend/app/api/v1/discs.py
+
+from fastapi import APIRouter, Depends, HTTPException
+from app.services.blockchain_service import DiscRegistryService
+from app.schemas.disc import DiscCreate, DiscResponse, LostReport, FoundReport
+
+router = APIRouter(prefix="/discs", tags=["discs"])
+
+@router.post("/register", response_model=DiscResponse)
+async def register_disc(
+    disc: DiscCreate,
+    current_user: User = Depends(get_current_user),
+    blockchain: DiscRegistryService = Depends()
+):
+    """Register a new disc and mint NFT"""
+    # 1. Generate unique disc ID
+    disc_id = generate_disc_id()
+    
+    # 2. Upload metadata to IPFS
+    metadata_uri = await upload_to_ipfs(disc.metadata)
+    
+    # 3. Mint NFT on blockchain
+    token_id = await blockchain.register_disc(
+        owner=current_user.wallet_address,
+        disc_id=disc_id,
+        metadata_uri=metadata_uri,
+        **disc.dict()
+    )
+    
+    # 4. Store in database for quick queries
+    db_disc = await create_disc_record(
+        disc_id=disc_id,
+        token_id=token_id,
+        owner_id=current_user.id,
+        **disc.dict()
+    )
+    
+    # 5. Generate QR code data
+    qr_data = generate_qr_code(disc_id)
+    
+    return DiscResponse(
+        disc_id=disc_id,
+        token_id=token_id,
+        qr_code=qr_data,
+        **db_disc.dict()
+    )
+
+@router.post("/{disc_id}/lost")
+async def report_lost(
+    disc_id: str,
+    report: LostReport,
+    current_user: User = Depends(get_current_user),
+    blockchain: DiscRegistryService = Depends()
+):
+    """Mark disc as lost"""
+    disc = await get_disc_by_id(disc_id)
+    
+    if disc.owner_id != current_user.id:
+        raise HTTPException(403, "Not your disc")
+    
+    # Update blockchain
+    await blockchain.report_lost(disc.token_id)
+    
+    # Update database
+    await update_disc_status(disc_id, "lost", report.location, report.notes)
+    
+    return {"status": "lost", "disc_id": disc_id}
+
+@router.post("/{disc_id}/found")
+async def report_found(
+    disc_id: str,
+    report: FoundReport,
+    blockchain: DiscRegistryService = Depends()
+):
+    """Report finding a disc (no auth required - anyone can report)"""
+    disc = await get_disc_by_id(disc_id)
+    
+    # Get or create finder record
+    finder = await get_or_create_finder(report.contact_info)
+    
+    # Update blockchain (if finder has wallet)
+    if finder.wallet_address:
+        await blockchain.report_found(disc.token_id, finder.wallet_address)
+    
+    # Update database
+    await update_disc_found(disc_id, finder.id, report.location)
+    
+    # Notify owner
+    await notify_owner_disc_found(disc, finder, report)
+    
+    return {
+        "status": "found",
+        "disc_id": disc_id,
+        "owner_notified": True,
+        "owner_contact": disc.owner.display_name
+    }
+
+@router.get("/{disc_id}/verify")
+async def verify_ownership(disc_id: str):
+    """Public endpoint to verify disc ownership and history"""
+    disc = await get_disc_with_history(disc_id)
+    
+    return {
+        "disc_id": disc_id,
+        "status": disc.status,
+        "current_owner": disc.owner.display_name,
+        "registered_at": disc.registered_at,
+        "ownership_history": [
+            {
+                "owner": record.owner.display_name,
+                "date": record.timestamp,
+                "type": record.transfer_type
+            }
+            for record in disc.ownership_history
+        ],
+        "blockchain_verified": True,
+        "token_id": disc.token_id,
+        "contract": DISC_REGISTRY_ADDRESS
+    }
+```
+
+---
+
+## 5. User Flows
+
+### 5.1 Register a New Disc
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                  REGISTER NEW DISC FLOW                     │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  1. User opens app → "Register Disc"                        │
+│                                                             │
+│  2. Enter disc info:                                        │
+│     ┌─────────────────────────────────────────────────┐    │
+│     │  Manufacturer: [Innova        ▼]               │    │
+│     │  Mold:         [Destroyer      ]               │    │
+│     │  Plastic:      [Star          ▼]               │    │
+│     │  Weight:       [175] grams                     │    │
+│     │  Color:        [Blue Swirl     ]               │    │
+│     │                                                │    │
+│     │  📷 [Take Photo]                               │    │
+│     │                                                │    │
+│     │  Special notes:                                │    │
+│     │  [Paul McBeth signature on rim               ]│    │
+│     │                                                │    │
+│     │         [Register Disc - $0.50]               │    │
+│     └─────────────────────────────────────────────────┘    │
+│                                                             │
+│  3. Confirm with wallet (MetaMask/WalletConnect)            │
+│                                                             │
+│  4. Receive:                                                │
+│     • NFT in wallet                                         │
+│     • Downloadable QR code sticker design                   │
+│     • Physical disc ID: DISC-0001234                        │
+│                                                             │
+│  5. Print/order sticker → apply to disc                     │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 5.2 Lost Disc Flow
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     LOST DISC FLOW                          │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  OWNER SIDE:                                                │
+│  ───────────                                                │
+│  1. Can't find disc after round                             │
+│  2. Open app → My Discs → Select disc → "Report Lost"       │
+│  3. Add location details (hole #, approximate area)         │
+│  4. Disc status changes to "LOST" on blockchain             │
+│  5. Other users can now see it's lost when scanned          │
+│                                                             │
+│  FINDER SIDE:                                               │
+│  ────────────                                               │
+│  1. Finds disc with RGDGC QR sticker                        │
+│  2. Scans QR code with phone camera                         │
+│  3. Sees:                                                   │
+│     ┌─────────────────────────────────────────────────┐    │
+│     │  🥏 DISC FOUND!                                 │    │
+│     │                                                 │    │
+│     │  This disc is registered to:                    │    │
+│     │  @discgolfer_blake                              │    │
+│     │                                                 │    │
+│     │  Status: ⚠️ REPORTED LOST                       │    │
+│     │  Lost at: Hole 7, River Grove Park              │    │
+│     │                                                 │    │
+│     │  [📱 Contact Owner]   [✓ Mark as Found]         │    │
+│     │                                                 │    │
+│     │  🎁 Earn 10 $RGDG tokens for returning!         │    │
+│     └─────────────────────────────────────────────────┘    │
+│                                                             │
+│  4. Finder clicks "Mark as Found" → enters contact info     │
+│  5. Owner receives notification                             │
+│  6. They arrange return                                     │
+│  7. Owner confirms return in app                            │
+│  8. Finder receives $RGDG reward + reputation boost         │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 5.3 Verify Ownership (Buying/Selling)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                  VERIFY OWNERSHIP FLOW                      │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Scenario: Buying a "rare Paul McBeth signed Destroyer"     │
+│                                                             │
+│  1. Seller shows disc with QR sticker                       │
+│                                                             │
+│  2. Buyer scans QR code                                     │
+│                                                             │
+│  3. Verification screen:                                    │
+│     ┌─────────────────────────────────────────────────┐    │
+│     │  ✓ VERIFIED AUTHENTIC                           │    │
+│     │                                                 │    │
+│     │  Innova Star Destroyer 175g                     │    │
+│     │  Registered: March 15, 2024                     │    │
+│     │                                                 │    │
+│     │  OWNERSHIP HISTORY:                             │    │
+│     │  ├─ @discgolfer_blake (current)                │    │
+│     │  │   Since: Jan 10, 2026                       │    │
+│     │  │   Transfer: Gift                            │    │
+│     │  │                                             │    │
+│     │  └─ @paul_mcbeth ← Original                    │    │
+│     │      Since: Mar 15, 2024                       │    │
+│     │      Note: "Signed at 2024 DGPT Championship"  │    │
+│     │                                                 │    │
+│     │  🔗 View on Blockchain                          │    │
+│     │  📜 NFT: Token #1234 on DiscRegistry           │    │
+│     └─────────────────────────────────────────────────┘    │
+│                                                             │
+│  4. Buyer can verify the provenance is legitimate           │
+│                                                             │
+│  5. If purchasing, seller transfers NFT to buyer's wallet   │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 6. Cost Analysis
+
+### 6.1 Blockchain Costs (Ethereum)
+
+| Action | Gas (approx) | Cost @ $2000 ETH, 30 gwei |
+|--------|--------------|---------------------------|
+| Register disc (mint NFT) | ~150,000 | ~$9.00 |
+| Report lost | ~50,000 | ~$3.00 |
+| Report found | ~50,000 | ~$3.00 |
+| Confirm return | ~80,000 | ~$4.80 |
+| Transfer disc | ~65,000 | ~$3.90 |
+
+**This is expensive!** Solutions:
+
+### 6.2 Layer 2 Solutions (Recommended)
+
+| Network | Pros | Cost Reduction |
+|---------|------|----------------|
+| **Polygon** | Cheapest, well-supported | ~99% cheaper |
+| **Base** | Coinbase-backed, growing | ~95% cheaper |
+| **Arbitrum** | Most Ethereum-like | ~90% cheaper |
+| **Optimism** | Governance tokens | ~90% cheaper |
+
+**Recommended: Polygon**
+- Same smart contract code
+- ~$0.01-0.10 per transaction
+- Widely supported in wallets
+- Easy bridging from Ethereum
+
+### 6.3 Hybrid Approach (Most Practical)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    HYBRID ARCHITECTURE                      │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  OFF-CHAIN (PostgreSQL):                                    │
+│  • Disc registration (free, instant)                        │
+│  • Lost/found status updates                                │
+│  • Ownership transfers                                      │
+│  • Round history, stats                                     │
+│  • Quick searches, queries                                  │
+│                                                             │
+│  ON-CHAIN (Polygon NFT):                                    │
+│  • Optional "certification" for valuable discs              │
+│  • Collectible/rare discs                                   │
+│  • Verified provenance for resale                           │
+│  • $RGDG token rewards                                      │
+│                                                             │
+│  USER CHOICE:                                               │
+│  • Free tier: Database-only tracking                        │
+│  • Premium: NFT certification ($1-5 per disc)               │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 7. Sticker Production Guide
+
+### 7.1 Ordering Custom Stickers
+
+**Recommended Vendor: Sticker Mule or StickyBrand**
+
+```
+ORDER SPECIFICATIONS:
+─────────────────────
+Material: Photoluminescent vinyl with clear laminate
+Shape: Circle (1.5" diameter) or Rounded square (1.5" x 1.5")
+Finish: Gloss laminate (better QR scanning)
+Glow: Photoluminescent green
+Print: High-resolution QR code + RGDGC branding
+
+ARTWORK REQUIREMENTS:
+─────────────────────
+• QR code area: Minimum 1" x 1" (300+ DPI)
+• High contrast: Black QR on white/light background
+• Error correction: Level H (30% damage tolerance)
+• Border: White border around QR for scanning reliability
+
+FILE FORMAT:
+────────────
+• Vector (AI, SVG, PDF) preferred
+• PNG at 300 DPI minimum
+• CMYK color mode
+```
+
+### 7.2 QR Code Best Practices
+
+```python
+# Generate QR code for disc
+import qrcode
+from qrcode.constants import ERROR_CORRECT_H
+
+def generate_disc_qr(disc_id: str) -> bytes:
+    """Generate high-quality QR code for disc sticker"""
+    
+    url = f"https://disc.rgdgc.com/{disc_id}"
+    
+    qr = qrcode.QRCode(
+        version=2,  # Size (1-40, higher = more data capacity)
+        error_correction=ERROR_CORRECT_H,  # 30% damage tolerance
+        box_size=10,  # Pixels per box
+        border=4,  # White border (minimum 4)
+    )
+    
+    qr.add_data(url)
+    qr.make(fit=True)
+    
+    img = qr.make_image(fill_color="black", back_color="white")
+    
+    # Convert to bytes for storage/download
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    return buffer.getvalue()
+```
+
+### 7.3 Sticker Application Guide
+
+```
+WHERE TO APPLY:
+───────────────
+Best location: Center underside of disc (inside flight plate)
+• Doesn't affect flight
+• Protected from ground scrapes
+• Visible when disc is upside-down (lost in bushes)
+• Won't interfere with grip
+
+Alternative: Rim (inner edge)
+• More visible when bagged
+• May affect grip slightly
+• More wear from basket chains
+
+PREPARATION:
+────────────
+1. Clean disc surface with isopropyl alcohol
+2. Dry completely
+3. Peel sticker backing
+4. Apply center-out to avoid bubbles
+5. Press firmly, especially edges
+6. Wait 24 hours before throwing for best adhesion
+```
+
+---
+
+## 8. Implementation Roadmap
+
+### Phase 1: MVP (4 weeks)
+- [ ] Basic disc registration (database only)
+- [ ] QR code generation
+- [ ] Lost/found reporting
+- [ ] Owner lookup via QR scan
+- [ ] Sticker design template
+
+### Phase 2: Blockchain Integration (4 weeks)
+- [ ] Deploy DiscRegistry contract on Polygon testnet
+- [ ] NFT minting for registered discs
+- [ ] Wallet connection in app
+- [ ] On-chain ownership transfers
+
+### Phase 3: Rewards & Reputation (2 weeks)
+- [ ] $RGDG token integration for finder rewards
+- [ ] Finder reputation scoring
+- [ ] Leaderboard for disc returners
+
+### Phase 4: Sticker Production (2 weeks)
+- [ ] Finalize sticker design
+- [ ] Order bulk production
+- [ ] Distribute to RGDGC members
+- [ ] Sell individual stickers in app
+
+---
+
+## 9. Summary
+
+### What You're Building
+
+1. **Physical Product**: Weatherproof, glow-in-the-dark QR code stickers
+   - Material: ORAJET 3930 or similar photoluminescent vinyl
+   - Features: 5+ year outdoor durability, glows 30-60 minutes
+   - Cost: ~$0.80-1.50 per sticker at scale
+
+2. **Digital System**: NFT-backed disc registry
+   - Smart contract: ERC-721 on Polygon
+   - Features: Ownership tracking, lost/found, provenance
+   - Cost: ~$0.01-0.10 per transaction on L2
+
+3. **Community Value**: 
+   - Lost disc recovery incentivized with $RGDG tokens
+   - Verified collectible trading
+   - Finder reputation system
+
+### Next Steps
+
+1. **Validate demand**: Survey RGDGC members on interest
+2. **Prototype stickers**: Order sample batch (10-25)
+3. **Test durability**: Apply to test discs, monitor for 3+ months
+4. **Build MVP**: Database-first, add blockchain later
+5. **Launch pilot**: 50 members with registered discs
+
+---
+
+*Document Version: 1.0*
+*Last Updated: March 2026*
+*Owner: RGDGC Tech Team*

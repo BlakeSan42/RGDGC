@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Build
+dist/
+build/
+*.egg-info/
+.next/
+
+# Environment
+.env
+.env.local
+.env.prod
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+postgres_data/
+redis_data/
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Blockchain
+contracts/artifacts/
+contracts/cache/
+contracts/typechain-types/
+
+# Logs
+*.log
+
+# Signals (keep structure, ignore large data)
+signals/*.jsonl
+!signals/.processed_transcripts

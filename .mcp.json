@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "rgdgc": {
+      "command": "npx",
+      "args": ["tsx", "mcp-server/src/index.ts"],
+      "cwd": "/Users/blakesanders/RGDGC",
+      "env": {
+        "RGDGC_API_URL": "http://localhost:8001",
+        "RGDGC_API_KEY": ""
+      }
+    }
+  }
+}

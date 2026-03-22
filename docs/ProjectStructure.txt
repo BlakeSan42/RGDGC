@@ -1,0 +1,16 @@
+rgdgc-app/
+├── docs/
+│   ├── DEVELOPMENT_PLAN.md      # 1,500+ lines comprehensive architecture
+│   └── OPENCLAW_INTEGRATION.md  # Complete AI bot integration guide
+├── backend/
+│   ├── app/
+│   │   ├── models/              # User, Course, Round, League, Event, Result
+│   │   ├── services/            # Points calculation, handicaps, blockchain
+│   │   ├── api/v1/              # FastAPI endpoints
+│   │   └── db/                  # SQLAlchemy async setup
+│   └── requirements.txt
+├── openclaw-skills/
+│   ├── standings/SKILL.md       # Get league leaderboards
+│   ├── event-checkin/SKILL.md   # Register for events via chat
+│   └── pdga-rules/SKILL.md      # Answer rules questions
+└── contracts/                   # (Planned) Solidity smart contracts

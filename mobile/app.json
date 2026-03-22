@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "RGDGC",
+    "slug": "rgdgc",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1B5E20"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.rgdgc.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "RGDGC uses the camera for AR distance measurement and putting analysis.",
+        "NSLocationWhenInUseUsageDescription": "RGDGC uses your location to find nearby courses and measure distances."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1B5E20"
+      },
+      "package": "com.rgdgc.app"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
+    "scheme": "rgdgc",
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
+    }
+  }
+}

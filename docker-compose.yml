@@ -1,0 +1,61 @@
+###############################################################################
+# RGDGC Local Development Stack
+#
+# Ports are offset to avoid conflicts with MadWorld:
+#   PostgreSQL: 5433 (MW uses 5432)
+#   Redis:      6381 (MW uses 6379/6380)
+#   Backend:    8001 (MW uses 8000)
+#
+#   docker compose up -d
+#
+# Then separately:
+#   cd backend && uvicorn app.main:app --reload --port 8001
+#   cd mobile && npx expo start
+###############################################################################
+
+services:
+  # ---------- PostgreSQL ----------
+  db:
+    image: postgres:15-alpine
+    container_name: rgdgc-db
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=rgdgc
+      - POSTGRES_PASSWORD=rgdgc_dev
+      - POSTGRES_DB=rgdgc
+    volumes:
+      - rgdgc_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rgdgc"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  # ---------- Redis Cache ----------
+  redis:
+    image: redis:7.4-alpine
+    container_name: rgdgc-redis
+    restart: unless-stopped
+    ports:
+      - "6381:6379"
+    command: >
+      redis-server
+      --maxmemory 64mb
+      --maxmemory-policy allkeys-lru
+      --save 60 100
+      --loglevel warning
+    volumes:
+      - rgdgc_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  rgdgc_postgres_data:
+  rgdgc_redis_data:

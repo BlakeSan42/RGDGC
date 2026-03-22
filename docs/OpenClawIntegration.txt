@@ -1,0 +1,877 @@
+# OpenClaw (Clawdbot) Integration for RGDGC
+
+## Overview
+
+OpenClaw (formerly Clawdbot/Clawd) is an open-source personal AI assistant that runs locally and integrates with messaging platforms like WhatsApp, Telegram, Discord, and Slack. With 30,000+ GitHub stars and 565+ skills, it represents the cutting edge of “AI with hands” - assistants that can actually execute tasks, not just chat.
+
+For River Grove Disc Golf Club, OpenClaw integration transforms the app from a passive tool into an **intelligent club assistant** that can:
+
+- Proactively remind players of upcoming events
+- Answer questions about scores, standings, and rules
+- Automate administrative tasks
+- Provide personalized coaching insights
+- Handle payments and registrations via chat
+
+-----
+
+## Why OpenClaw for RGDGC?
+
+### What OpenClaw Does Best
+
+|Capability                 |RGDGC Application                                               |
+|---------------------------|----------------------------------------------------------------|
+|**Multi-channel messaging**|Reach players on WhatsApp, Telegram, Discord - wherever they are|
+|**Persistent memory**      |Remembers player preferences, past conversations, context       |
+|**Task execution**         |Actually performs actions (check in, pay fees, register)        |
+|**Scheduled jobs (cron)**  |Automated weekly standings, event reminders                     |
+|**Custom skills**          |Domain-specific disc golf knowledge and workflows               |
+|**Local/private**          |Club data stays on club infrastructure                          |
+
+### Current State-of-the-Art Usage
+
+Based on research, top OpenClaw deployments are using it for:
+
+1. **Proactive Automation** - Not waiting for users to ask; pushing relevant info
+1. **Multi-step Workflows** - Combining API calls, database queries, and messages
+1. **Contextual Responses** - Using conversation history + external data
+1. **Voice Integration** - ElevenLabs TTS for voice announcements
+1. **Cross-platform Presence** - Same assistant on Discord, WhatsApp, and web
+
+-----
+
+## RGDGC OpenClaw Architecture
+
+### System Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        MESSAGING PLATFORMS                               │
+├─────────────┬─────────────┬─────────────┬─────────────┬─────────────────┤
+│  WhatsApp   │  Telegram   │   Discord   │    Slack    │    WebChat      │
+└──────┬──────┴──────┬──────┴──────┬──────┴──────┬──────┴────────┬────────┘
+       │             │             │             │               │
+       ▼             ▼             ▼             ▼               ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         OPENCLAW GATEWAY                                 │
+│                    (ws://localhost:18789)                                │
+├─────────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────────────┐  │
+│  │   RGDGC Agent   │  │  Memory Store   │  │    Cron Scheduler       │  │
+│  │  (AGENTS.md)    │  │  (ByteRover)    │  │    (jobs.json)          │  │
+│  └────────┬────────┘  └─────────────────┘  └─────────────────────────┘  │
+│           │                                                              │
+│  ┌────────┴────────────────────────────────────────────────────────┐    │
+│  │                      RGDGC SKILLS                                │    │
+│  ├──────────────┬──────────────┬──────────────┬─────────────────────┤    │
+│  │ standings    │ round-entry  │ pdga-rules   │ blockchain-pay      │    │
+│  │ event-checkin│ player-stats │ handicap     │ course-info         │    │
+│  │ announce     │ prize-payout │ weather      │ tournament          │    │
+│  └──────────────┴──────────────┴──────────────┴─────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────┘
+          │
+          ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         RGDGC BACKEND API                                │
+│                    (FastAPI @ api.rgdgc.com)                             │
+├─────────────────────────────────────────────────────────────────────────┤
+│  /api/v1/leaderboard   /api/v1/events   /api/v1/rounds                  │
+│  /api/v1/players       /api/v1/courses  /api/v1/blockchain              │
+└─────────────────────────────────────────────────────────────────────────┘
+          │
+          ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                PostgreSQL + Redis + Blockchain                           │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+-----
+
+## Custom RGDGC Skills
+
+### Skill 1: standings
+
+```markdown
+---
+name: standings
+description: Get current league standings and leaderboards for RGDGC leagues. Use when players ask about rankings, points, who's winning, or standings.
+metadata:
+  openclaw:
+    emoji: "🏆"
+    requires:
+      bins: ["curl"]
+    env:
+      - RGDGC_API_URL
+      - RGDGC_API_KEY
+---
+
+# RGDGC Standings Skill
+
+## Description
+Fetches and displays league standings from the RGDGC API.
+
+## Tools
+- `curl`: HTTP requests to RGDGC API
+
+## Triggers
+- "What are the standings?"
+- "Who's winning Dubs?"
+- "Show me the leaderboard"
+- "Where am I ranked?"
+- "Top 5 in singles"
+
+## Instructions
+
+### Get Overall Standings
+```bash
+curl -s -H "Authorization: Bearer $RGDGC_API_KEY" \
+  "$RGDGC_API_URL/api/v1/leaderboard?limit=10" | jq
+```
+
+### Get League-Specific Standings
+
+```bash
+# For Dubs
+curl -s -H "Authorization: Bearer $RGDGC_API_KEY" \
+  "$RGDGC_API_URL/api/v1/leaderboard/dubs?limit=10" | jq
+
+# For Sunday Singles
+curl -s -H "Authorization: Bearer $RGDGC_API_KEY" \
+  "$RGDGC_API_URL/api/v1/leaderboard/singles?limit=10" | jq
+```
+
+### Get Player-Specific Rank
+
+```bash
+curl -s -H "Authorization: Bearer $RGDGC_API_KEY" \
+  "$RGDGC_API_URL/api/v1/players/{player_id}/rank" | jq
+```
+
+## Response Formatting
+
+Format standings as:
+
+```
+🏆 **Dubs Standings** (as of {date})
+
+🥇 1. Mike J. — 102 pts (12 events)
+🥈 2. Sarah K. — 98 pts (11 events)  
+🥉 3. John D. — 95 pts (12 events)
+4. Tom B. — 87 pts (10 events)
+5. Lisa M. — 82 pts (11 events)
+
+💰 Prize pool: $500 for top 5
+```
+
+## Rules
+
+- Always include the date standings were retrieved
+- Show points AND events played
+- Mention prize pool if asking about top positions
+- If player asks about their rank, include their position explicitly
+
+```
+### Skill 2: event-checkin
+
+```markdown
+---
+name: event-checkin
+description: Check players into RGDGC league events. Use when players want to register, check in, or confirm attendance for upcoming events.
+metadata:
+  openclaw:
+    emoji: "✅"
+    requires:
+      bins: ["curl"]
+    env:
+      - RGDGC_API_URL
+      - RGDGC_API_KEY
+---
+
+# RGDGC Event Check-in Skill
+
+## Description
+Handles player check-in for league events via chat.
+
+## Triggers
+- "Check me in for Sunday"
+- "I'm playing this week"
+- "Register for Dubs Saturday"
+- "Who's checked in?"
+- "Am I registered?"
+
+## Instructions
+
+### Get Upcoming Events
+```bash
+curl -s -H "Authorization: Bearer $RGDGC_API_KEY" \
+  "$RGDGC_API_URL/api/v1/events?status=upcoming" | jq
+```
+
+### Check In Player
+
+```bash
+curl -s -X POST \
+  -H "Authorization: Bearer $RGDGC_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"player_id": {player_id}, "confirmed": true}' \
+  "$RGDGC_API_URL/api/v1/events/{event_id}/checkin" | jq
+```
+
+### List Checked-In Players
+
+```bash
+curl -s -H "Authorization: Bearer $RGDGC_API_KEY" \
+  "$RGDGC_API_URL/api/v1/events/{event_id}/players" | jq
+```
+
+## Player Identification
+
+1. First, identify the player by their messaging platform ID
+1. Look up their RGDGC player_id from memory or API
+1. If unknown, ask for their name/email to match
+
+## Response Examples
+
+### Successful Check-in
+
+```
+✅ **You're checked in!**
+
+📅 Sunday Singles — March 24, 2025
+⏰ 10:00 AM
+📍 River Grove DGC — White Layout
+👥 12 players registered so far
+
+See you on the course! 🥏
+```
+
+### Already Checked In
+
+```
+👍 You're already checked in for Sunday Singles!
+
+Want me to show you who else is playing?
+```
+
+## Rules
+
+- Always confirm which event before checking in
+- If multiple upcoming events, ask which one
+- Show player count after successful check-in
+- Remind about fee if not paid (blockchain integration)
+
+```
+### Skill 3: pdga-rules
+
+```markdown
+---
+name: pdga-rules
+description: Answer questions about PDGA disc golf rules. Use when players ask about rules, penalties, OB, mandos, relief, or any official ruling questions.
+metadata:
+  openclaw:
+    emoji: "📖"
+---
+
+# PDGA Rules Skill
+
+## Description
+Provides accurate answers to disc golf rules questions based on official PDGA rules.
+
+## Triggers
+- "What's the rule for OB?"
+- "How does a mando work?"
+- "What's the penalty for..."
+- "Can I take relief from..."
+- "Is that legal?"
+- "Foot fault rules"
+
+## Core Rules Reference
+
+### Out of Bounds (OB)
+- OB is marked by lines or physical boundaries
+- A disc is OB when it comes to rest completely beyond the OB line
+- **Penalty: 1 stroke**
+- Play from the previous lie, or 1m from where disc crossed OB line
+
+### Mandatories (Mandos)
+- Arrow indicates required passing side
+- Miss a mando = return to previous lie
+- **Penalty: 1 stroke**
+- Or play from designated drop zone if available
+
+### Foot Faults
+- Supporting point within lie at release
+- No supporting point touching OB or closer to target
+- **Penalty: 1 stroke** (warning first in casual play)
+
+### Casual Relief
+- Free relief from:
+  - Casual water (temporary water)
+  - Harmful insects/animals
+  - Damaged course equipment
+- Mark lie, move 1m in any direction (not closer to target)
+
+### Two-Meter Rule (if in effect)
+- Disc comes to rest 2+ meters above playing surface
+- **Penalty: 1 stroke**
+- Play from directly below
+
+### Courtesy Violations
+- Excessive time (30 seconds from lie clear)
+- Distracting other players
+- **Penalty: Warning, then 1 stroke per offense**
+
+## Response Format
+```
+
+📖 **PDGA Rule: Out of Bounds**
+
+When your disc lands OB, you have these options:
+
+1️⃣ **Previous Lie** — Re-throw from where you threw (1 stroke penalty)
+2️⃣ **Last In-bounds** — Play from 1m into the course from where disc crossed OB line (1 stroke penalty)
+3️⃣ **Drop Zone** — If available, play from DZ (1 stroke penalty)
+
+🔗 Full rules: pdga.com/rules
+
+```
+## Rules
+- Cite specific rule numbers when possible (e.g., "Rule 806.02")
+- Keep explanations concise but complete
+- Offer to explain further if complex
+- Always recommend checking pdga.com/rules for official text
+```
+
+### Skill 4: round-entry
+
+```markdown
+---
+name: round-entry
+description: Help players enter scores for casual or league rounds via chat. Use when players want to log a round, enter scores, or track their game.
+metadata:
+  openclaw:
+    emoji: "📝"
+    requires:
+      bins: ["curl"]
+    env:
+      - RGDGC_API_URL
+      - RGDGC_API_KEY
+---
+
+# Round Entry Skill
+
+## Description
+Conversational score entry for disc golf rounds.
+
+## Triggers
+- "Log my round"
+- "Enter my scores"
+- "I shot a 52 today"
+- "Record my round"
+- "I played the white layout"
+
+## Workflow
+
+### 1. Start Round
+Ask for:
+- Layout (White, Red, Blue)
+- Practice or league round?
+- Other players in group?
+
+```bash
+curl -s -X POST \
+  -H "Authorization: Bearer $RGDGC_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"player_id": {id}, "layout_id": {layout}, "is_practice": true}' \
+  "$RGDGC_API_URL/api/v1/rounds" | jq
+```
+
+### 2. Enter Scores
+
+Accept scores in flexible formats:
+
+- “3, 4, 3, 3, 2, 4, 3, 3, 4” (hole by hole)
+- “Par on 1-3, birdie 4, bogey 5-6…”
+- “52 total” (system calculates vs par)
+
+### 3. Submit
+
+```bash
+curl -s -X POST \
+  -H "Authorization: Bearer $RGDGC_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"scores": [{hole: 1, strokes: 3}, ...]}' \
+  "$RGDGC_API_URL/api/v1/rounds/{round_id}/scores" | jq
+```
+
+## Response Example
+
+```
+📝 **Round Recorded!**
+
+📍 River Grove — White Layout
+📅 March 22, 2025
+🏌️ Total: 54 (+2)
+
+Hole-by-hole:
+1️⃣ 3 (par) | 2️⃣ 4 (+1) | 3️⃣ 3 (par) ...
+
+🔥 Best hole: #4 (birdie!)
+📈 That's your 3rd best round on White!
+```
+
+## Rules
+
+- Guide conversation naturally
+- Accept flexible input formats
+- Validate scores are reasonable (1-10 per hole)
+- Provide encouraging feedback
+- Compare to past performance
+
+```
+### Skill 5: blockchain-pay
+
+```markdown
+---
+name: blockchain-pay
+description: Handle RGDG token payments for league fees, membership, and purchases. Use when players ask about paying, token balance, or purchasing RGDG.
+metadata:
+  openclaw:
+    emoji: "💰"
+    requires:
+      bins: ["curl"]
+    env:
+      - RGDGC_API_URL
+      - RGDGC_API_KEY
+---
+
+# Blockchain Payment Skill
+
+## Description
+Manages $RGDG token payments for RGDGC services.
+
+## Triggers
+- "Pay my league fee"
+- "What's my token balance?"
+- "Buy RGDG tokens"
+- "How much is entry?"
+- "Pay with crypto"
+
+## Token Info
+- **Token**: $RGDG (River Grove Disc Golf)
+- **Network**: Sepolia Testnet (Ethereum)
+- **League fee**: 5 RGDG per event
+- **Membership**: 50 RGDG per year
+
+## Check Balance
+```bash
+curl -s -H "Authorization: Bearer $RGDGC_API_KEY" \
+  "$RGDGC_API_URL/api/v1/blockchain/balance?player_id={id}" | jq
+```
+
+## Pay League Fee
+
+1. Verify player has connected wallet
+1. Check balance sufficient
+1. Generate transaction data
+1. Send payment link/QR
+
+```bash
+curl -s -X POST \
+  -H "Authorization: Bearer $RGDGC_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"player_id": {id}, "event_id": {event_id}, "amount": 5}' \
+  "$RGDGC_API_URL/api/v1/blockchain/pay-fee" | jq
+```
+
+## Response Example
+
+```
+💰 **Pay League Fee**
+
+📅 Sunday Singles — March 24
+💵 Fee: 5 RGDG (~$5 USD)
+💳 Your balance: 47 RGDG
+
+🔗 **Pay now**: [MetaMask Deep Link]
+
+Or scan this QR code with your wallet app.
+
+After payment, you'll be automatically checked in!
+```
+
+## Rules
+
+- Always show current balance before payment
+- Confirm amount before generating transaction
+- Provide both link and QR options
+- Explain how to get tokens if balance is low
+- Never store or handle private keys
+
+```
+---
+
+## Scheduled Jobs (Cron)
+
+### jobs.json Configuration
+
+```json
+{
+  "jobs": [
+    {
+      "id": "weekly-standings",
+      "schedule": "0 18 * * 0",
+      "description": "Post weekly standings every Sunday at 6 PM",
+      "action": {
+        "type": "skill",
+        "skill": "standings",
+        "params": {
+          "league": "all",
+          "destination": "discord:#standings"
+        }
+      }
+    },
+    {
+      "id": "event-reminder-24h",
+      "schedule": "0 10 * * 6",
+      "description": "Remind players of Sunday event on Saturday morning",
+      "action": {
+        "type": "message",
+        "template": "🥏 **Reminder!** Sunday Singles is tomorrow at 10 AM. Check in now: /checkin",
+        "destination": ["discord:#general", "telegram:rgdgc_group"]
+      }
+    },
+    {
+      "id": "results-announcement",
+      "trigger": "webhook:event_finalized",
+      "description": "Announce results when an event is finalized",
+      "action": {
+        "type": "skill",
+        "skill": "announce",
+        "params": {
+          "type": "results",
+          "event_id": "{{event_id}}"
+        }
+      }
+    },
+    {
+      "id": "weather-check",
+      "schedule": "0 7 * * 0",
+      "description": "Check weather and warn if bad conditions expected",
+      "action": {
+        "type": "skill",
+        "skill": "weather",
+        "params": {
+          "location": "River Grove, IL",
+          "alert_if": ["rain", "storm", "wind>20mph"]
+        }
+      }
+    },
+    {
+      "id": "prize-distribution",
+      "trigger": "webhook:season_end",
+      "description": "Calculate and announce final prizes",
+      "action": {
+        "type": "skill",
+        "skill": "prize-payout",
+        "params": {
+          "season_id": "{{season_id}}"
+        }
+      }
+    }
+  ]
+}
+```
+
+-----
+
+## Agent Configuration
+
+### AGENTS.md
+
+```markdown
+---
+name: RGDGC Bot
+emoji: 🥏
+description: The official River Grove Disc Golf Club assistant
+model: claude-sonnet-4-20250514
+---
+
+# RGDGC Bot
+
+You are the official AI assistant for River Grove Disc Golf Club. You help members with:
+- League standings and statistics
+- Event check-in and registration
+- Score entry and tracking
+- PDGA rules questions
+- Payment processing ($RGDG tokens)
+- Course information
+
+## Personality
+- Friendly and encouraging
+- Knowledgeable about disc golf
+- Helpful but concise
+- Celebrates player achievements
+- Uses disc golf terminology naturally
+
+## Key Information
+- Club: River Grove Disc Golf Club (RGDGC)
+- Location: River Grove, IL
+- Home Course: River Grove DGC
+- Leagues: "Dubs" (doubles), "Sunday Singles"
+- Season: January - December
+- Top 5 earn cash prizes
+
+## Response Style
+- Use emoji sparingly but appropriately (🥏, 🏆, ✅)
+- Keep responses under 200 words
+- Always include actionable next steps
+- Celebrate birdies, aces, and achievements
+
+## Available Skills
+- standings: League leaderboards
+- event-checkin: Register for events
+- round-entry: Log scores
+- pdga-rules: Rules questions
+- blockchain-pay: Token payments
+- player-stats: Personal statistics
+- course-info: Hole details, layouts
+- weather: Course conditions
+
+## Conversation Flow
+1. Greet returning players by name (from memory)
+2. Proactively mention upcoming events
+3. Offer relevant actions based on context
+4. Follow up on incomplete workflows
+```
+
+### SOUL.md
+
+```markdown
+# RGDGC Bot Soul
+
+## Core Values
+- Make disc golf more fun and accessible
+- Help players improve their game
+- Build community through shared competition
+- Respect everyone's time
+
+## Behavioral Guidelines
+
+### DO
+- Remember player preferences and history
+- Proactively remind about upcoming events
+- Celebrate achievements (PRs, aces, ranking up)
+- Be patient with new players
+- Explain rules clearly
+
+### DON'T
+- Be preachy about rules (explain when asked)
+- Spam notifications
+- Share player data between conversations without permission
+- Make predictions about who will win
+- Take sides in disputes (escalate to admins)
+
+## Escalation
+If a player reports an issue, dispute, or technical problem:
+1. Acknowledge the concern
+2. Note the details
+3. Tag @admin in Discord or notify via admin channel
+4. Let player know a human will follow up
+
+## Privacy
+- Player scores are public within the club
+- Contact info is private
+- Payment details are never stored
+- Conversation history used only for context
+```
+
+-----
+
+## Deployment
+
+### Prerequisites
+
+```bash
+# Server requirements
+- Mac Mini M2+ or Linux server
+- Node.js 20+
+- Bun runtime
+- Docker (optional but recommended)
+- Domain for webhooks
+
+# Accounts needed
+- OpenClaw account
+- Telegram Bot (via BotFather)
+- Discord Application (developer portal)
+- WhatsApp Business API (optional)
+```
+
+### Installation
+
+```bash
+# Install OpenClaw
+npm install -g openclaw
+
+# Or via direct download
+git clone https://github.com/openclaw/openclaw.git
+cd openclaw && npm install
+
+# Run onboarding
+openclaw onboard
+
+# Configure RGDGC workspace
+mkdir -p ~/.openclaw/workspaces/rgdgc/skills
+cd ~/.openclaw/workspaces/rgdgc
+
+# Copy RGDGC skills
+cp -r /path/to/rgdgc-skills/* skills/
+
+# Configure agent
+cp AGENTS.md .
+cp SOUL.md .
+cp jobs.json cron/
+
+# Set environment
+cat > .env << EOF
+RGDGC_API_URL=https://api.rgdgc.com
+RGDGC_API_KEY=your-api-key
+ANTHROPIC_API_KEY=your-claude-key
+TELEGRAM_BOT_TOKEN=your-telegram-token
+DISCORD_BOT_TOKEN=your-discord-token
+EOF
+
+# Start OpenClaw with RGDGC workspace
+openclaw --workspace rgdgc
+```
+
+### Connect Channels
+
+```bash
+# Telegram
+openclaw channel add telegram
+# Follow prompts to pair with bot
+
+# Discord
+openclaw channel add discord
+# Configure in Discord developer portal
+
+# WhatsApp (requires business API)
+openclaw channel add whatsapp
+```
+
+-----
+
+## Example Conversations
+
+### Discord: Checking Standings
+
+```
+Player: @RGDGC Bot what's the standings?
+
+Bot: 🏆 **Dubs Standings** (March 22, 2025)
+
+🥇 1. Mike J. & Tom K. — 102 pts (12 events)
+🥈 2. Sarah K. & Lisa M. — 98 pts (11 events)
+🥉 3. John D. & Pete R. — 95 pts (12 events)
+4. You & Dave S. — 87 pts (10 events)
+5. Chris B. & Amy L. — 82 pts (11 events)
+
+You're 5 points behind the podium! Next Dubs is Saturday at 9 AM.
+Want me to check you in?
+```
+
+### Telegram: Event Check-in
+
+```
+Player: I'm playing Sunday
+
+Bot: ✅ Great! I'll check you in for Sunday Singles.
+
+📅 March 24, 2025 @ 10:00 AM
+📍 River Grove DGC — White Layout
+👥 8 players registered
+
+Your balance: 47 RGDG
+Fee: 5 RGDG
+
+[Pay Now] [Pay Later]
+
+Should I register you?
+
+Player: yes
+
+Bot: ✅ You're in! 
+
+🎟️ Checked in for Sunday Singles
+💰 5 RGDG deducted (balance: 42 RGDG)
+
+See you Sunday! 🥏
+```
+
+### WhatsApp: Rules Question
+
+```
+Player: What happens if my disc lands OB but rolls back in?
+
+Bot: 📖 **PDGA Rule 806.02: Out of Bounds**
+
+If your disc lands OB but rolls/slides back in-bounds before coming to rest, it's **IN!** No penalty.
+
+The rule: A disc is OB only when it "comes to rest" completely beyond the OB line. Motion before rest doesn't count.
+
+⚠️ Be careful though: if you're not certain where it crossed, play from the last point it was definitively in-bounds.
+
+Need me to explain anything else?
+```
+
+-----
+
+## Security Considerations
+
+1. **API Key Protection**
+- Store in environment variables, not in skill files
+- Rotate keys regularly
+- Use read-only keys where possible
+1. **Player Data**
+- Identify players via platform ID mapping
+- Don’t store sensitive info in conversation memory
+- Encrypt player-wallet associations
+1. **Skill Review**
+- Review all custom skills before deployment
+- Sandbox new skills before production
+- Monitor for unexpected API calls
+1. **Rate Limiting**
+- Implement rate limits on check-in/payment skills
+- Prevent spam via conversation cooldowns
+- Alert admins on unusual activity
+
+-----
+
+## Future Enhancements
+
+### Phase 2
+
+- Voice announcements for live events
+- Photo recognition for scorecard OCR
+- Group scheduling coordination
+- Practice tracking and recommendations
+
+### Phase 3
+
+- Tournament bracket management
+- Cross-club challenges
+- Pro shop inventory queries
+- Course condition crowdsourcing
+
+### Phase 4
+
+- Video analysis for form feedback
+- Predictive handicap adjustments
+- Weather-adjusted recommendations
+- Community highlight reels
+
+-----
+
+*OpenClaw Integration Document v1.0*
+*For River Grove Disc Golf Club*
+*Compatible with OpenClaw v2.x*

@@ -1,0 +1,1019 @@
+# RGDGC Disc Golf Game Design Document
+
+## Overview
+
+A mobile casual disc golf game that teaches real disc golf mechanics while providing entertaining gameplay. The game serves as both an educational tool for new players and an engaging experience for disc golf enthusiasts.
+
+---
+
+## 1. Game Concept
+
+### 1.1 Vision Statement
+
+> "The most authentic disc golf experience on mobile, where every throw teaches you something about the real sport."
+
+### 1.2 Target Audience
+
+| Audience | Description | Key Features They Want |
+|----------|-------------|------------------------|
+| **Disc Golf Players** | Active players (MA1-MA4, recreational) | Realistic flight physics, real courses, practice modes |
+| **Curious Newcomers** | People interested in trying disc golf | Tutorial, approachable UI, learn the rules |
+| **Casual Gamers** | Mobile game enthusiasts | Quick sessions, progression, achievements |
+| **RGDGC Members** | River Grove Disc Golf Club | River Grove course, league integration |
+
+### 1.3 Core Pillars
+
+1. **Authenticity** — Real disc physics, actual flight numbers, PDGA rules
+2. **Accessibility** — Easy to pick up, depth for mastery
+3. **Progression** — Always something to unlock, improve, achieve
+4. **Education** — Every mechanic teaches real disc golf concepts
+
+---
+
+## 2. Game Modes
+
+### 2.1 Mode Overview
+
+| Mode | Description | Session Length | Unlock |
+|------|-------------|----------------|--------|
+| **Quick Round** | Random 9 or 18 holes | 5-15 min | Default |
+| **Career Mode** | Progress through divisions | 15-30 min | Default |
+| **Practice Range** | Free throw practice | Unlimited | Default |
+| **Putting Practice** | C1/C2 drills | 3-10 min | Default |
+| **Tournament** | Compete vs AI or online | 20-40 min | Level 5 |
+| **Pass-n-Play** | Local multiplayer | 10-30 min | Level 3 |
+| **Challenge Mode** | Daily/weekly challenges | 5-10 min | Level 2 |
+| **Course Builder** | Create custom courses | Unlimited | Level 15 |
+
+### 2.2 Quick Round
+
+```
+┌─────────────────────────────────────────────┐
+│           QUICK ROUND                       │
+│                                             │
+│  ┌─────────────────────────────────────┐    │
+│  │  Course: Random                     │    │
+│  │  [🎲 Random] [📋 Select Course]     │    │
+│  └─────────────────────────────────────┘    │
+│                                             │
+│  ┌─────────────────────────────────────┐    │
+│  │  Length:                            │    │
+│  │  [9 Holes] [18 Holes]               │    │
+│  └─────────────────────────────────────┘    │
+│                                             │
+│  ┌─────────────────────────────────────┐    │
+│  │  Conditions:                        │    │
+│  │  Wind: [None] [Light] [Heavy]       │    │
+│  │  Weather: [☀️] [🌧️] [❄️]              │    │
+│  └─────────────────────────────────────┘    │
+│                                             │
+│         [ START ROUND ]                     │
+└─────────────────────────────────────────────┘
+```
+
+### 2.3 Career Mode
+
+**Division Progression:**
+
+```
+Recreational (Start)
+    ↓ Win 3 tournaments
+MA4 (Novice)
+    ↓ Win 5 tournaments, Rating 850+
+MA3 (Intermediate)
+    ↓ Win 5 tournaments, Rating 900+
+MA2 (Advanced)
+    ↓ Win 10 tournaments, Rating 950+
+MA1 (Advanced)
+    ↓ Win 20 tournaments, Rating 1000+
+MPO (Professional)
+    ↓ Special achievements
+Elite Tour
+```
+
+**Career Features:**
+- Simulated rating system (800-1050 range)
+- Sponsorship opportunities (unlock disc bags, apparel)
+- Coach unlocks (tips from "pro" NPCs)
+- Season structure with playoffs
+
+### 2.4 Putting Practice
+
+```
+┌─────────────────────────────────────────────┐
+│           PUTTING PRACTICE                  │
+│                                             │
+│  Drill Selection:                           │
+│                                             │
+│  ┌──────────────────────────┐               │
+│  │ 🎯 CIRCLE OF DEATH       │               │
+│  │ 12 positions, make all   │               │
+│  │ Best: 8/12               │               │
+│  └──────────────────────────┘               │
+│                                             │
+│  ┌──────────────────────────┐               │
+│  │ 📏 LADDER                │               │
+│  │ Start 15ft, +5ft/make    │               │
+│  │ Best: 45ft               │               │
+│  └──────────────────────────┘               │
+│                                             │
+│  ┌──────────────────────────┐               │
+│  │ 🔢 21                    │               │
+│  │ Score points by distance │               │
+│  │ High Score: 21 (7 putts) │               │
+│  └──────────────────────────┘               │
+│                                             │
+│  ┌──────────────────────────┐               │
+│  │ ♾️ FREE PRACTICE          │               │
+│  │ Any distance, unlimited  │               │
+│  └──────────────────────────┘               │
+└─────────────────────────────────────────────┘
+```
+
+---
+
+## 3. Gameplay Mechanics
+
+### 3.1 Throw System
+
+**Input Method: Drag & Release**
+
+```
+┌─────────────────────────────────────────────┐
+│                                             │
+│     [Hole View - 3D Course]                 │
+│                                             │
+│                    🎯                        │
+│                   Basket                     │
+│               (320ft away)                   │
+│                                             │
+│         Trees    Fairway    Trees           │
+│          🌲         .        🌲              │
+│          🌲    .    .   .   🌲              │
+│          🌲       [lie]     🌲              │
+│                    ●                         │
+│                                             │
+│    ┌────────────────────────────────┐       │
+│    │      Aim Direction             │       │
+│    │    ← ● ────────────→           │       │
+│    │      (drag to aim)             │       │
+│    └────────────────────────────────┘       │
+│                                             │
+│    ┌────────────────────────────────┐       │
+│    │   THROW                        │       │
+│    │   ↑ Swipe up to throw         │       │
+│    │   (speed = swipe length)       │       │
+│    └────────────────────────────────┘       │
+│                                             │
+└─────────────────────────────────────────────┘
+```
+
+**Throw Parameters:**
+
+| Input | Affects | Description |
+|-------|---------|-------------|
+| Drag direction | Aim angle | Where you're throwing |
+| Swipe length | Power (%) | 0-100% of disc's max speed |
+| Swipe angle | Release angle | Hyzer/anhyzer/flat |
+| Release timing | Nose angle | Up (lofty) / Down (skip) |
+
+### 3.2 Disc Flight Physics
+
+Each disc has four flight numbers that determine its behavior:
+
+```typescript
+interface DiscFlightNumbers {
+  speed: number;      // 1-15: Power needed for full flight
+  glide: number;      // 1-7: Air time / lift
+  turn: number;       // -5 to +1: High-speed curve (negative = right for RHBH)
+  fade: number;       // 0-5: Low-speed hook (left for RHBH)
+}
+
+// Example discs
+const discs: Record<string, DiscFlightNumbers> = {
+  'Innova Destroyer': { speed: 12, glide: 5, turn: -1, fade: 3 },
+  'Discraft Buzzz': { speed: 5, glide: 4, turn: -1, fade: 1 },
+  'Dynamic Discs Judge': { speed: 2, glide: 4, turn: 0, fade: 1 },
+  'MVP Volt': { speed: 8, glide: 5, turn: -0.5, fade: 2 },
+};
+```
+
+**Flight Path Calculation:**
+
+```typescript
+function calculateFlightPath(
+  disc: DiscFlightNumbers,
+  throwPower: number,        // 0-100%
+  releaseAngle: number,      // degrees: negative = hyzer, positive = anhyzer
+  noseAngle: number,         // degrees: up/down
+  windSpeed: number,         // mph
+  windDirection: number      // degrees relative to throw
+): FlightPath {
+  
+  const maxDistance = getMaxDistance(disc.speed, throwPower);
+  const actualPower = throwPower / 100;
+  
+  // High-speed phase (affected by turn)
+  const highSpeedPhase = maxDistance * 0.6;
+  const turnAmount = disc.turn * actualPower * (1 + releaseAngle / 45);
+  
+  // Low-speed phase (affected by fade)
+  const lowSpeedPhase = maxDistance * 0.4;
+  const fadeAmount = disc.fade * (1 - actualPower * 0.3);
+  
+  // Glide affects total distance and height
+  const glideFactor = disc.glide / 5;
+  const peakHeight = 15 + (disc.glide * 3) + (noseAngle * 0.5);
+  
+  // Wind effects
+  const headwindFactor = Math.cos(windDirection * Math.PI / 180);
+  const crosswindFactor = Math.sin(windDirection * Math.PI / 180);
+  
+  // Headwind increases stability (less turn, more fade)
+  const adjustedTurn = turnAmount - (headwindFactor * windSpeed * 0.02);
+  const adjustedFade = fadeAmount + (headwindFactor * windSpeed * 0.01);
+  
+  // Crosswind pushes disc
+  const crosswindPush = crosswindFactor * windSpeed * 0.5;
+  
+  // Generate path points
+  const path: Point3D[] = [];
+  const segments = 50;
+  
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments;
+    const distance = maxDistance * t;
+    
+    // Horizontal movement (turn then fade)
+    let lateral = 0;
+    if (t < 0.6) {
+      // High-speed turn
+      lateral = adjustedTurn * (t / 0.6) * (t / 0.6);
+    } else {
+      // Low-speed fade
+      const fadeT = (t - 0.6) / 0.4;
+      lateral = adjustedTurn + adjustedFade * fadeT * fadeT;
+    }
+    
+    // Add crosswind
+    lateral += crosswindPush * t;
+    
+    // Vertical movement (parabolic with glide extension)
+    const normalizedHeight = -4 * (t - 0.35) * (t - 0.35) + 1;
+    const height = peakHeight * normalizedHeight * glideFactor;
+    
+    path.push({
+      x: distance,
+      y: Math.max(0, height),
+      z: lateral
+    });
+  }
+  
+  return {
+    points: path,
+    totalDistance: maxDistance,
+    landingAngle: calculateLandingAngle(path),
+    flightTime: maxDistance / (disc.speed * 10)
+  };
+}
+
+function getMaxDistance(speed: number, powerPercent: number): number {
+  // Base distance formula (in feet)
+  const baseDistance = 150 + (speed * 25);
+  return baseDistance * (powerPercent / 100);
+}
+```
+
+### 3.3 Putting Mechanics
+
+Simplified putting with the physics model:
+
+```typescript
+interface PuttAttempt {
+  distance: number;        // feet
+  aimOffset: number;       // degrees off center
+  powerOffset: number;     // % off perfect power
+  windEffect: number;      // random wind gust
+}
+
+function simulatePutt(attempt: PuttAttempt, playerSkill: PlayerSkill): PuttResult {
+  const basketRadius = 10.625;  // inches
+  const discRadius = 4.25;      // inches
+  
+  // Calculate if disc hits chains
+  const effectiveRadius = basketRadius - discRadius;
+  
+  // Angular error (in inches at basket)
+  const distanceInches = attempt.distance * 12;
+  const lateralError = Math.tan(attempt.aimOffset * Math.PI / 180) * distanceInches;
+  
+  // Add player skill variance
+  const skillVariance = playerSkill.puttingAccuracy;
+  const actualLateral = lateralError + randomNormal(0, skillVariance);
+  
+  // Distance error
+  const distanceError = attempt.powerOffset * attempt.distance * 0.02;
+  const actualDistance = attempt.distance + distanceError + attempt.windEffect;
+  
+  // Check if putt hits basket
+  const hitChains = Math.abs(actualLateral) < effectiveRadius && 
+                    actualDistance >= attempt.distance - 1 &&
+                    actualDistance <= attempt.distance + 3;
+  
+  // Even if hits chains, there's a small chance of spit-out
+  const made = hitChains && Math.random() > 0.05;
+  
+  return {
+    made,
+    lateralError: actualLateral,
+    distanceError: actualDistance - attempt.distance,
+    chainHit: hitChains && !made,
+    result: made ? 'made' : hitChains ? 'spit_out' : 
+            actualLateral > 0 ? 'miss_right' : 'miss_left'
+  };
+}
+```
+
+### 3.4 Scoring
+
+Standard disc golf scoring with visual feedback:
+
+| Score | Name | Visual | Sound |
+|-------|------|--------|-------|
+| -3 | Albatross | 🦅🦅🦅 Gold explosion | Epic fanfare |
+| -2 | Eagle | 🦅🦅 Gold glow | Triumphant |
+| -1 | Birdie | 🐦 Green sparkle | Upbeat chime |
+| 0 | Par | ⚪ Subtle | Neutral tone |
+| +1 | Bogey | 🟡 Yellow tint | Slight descend |
+| +2 | Double Bogey | 🟠 Orange | Lower tone |
+| +3+ | Triple+ | 🔴 Red | Comedic |
+
+---
+
+## 4. Progression System
+
+### 4.1 Experience Points (XP)
+
+```typescript
+const XP_REWARDS = {
+  // Round completion
+  completeRound: 50,
+  completeRound18: 100,
+  
+  // Score-based
+  parHole: 5,
+  birdieHole: 15,
+  eagleHole: 50,
+  albatrossHole: 200,
+  aceHole: 500,
+  
+  // Round performance
+  underParRound: 25,
+  parRound: 10,
+  personalBest: 100,
+  
+  // Milestones
+  first100Rounds: 500,
+  first1000Throws: 200,
+  
+  // Daily
+  dailyLogin: 10,
+  dailyChallenge: 50,
+  weeklyChallenge: 200
+};
+```
+
+### 4.2 Level System
+
+```
+Level 1:   0 XP      - Tutorial complete
+Level 2:   100 XP    - Challenge Mode unlocked
+Level 3:   250 XP    - Pass-n-Play unlocked
+Level 4:   500 XP    - Custom bag unlocked
+Level 5:   1000 XP   - Tournament Mode unlocked
+Level 10:  5000 XP   - Pro discs available
+Level 15:  15000 XP  - Course Builder unlocked
+Level 20:  30000 XP  - Weather effects unlocked
+Level 25:  50000 XP  - Pro Tour courses unlocked
+Level 50:  200000 XP - Everything unlocked, prestige available
+```
+
+### 4.3 Skill Tree
+
+```
+                    ┌─────────────────┐
+                    │   SKILL TREE    │
+                    └────────┬────────┘
+           ┌─────────────────┼─────────────────┐
+           │                 │                 │
+    ┌──────▼──────┐   ┌──────▼──────┐   ┌──────▼──────┐
+    │   POWER     │   │  ACCURACY   │   │   PUTTING   │
+    │   Branch    │   │   Branch    │   │   Branch    │
+    └──────┬──────┘   └──────┬──────┘   └──────┬──────┘
+           │                 │                 │
+    ┌──────▼──────┐   ┌──────▼──────┐   ┌──────▼──────┐
+    │ Arm Speed   │   │ Release     │   │ C1 Mastery  │
+    │ +5% power   │   │ Consistency │   │ +5% C1      │
+    └──────┬──────┘   │ +3% acc     │   └──────┬──────┘
+           │          └──────┬──────┘          │
+    ┌──────▼──────┐   ┌──────▼──────┐   ┌──────▼──────┐
+    │ Hip Rotation│   │ Wind        │   │ C2 Reach    │
+    │ +8% power   │   │ Reading     │   │ +5% C2      │
+    └──────┬──────┘   │ -10% wind   │   └──────┬──────┘
+           │          └──────┬──────┘          │
+    ┌──────▼──────┐   ┌──────▼──────┐   ┌──────▼──────┐
+    │ X-Step      │   │ Line        │   │ Pressure    │
+    │ Master      │   │ Shaping     │   │ Putting     │
+    │ +12% power  │   │ New angles  │   │ -5% nerves  │
+    └─────────────┘   └─────────────┘   └─────────────┘
+```
+
+**Skill Points:** Earned at each level (1 per level, bonus at milestone levels)
+
+### 4.4 Disc Collection
+
+**Unlockable Discs:**
+
+| Tier | Examples | Unlock Method |
+|------|----------|---------------|
+| **Starter** | DX Aviar, DX Shark, DX Valkyrie | Default |
+| **Intermediate** | Champion Roc3, Star Destroyer | Level 5+ |
+| **Premium** | Halo Destroyer, Sexton Firebird | Level 10+ / Achievements |
+| **Pro Signature** | McBeth Luna, Eagle Enigma | Tournament wins |
+| **Legendary** | First Run CE, Proto discs | Rare achievements |
+| **RGDGC Special** | River Grove Custom Stamp | RGDGC membership |
+
+**Disc Stats:**
+
+```typescript
+interface GameDisc {
+  id: string;
+  name: string;
+  manufacturer: string;
+  flightNumbers: DiscFlightNumbers;
+  plastic: string;          // 'DX', 'Star', 'Champion', etc.
+  weight: number;           // 165-175g
+  condition: number;        // 0-100%, affects flight
+  customStamp?: string;     // Custom art
+  
+  // Game stats
+  throwsWithDisc: number;
+  acesWithDisc: number;
+  favoriteHole?: string;
+}
+```
+
+---
+
+## 5. Courses
+
+### 5.1 Course Types
+
+| Type | Description | Example |
+|------|-------------|---------|
+| **Tutorial** | Simple 9-hole course | "Learning Links" |
+| **Recreation** | Easy, beginner-friendly | "River Grove (Shorts)" |
+| **Standard** | Average difficulty | "River Grove (Longs)" |
+| **Championship** | Pro-level design | "Maple Hill Diamond" |
+| **Fantasy** | Impossible real-world layouts | "Sky Castle" |
+
+### 5.2 River Grove Park (Home Course)
+
+```
+┌─────────────────────────────────────────────┐
+│   RIVER GROVE PARK                          │
+│   Kingwood, TX                              │
+│   ★★★★☆ (4.2) | 21 Holes | Free             │
+│                                             │
+│   Layouts:                                  │
+│   ┌───────────────────────────────────┐     │
+│   │ 🟢 Shorts (Beginner)              │     │
+│   │ Par 63 | 4,200 ft | 21 holes      │     │
+│   └───────────────────────────────────┘     │
+│                                             │
+│   ┌───────────────────────────────────┐     │
+│   │ 🟡 Longs (Intermediate)           │     │
+│   │ Par 63 | 5,800 ft | 21 holes      │     │
+│   └───────────────────────────────────┘     │
+│                                             │
+│   ┌───────────────────────────────────┐     │
+│   │ 🔴 Championship (Advanced)        │     │
+│   │ Par 66 | 7,200 ft | 21 holes      │     │
+│   │ 🔒 Unlock: Complete Longs under par│    │
+│   └───────────────────────────────────┘     │
+│                                             │
+│   Course Records:                           │
+│   Shorts: -12 (You: -4)                     │
+│   Longs: -8 (You: +2)                       │
+│                                             │
+└─────────────────────────────────────────────┘
+```
+
+**Hole Example - River Grove Hole 7:**
+
+```
+┌─────────────────────────────────────────────┐
+│   HOLE 7 - "The Tunnel"                     │
+│   Par 3 | 285 ft | Wooded                   │
+│                                             │
+│   ┌─────────────────────────────────┐       │
+│   │  🌲🌲     🌲🌲                    │       │
+│   │  🌲  ─────────────  🌲           │       │
+│   │  🌲    fairway      🌲   🎯      │       │
+│   │  🌲  ─────────────  🌲 basket    │       │
+│   │  🌲🌲     🌲🌲                    │       │
+│   │                                 │       │
+│   │   ● tee                         │       │
+│   └─────────────────────────────────┘       │
+│                                             │
+│   Strategy Tips:                            │
+│   • Tight tunnel shot required              │
+│   • Midrange or stable fairway driver       │
+│   • Watch for kick off trees on right       │
+│                                             │
+│   Your Stats (23 rounds):                   │
+│   Average: 3.2 | Birdies: 8 | Pars: 12      │
+│                                             │
+└─────────────────────────────────────────────┘
+```
+
+### 5.3 Course Unlocks
+
+| Course | Unlock Requirement |
+|--------|-------------------|
+| River Grove (Shorts) | Default - Tutorial complete |
+| River Grove (Longs) | Level 3 |
+| Bear Creek | Level 5 |
+| TC Jester | Level 8 |
+| Brock Park | Level 10 + Win MA4 tournament |
+| Maple Hill (DGPT) | Level 20 |
+| Smuggler's Notch | Level 25 |
+| Pro Tour Courses | Tournament mode progression |
+
+---
+
+## 6. User Interface
+
+### 6.1 Main Menu
+
+```
+┌─────────────────────────────────────────────┐
+│                                             │
+│           🥏 DISC GOLF PRO 🥏               │
+│                                             │
+│   ┌─────────┐  Player: Blake                │
+│   │ Avatar  │  Level 12 ████████░░ 73%      │
+│   │   😊    │  Rating: 892                  │
+│   └─────────┘  Division: MA3                │
+│                                             │
+│   ┌─────────────────────────────────────┐   │
+│   │         🎮 QUICK ROUND              │   │
+│   └─────────────────────────────────────┘   │
+│                                             │
+│   ┌─────────────────────────────────────┐   │
+│   │         🏆 CAREER MODE              │   │
+│   └─────────────────────────────────────┘   │
+│                                             │
+│   ┌────────────┐  ┌────────────┐            │
+│   │ 🎯 PUTTING │  │ 🎒 MY BAG  │            │
+│   └────────────┘  └────────────┘            │
+│                                             │
+│   ┌────────────┐  ┌────────────┐            │
+│   │ 🏅 ACHIEVE │  │ ⚙️ SETTINGS│            │
+│   └────────────┘  └────────────┘            │
+│                                             │
+│   Daily Challenge: Make 5 birdies 🎁        │
+│                                             │
+└─────────────────────────────────────────────┘
+```
+
+### 6.2 In-Round HUD
+
+```
+┌─────────────────────────────────────────────┐
+│ Hole 7/18   Par 3   285 ft   🌬️ 8mph →     │
+├─────────────────────────────────────────────┤
+│                                             │
+│                                             │
+│              [3D HOLE VIEW]                 │
+│                                             │
+│                                             │
+│                                             │
+│                                             │
+├─────────────────────────────────────────────┤
+│                                             │
+│  Disc: Star Destroyer (12/5/-1/3)           │
+│  [◀ Previous]  [Disc Icon]  [Next ▶]        │
+│                                             │
+│  ┌─────────────────────────────────────┐    │
+│  │          [AIM ZONE]                 │    │
+│  │     Drag to aim • Swipe to throw    │    │
+│  └─────────────────────────────────────┘    │
+│                                             │
+│  Throw: 1   Lie: Tee   Score: E             │
+│                                             │
+└─────────────────────────────────────────────┘
+```
+
+### 6.3 Scorecard
+
+```
+┌─────────────────────────────────────────────┐
+│              SCORECARD                      │
+│   River Grove - Longs                       │
+├─────────────────────────────────────────────┤
+│ Hole │ 1  │ 2  │ 3  │ 4  │ 5  │ 6  │ OUT   │
+│ Par  │ 3  │ 3  │ 4  │ 3  │ 3  │ 4  │ 20    │
+│ You  │ 3  │ 2🐦│ 4  │ 4  │ 3  │ 3🐦│ 19    │
+├─────────────────────────────────────────────┤
+│ Hole │ 7  │ 8  │ 9  │ 10 │ 11 │ 12 │ IN    │
+│ Par  │ 3  │ 3  │ 4  │ 3  │ 3  │ 4  │ 20    │
+│ You  │ •  │ •  │ •  │ •  │ •  │ •  │ •     │
+├─────────────────────────────────────────────┤
+│ Total: -1 (19)   Thru 6                     │
+│                                             │
+│ 🐦 Birdies: 2  ⚪ Pars: 3  🟡 Bogeys: 1     │
+│ Fairways: 4/6  C1X: 5/5  C2: 1/2            │
+└─────────────────────────────────────────────┘
+```
+
+---
+
+## 7. Audio Design
+
+### 7.1 Sound Effects
+
+| Action | Sound Description |
+|--------|-------------------|
+| **Disc throw** | Whoosh, varies by power |
+| **Disc flight** | Subtle air sound |
+| **Tree hit** | Thunk, crack depending on impact |
+| **Ground landing** | Soft thud, skipping sounds |
+| **Chain hit** | Realistic chain rattle |
+| **Basket drop** | Satisfying metallic clang |
+| **Spit out** | Chain rattle + sad trombone (optional) |
+| **Ace** | Explosive chain sound + celebration |
+
+### 7.2 Music
+
+| Context | Style |
+|---------|-------|
+| **Main menu** | Chill acoustic, nature sounds |
+| **In-round** | Ambient, non-distracting |
+| **Tournament** | Building tension |
+| **Victory** | Triumphant, celebratory |
+| **Putting drill** | Focus-inducing, minimal |
+
+---
+
+## 8. Monetization
+
+### 8.1 Free-to-Play Model
+
+**Free Features:**
+- All core gameplay
+- River Grove course
+- Starter disc bag
+- Career mode (MA4-MA2)
+- Basic putting practice
+- Limited daily challenges
+
+**Premium Currency ($RGDG Coins):**
+
+| Item | Cost |
+|------|------|
+| Premium disc | 100-500 coins |
+| Course unlock | 200-1000 coins |
+| Custom stamp | 50 coins |
+| Bag slot | 100 coins |
+| XP boost (24hr) | 50 coins |
+
+**Coin Acquisition:**
+- Daily login: 5 coins
+- Watch ad: 10 coins
+- Complete challenge: 10-50 coins
+- Purchase: $0.99 = 100 coins, $4.99 = 600 coins, $9.99 = 1500 coins
+
+### 8.2 Premium Pass ($4.99/month)
+
+- Ad-free experience
+- 2x XP gain
+- Exclusive discs monthly
+- Early access to new courses
+- Unlimited bag slots
+- Custom avatar items
+
+### 8.3 RGDGC Integration
+
+**RGDGC Members Get:**
+- River Grove all layouts free
+- RGDGC custom disc stamp
+- League standings integration
+- Member-exclusive tournaments
+- Real $RGDG token rewards
+
+---
+
+## 9. Technical Implementation
+
+### 9.1 Tech Stack
+
+| Component | Technology |
+|-----------|------------|
+| **Engine** | Unity 2022 LTS or React Native + Three.js |
+| **2D UI** | React Native / Unity UI Toolkit |
+| **3D Graphics** | Three.js (web) / Unity (native) |
+| **Physics** | Custom disc flight physics |
+| **Backend** | RGDGC FastAPI server |
+| **Auth** | JWT + optional MetaMask |
+| **Analytics** | Firebase Analytics |
+| **Ads** | AdMob |
+
+### 9.2 React Native + Three.js Approach
+
+```typescript
+// App.tsx
+import React, { useState } from 'react';
+import { View, StyleSheet } from 'react-native';
+import { Canvas } from '@react-three/fiber/native';
+import { CourseScene } from './components/CourseScene';
+import { GameHUD } from './components/GameHUD';
+import { ThrowControls } from './components/ThrowControls';
+import { useGameState } from './hooks/useGameState';
+
+export const GameScreen: React.FC = () => {
+  const { 
+    currentHole, 
+    playerPosition, 
+    selectedDisc,
+    throwDisc,
+    gameState 
+  } = useGameState();
+  
+  return (
+    <View style={styles.container}>
+      {/* 3D Course View */}
+      <Canvas>
+        <CourseScene
+          hole={currentHole}
+          playerPosition={playerPosition}
+          basketPosition={currentHole.basket}
+        />
+      </Canvas>
+      
+      {/* HUD Overlay */}
+      <GameHUD
+        holeNumber={currentHole.number}
+        par={currentHole.par}
+        distance={currentHole.distance}
+        throws={gameState.currentThrow}
+        score={gameState.totalScore}
+      />
+      
+      {/* Throw Controls */}
+      <ThrowControls
+        selectedDisc={selectedDisc}
+        onThrow={throwDisc}
+        disabled={gameState.discInFlight}
+      />
+    </View>
+  );
+};
+
+// CourseScene.tsx
+import { useFrame } from '@react-three/fiber/native';
+import { useRef } from 'react';
+import * as THREE from 'three';
+
+export const CourseScene: React.FC<CourseSceneProps> = ({
+  hole,
+  playerPosition,
+  basketPosition
+}) => {
+  const discRef = useRef<THREE.Mesh>(null);
+  const [flightPath, setFlightPath] = useState<Point3D[]>([]);
+  const [flightProgress, setFlightProgress] = useState(0);
+  
+  useFrame((state, delta) => {
+    if (flightPath.length > 0 && flightProgress < 1) {
+      // Animate disc along flight path
+      const newProgress = Math.min(flightProgress + delta * 0.5, 1);
+      setFlightProgress(newProgress);
+      
+      const pathIndex = Math.floor(newProgress * (flightPath.length - 1));
+      const point = flightPath[pathIndex];
+      
+      if (discRef.current) {
+        discRef.current.position.set(point.x, point.y, point.z);
+        // Add rotation based on disc spin
+        discRef.current.rotation.y += delta * 10;
+      }
+    }
+  });
+  
+  return (
+    <>
+      {/* Lighting */}
+      <ambientLight intensity={0.5} />
+      <directionalLight position={[10, 10, 5]} intensity={1} />
+      
+      {/* Ground/Fairway */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+        <planeGeometry args={[500, 500]} />
+        <meshStandardMaterial color="#228B22" />
+      </mesh>
+      
+      {/* Trees */}
+      {hole.obstacles.filter(o => o.type === 'tree').map((tree, i) => (
+        <Tree key={i} position={tree.position} />
+      ))}
+      
+      {/* Basket */}
+      <Basket position={basketPosition} />
+      
+      {/* Disc */}
+      <mesh ref={discRef} position={playerPosition}>
+        <cylinderGeometry args={[0.11, 0.11, 0.02, 32]} />
+        <meshStandardMaterial color="#FF6B35" />
+      </mesh>
+      
+      {/* Flight path preview */}
+      {flightPath.length > 0 && (
+        <Line points={flightPath} color="#FFD700" lineWidth={2} />
+      )}
+    </>
+  );
+};
+```
+
+### 9.3 Offline Mode
+
+```typescript
+// offlineStorage.ts
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+interface OfflineRound {
+  id: string;
+  course: string;
+  layout: string;
+  scores: number[];
+  stats: RoundStats;
+  completedAt: Date;
+  synced: boolean;
+}
+
+class OfflineStorage {
+  private ROUNDS_KEY = '@offline_rounds';
+  private PROGRESS_KEY = '@player_progress';
+  
+  async saveRound(round: OfflineRound): Promise<void> {
+    const existing = await this.getUnsynedRounds();
+    existing.push(round);
+    await AsyncStorage.setItem(this.ROUNDS_KEY, JSON.stringify(existing));
+  }
+  
+  async getUnsynedRounds(): Promise<OfflineRound[]> {
+    const data = await AsyncStorage.getItem(this.ROUNDS_KEY);
+    if (!data) return [];
+    
+    const rounds: OfflineRound[] = JSON.parse(data);
+    return rounds.filter(r => !r.synced);
+  }
+  
+  async syncWithServer(): Promise<void> {
+    const rounds = await this.getUnsynedRounds();
+    
+    for (const round of rounds) {
+      try {
+        await api.post('/api/v1/rounds', round);
+        round.synced = true;
+      } catch (error) {
+        console.error('Failed to sync round:', error);
+      }
+    }
+    
+    // Save updated sync status
+    const allRounds = await AsyncStorage.getItem(this.ROUNDS_KEY);
+    if (allRounds) {
+      const parsed: OfflineRound[] = JSON.parse(allRounds);
+      for (const round of parsed) {
+        const synced = rounds.find(r => r.id === round.id);
+        if (synced) round.synced = synced.synced;
+      }
+      await AsyncStorage.setItem(this.ROUNDS_KEY, JSON.stringify(parsed));
+    }
+  }
+}
+```
+
+---
+
+## 10. Development Roadmap
+
+### Phase 1: MVP (8 weeks)
+
+| Week | Deliverable |
+|------|-------------|
+| 1-2 | Core throw mechanics, basic flight physics |
+| 3-4 | Single hole playable, putting mechanics |
+| 5-6 | Full 9-hole round, scoring, River Grove course |
+| 7-8 | Basic UI, tutorial, offline play |
+
+### Phase 2: Polish (4 weeks)
+
+| Week | Deliverable |
+|------|-------------|
+| 9-10 | 18-hole support, career mode basics |
+| 11-12 | Sound, visual polish, performance optimization |
+
+### Phase 3: Features (6 weeks)
+
+| Week | Deliverable |
+|------|-------------|
+| 13-14 | Disc collection, progression system |
+| 15-16 | Additional courses, putting practice modes |
+| 17-18 | Tournament mode, daily challenges |
+
+### Phase 4: Launch (4 weeks)
+
+| Week | Deliverable |
+|------|-------------|
+| 19-20 | Beta testing, bug fixes |
+| 21-22 | App Store submission, soft launch |
+
+---
+
+## 11. Analytics Events
+
+```typescript
+const ANALYTICS_EVENTS = {
+  // Session
+  SESSION_START: 'session_start',
+  SESSION_END: 'session_end',
+  
+  // Rounds
+  ROUND_START: 'round_start',
+  ROUND_COMPLETE: 'round_complete',
+  ROUND_ABANDON: 'round_abandon',
+  
+  // Gameplay
+  THROW_MADE: 'throw_made',
+  PUTT_ATTEMPT: 'putt_attempt',
+  ACE_MADE: 'ace_made',
+  BIRDIE_MADE: 'birdie_made',
+  
+  // Progression
+  LEVEL_UP: 'level_up',
+  SKILL_UNLOCKED: 'skill_unlocked',
+  DISC_UNLOCKED: 'disc_unlocked',
+  COURSE_UNLOCKED: 'course_unlocked',
+  
+  // Monetization
+  PURCHASE_STARTED: 'purchase_started',
+  PURCHASE_COMPLETE: 'purchase_complete',
+  AD_WATCHED: 'ad_watched',
+  
+  // Engagement
+  DAILY_LOGIN: 'daily_login',
+  CHALLENGE_COMPLETE: 'challenge_complete',
+  TUTORIAL_COMPLETE: 'tutorial_complete'
+};
+```
+
+---
+
+## 12. Appendix
+
+### A. Flight Number Reference
+
+| Disc Type | Speed | Glide | Turn | Fade | Example |
+|-----------|-------|-------|------|------|---------|
+| Putter | 1-3 | 3-5 | 0 to -1 | 0-2 | Aviar |
+| Midrange | 4-6 | 4-6 | -2 to +1 | 0-3 | Buzzz |
+| Fairway | 7-9 | 4-6 | -2 to +1 | 1-3 | Teebird |
+| Distance | 10-14 | 4-6 | -3 to 0 | 2-4 | Destroyer |
+
+### B. PDGA Rules Simplified
+
+1. **Teeing Off**: Both feet must be behind the front of the tee
+2. **Lie**: Disc must be within 30cm of previous landing spot
+3. **Putting (C1)**: No follow-through past lie on putts inside 10m
+4. **OB**: 1 stroke penalty, play from last in-bounds or designated drop zone
+5. **Mandos**: Must pass mandatory on correct side or replay from previous lie
+
+### C. Glossary
+
+| Term | Definition |
+|------|------------|
+| **Ace** | Hole-in-one |
+| **Anhyzer** | Release angle tilted away from body |
+| **Hyzer** | Release angle tilted toward body |
+| **C1/C2** | Circle 1 (10m) / Circle 2 (20m) |
+| **OB** | Out of bounds |
+| **Mando** | Mandatory - must pass on specified side |
+
+---
+
+*Document Version: 1.0*
+*Last Updated: March 2026*
+*Author: RGDGC Development Team*
