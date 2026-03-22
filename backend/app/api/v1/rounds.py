@@ -228,6 +228,14 @@ async def complete_round(
             db.add(event_result)
             await db.flush()
 
+    # --- Award $RGDG tokens for round completion (fire and forget) ---
+    if not round_.is_practice:
+        try:
+            from app.services.token_service import award_round_completion
+            await award_round_completion(db, user.id)
+        except Exception:
+            pass  # Token reward failure must never break round completion
+
     # --- Auto-calculate handicap on round completion ---
     if not round_.is_practice:
         await _update_handicap(user, db)

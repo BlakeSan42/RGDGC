@@ -367,4 +367,48 @@ export async function createAnnouncement(title: string, body: string): Promise<{
   return data;
 }
 
+// --- Club Leader Analytics ---
+
+export const analyticsApi = {
+  // Financial
+  financialSummary: (months = 12) =>
+    api.get(`/admin/analytics/financial/summary?months=${months}`).then(r => r.data),
+  cashFlow: (months = 12) =>
+    api.get(`/admin/analytics/financial/cashflow?months=${months}`).then(r => r.data),
+  eventBreakdown: (leagueId?: number) =>
+    api.get(`/admin/analytics/financial/event-breakdown${leagueId ? `?league_id=${leagueId}` : ''}`).then(r => r.data),
+  unpaidFees: () =>
+    api.get('/admin/analytics/financial/unpaid').then(r => r.data),
+
+  // Membership
+  segments: () =>
+    api.get('/admin/analytics/membership/segments').then(r => r.data),
+  retention: (months = 6) =>
+    api.get(`/admin/analytics/membership/retention?cohort_months=${months}`).then(r => r.data),
+  churnRisk: () =>
+    api.get('/admin/analytics/membership/churn-risk').then(r => r.data),
+
+  // Performance
+  courseDifficulty: () =>
+    api.get('/admin/analytics/performance/course-difficulty').then(r => r.data),
+  puttingSummary: () =>
+    api.get('/admin/analytics/performance/putting-summary').then(r => r.data),
+  scoringTrends: (weeks = 12) =>
+    api.get(`/admin/analytics/performance/scoring-trends?weeks=${weeks}`).then(r => r.data),
+
+  // Operations
+  eventCalendar: (months = 3) =>
+    api.get(`/admin/analytics/operations/event-calendar?months_ahead=${months}`).then(r => r.data),
+  usageHeatmap: () =>
+    api.get('/admin/analytics/operations/usage-heatmap').then(r => r.data),
+
+  // Strategic
+  growthDrivers: () =>
+    api.get('/admin/analytics/strategic/growth-drivers').then(r => r.data),
+  revenueForecast: (months = 6) =>
+    api.get(`/admin/analytics/strategic/revenue-forecast?months_ahead=${months}`).then(r => r.data),
+  communityHealth: () =>
+    api.get('/admin/analytics/strategic/community-health').then(r => r.data),
+};
+
 export default api;

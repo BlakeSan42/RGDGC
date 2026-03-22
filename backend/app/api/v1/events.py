@@ -150,6 +150,18 @@ async def finalize(
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
+    # Award $RGDG tokens for top 3 placements (fire and forget)
+    try:
+        from app.services.token_service import award_event_placement
+        for r in results:
+            if r.position and r.position <= 3 and not r.dnf and not r.dq:
+                try:
+                    await award_event_placement(db, r.user_id, event_id, r.position)
+                except Exception:
+                    pass  # Individual award failure must not block others
+    except Exception:
+        pass  # Token reward failure must never break finalization
+
     # Invalidate leaderboard cache for this event's league
     event = await db.get(Event, event_id)
     if event and event.league_id:

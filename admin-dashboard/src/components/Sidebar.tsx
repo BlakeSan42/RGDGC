@@ -12,6 +12,7 @@ import {
   Shield,
   CarFront,
   BookOpen,
+  BarChart3,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -27,6 +28,7 @@ const navItems: Array<{ to: string; icon: any; label: string; end?: boolean; div
   { to: '/discs', icon: Disc3, label: 'Discs' },
   { to: '/stickers', icon: Tag, label: 'Stickers' },
   { to: '/treasury', icon: Wallet, label: 'Treasury' },
+  { to: '/analytics', icon: BarChart3, label: 'Analytics', divider: true },
   { to: '/settings', icon: Settings, label: 'Settings' },
   { to: '/ksa-intel', icon: Shield, label: 'KSA Intel', divider: true },
   { to: '/ksa-intel/articles', icon: BookOpen, label: 'Knowledge Base' },
@@ -78,7 +80,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               {item.divider && (
                 <div className="mt-4 mb-2 px-3 pt-3 border-t border-forest-700">
                   <p className="text-[10px] uppercase tracking-wider text-forest-400 font-semibold">
-                    Intelligence
+                    {item.to.includes('ksa') ? 'Intelligence' : 'Club Management'}
                   </p>
                 </div>
               )}

@@ -27,6 +27,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import get_settings
 from app.core.security import get_current_user
 from app.db.database import get_db
+from app.models.disc import RegisteredDisc
 from app.models.user import User
 from app.services.storage_service import delete_file, upload_file
 from app.schemas.disc import (
@@ -231,12 +232,37 @@ async def confirm_disc_returned(
     db: AsyncSession = Depends(get_db),
 ):
     """Confirm a disc has been returned. Only the disc owner can do this."""
+    # Grab finder user IDs from open found reports BEFORE resolving them
+    from app.models.disc import DiscFoundReport
+    finder_ids_result = await db.execute(
+        select(DiscFoundReport.finder_user_id).join(
+            RegisteredDisc, DiscFoundReport.disc_id == RegisteredDisc.id
+        ).where(
+            RegisteredDisc.disc_code == disc_code,
+            DiscFoundReport.resolved.is_(False),
+            DiscFoundReport.finder_user_id.isnot(None),
+        )
+    )
+    finder_user_ids = [row[0] for row in finder_ids_result.all()]
+
     try:
         disc = await confirm_returned(db, disc_code, user.id)
     except ValueError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Disc not found")
     except PermissionError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the disc owner can confirm return")
+
+    # Award $RGDG tokens to finders who are registered users (fire and forget)
+    try:
+        from app.services.token_service import award_disc_return
+        for finder_id in finder_user_ids:
+            if finder_id != user.id:  # Don't reward yourself
+                try:
+                    await award_disc_return(db, finder_id, user.id)
+                except Exception:
+                    pass
+    except Exception:
+        pass  # Token reward failure must never break disc return
 
     return DiscResponse(
         id=disc.id,
