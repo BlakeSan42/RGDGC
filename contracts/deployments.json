@@ -1,0 +1,20 @@
+{
+  "network": "sepolia",
+  "chainId": 11155111,
+  "deployer": "0x7d6EA7224ee396d27dcd1Fee9852aB3a567b534A",
+  "deployedAt": "2026-03-22T22:20:00.000Z",
+  "contracts": {
+    "RGDGToken": {
+      "address": "0x91c4348E39B021031b617A74D836f395715fA92F",
+      "initialSupply": "1000000 RGDG"
+    },
+    "RGDGTreasury": {
+      "address": "0x0E9E12cfd11249f4f7e9a3781f9833e7d76c21B4",
+      "eventFee": "10 RGDG",
+      "initialFunding": "500,000 RGDG"
+    },
+    "DiscRegistry": {
+      "address": "0x7ebC421d1AcD36Af2b823CBA4afBEA2497f472bf"
+    }
+  }
+}
