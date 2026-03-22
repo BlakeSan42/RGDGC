@@ -21,12 +21,11 @@ class RGDGCClient:
     gracefully.
     """
 
-    def __init__(self, base_url: str, api_key: str, timeout: float = 10.0) -> None:
+    def __init__(self, base_url: str, api_key: str = "", timeout: float = 10.0) -> None:
         self._base_url = base_url.rstrip("/")
-        self._headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Accept": "application/json",
-        }
+        self._headers: dict[str, str] = {"Accept": "application/json"}
+        if api_key:
+            self._headers["Authorization"] = f"Bearer {api_key}"
         self._timeout = timeout
         self._client: httpx.AsyncClient | None = None
 

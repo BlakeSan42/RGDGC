@@ -48,6 +48,11 @@ class Settings(BaseSettings):
     # Generate with: python3 -c "import secrets; print(secrets.token_hex(32))"
     owner_key: str = ""
 
+    # Stripe Payments
+    stripe_secret_key: str = ""
+    stripe_publishable_key: str = ""
+    stripe_webhook_secret: str = ""
+
     # Blockchain (P1)
     web3_provider_url: str = ""  # e.g. https://sepolia.infura.io/v3/YOUR_KEY
     rgdg_token_address: str = ""  # Deployed RGDGToken contract address

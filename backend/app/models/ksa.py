@@ -14,7 +14,7 @@ from sqlalchemy import (
     Enum as SAEnum, JSON
 )
 from sqlalchemy.orm import relationship
-from app.db.database import Base
+from app.models import Base
 import enum
 
 

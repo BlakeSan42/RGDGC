@@ -1,13 +1,11 @@
-import { useState, useEffect } from "react";
-import { View, Text, TextInput, StyleSheet, Alert, KeyboardAvoidingView, Platform, TouchableOpacity, ActivityIndicator } from "react-native";
+import { useEffect } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import * as AppleAuthentication from "expo-apple-authentication";
 import Constants from "expo-constants";
 import { useAuth } from "@/context/AuthContext";
 import { useGoogleAuth } from "@/hooks/useGoogleAuth";
-import { Button } from "@/components/common/Button";
 import { colors, spacing, fontSize, borderRadius } from "@/constants/theme";
 
 const GOOGLE_EXPO_CLIENT_ID = Constants.expoConfig?.extra?.googleExpoClientId ?? process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID ?? "";
@@ -16,11 +14,7 @@ const GOOGLE_ANDROID_CLIENT_ID = Constants.expoConfig?.extra?.googleAndroidClien
 const GOOGLE_WEB_CLIENT_ID = Constants.expoConfig?.extra?.googleWebClientId ?? process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? "";
 
 export default function LoginScreen() {
-  const { login, loginWithGoogle, loginWithApple } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [appleLoading, setAppleLoading] = useState(false);
+  const { loginWithGoogle } = useAuth();
 
   const google = useGoogleAuth({
     clientId: GOOGLE_EXPO_CLIENT_ID,
@@ -31,139 +25,43 @@ export default function LoginScreen() {
 
   useEffect(() => {
     if (google.idToken) {
-      handleGoogleLogin(google.idToken);
+      handleGoogleAuth(google.idToken);
     } else if (google.error) {
-      Alert.alert("Google Sign-In Failed", google.error);
+      Alert.alert("Sign-In Failed", google.error);
     }
   }, [google.idToken, google.error]);
 
-  const handleGoogleLogin = async (idToken: string) => {
+  const handleGoogleAuth = async (idToken: string) => {
     try {
       await loginWithGoogle(idToken);
       router.replace("/(tabs)");
     } catch (err) {
-      Alert.alert("Login Failed", "Could not sign in with Google. Please try again or use email.");
-    }
-  };
-
-  const handleApplePress = async () => {
-    setAppleLoading(true);
-    try {
-      const credential = await AppleAuthentication.signInAsync({
-        requestedScopes: [
-          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-        ],
-      });
-      const idToken = credential.identityToken;
-      if (!idToken) {
-        Alert.alert("Apple Sign-In Failed", "Could not retrieve authentication token. Please try again.");
-        return;
-      }
-      const fullName = [credential.fullName?.givenName, credential.fullName?.familyName]
-        .filter(Boolean)
-        .join(" ") || undefined;
-      await loginWithApple(idToken, fullName);
-      router.replace("/(tabs)");
-    } catch (err: any) {
-      if (err.code !== "ERR_REQUEST_CANCELED") {
-        Alert.alert("Apple Sign-In Failed", "Could not sign in with Apple. Please try again.");
-      }
-    } finally {
-      setAppleLoading(false);
-    }
-  };
-
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Missing fields", "Please enter email and password.");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await login(email, password);
-      router.replace("/(tabs)");
-    } catch (err) {
-      Alert.alert("Login failed", "Invalid email or password.");
-    } finally {
-      setLoading(false);
+      Alert.alert("Sign-In Failed", "Could not sign in with Google. Please try again.");
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.inner}
-      >
+      <View style={styles.inner}>
         <Text style={styles.title}>Welcome back</Text>
-        <Text style={styles.subtitle}>Log in to your RGDGC account</Text>
+        <Text style={styles.subtitle}>Sign in to your RGDGC account</Text>
 
-        <View style={styles.form}>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            textContentType="emailAddress"
-            placeholderTextColor={colors.text.disabled}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            textContentType="password"
-            placeholderTextColor={colors.text.disabled}
-          />
-
-          <Button title="Log In" onPress={handleLogin} loading={loading} size="lg" />
-
-          <View style={styles.dividerContainer}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or continue with</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <TouchableOpacity
-            style={[styles.googleButton, (!google.request || google.loading) && styles.googleButtonDisabled]}
-            onPress={google.promptAsync}
-            disabled={!google.request || google.loading}
-            activeOpacity={0.7}
-          >
-            {google.loading ? (
-              <ActivityIndicator size="small" color={colors.text.primary} />
-            ) : (
-              <>
-                <Ionicons name="logo-google" size={20} color="#4285F4" style={styles.googleIcon} />
-                <Text style={styles.googleButtonText}>Continue with Google</Text>
-              </>
-            )}
-          </TouchableOpacity>
-
-          {Platform.OS === "ios" && (
-            <TouchableOpacity
-              style={[styles.appleButton, appleLoading && styles.appleButtonDisabled]}
-              onPress={handleApplePress}
-              disabled={appleLoading}
-              activeOpacity={0.7}
-            >
-              {appleLoading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <>
-                  <Ionicons name="logo-apple" size={20} color="#FFFFFF" style={styles.appleIcon} />
-                  <Text style={styles.appleButtonText}>Continue with Apple</Text>
-                </>
-              )}
-            </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.googleButton, (!google.request || google.loading) && styles.googleButtonDisabled]}
+          onPress={google.promptAsync}
+          disabled={!google.request || google.loading}
+          activeOpacity={0.7}
+        >
+          {google.loading ? (
+            <ActivityIndicator size="small" color={colors.text.primary} />
+          ) : (
+            <>
+              <Ionicons name="logo-google" size={20} color="#4285F4" style={styles.googleIcon} />
+              <Text style={styles.googleButtonText}>Continue with Google</Text>
+            </>
           )}
-        </View>
-      </KeyboardAvoidingView>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -177,6 +75,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: spacing.lg,
     justifyContent: "center",
+    gap: spacing.md,
   },
   title: {
     fontSize: fontSize["3xl"],
@@ -189,34 +88,6 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginBottom: spacing.xl,
   },
-  form: {
-    gap: spacing.md,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.gray[300],
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    fontSize: fontSize.base,
-    color: colors.text.primary,
-    backgroundColor: colors.bg.secondary,
-    minHeight: 48,
-  },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: spacing.sm,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.gray[300],
-  },
-  dividerText: {
-    paddingHorizontal: spacing.md,
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-  },
   googleButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -225,7 +96,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.gray[300],
     borderRadius: borderRadius.md,
-    minHeight: 48,
+    minHeight: 52,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
   },
@@ -236,29 +107,8 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   googleButtonText: {
-    fontSize: fontSize.base,
+    fontSize: fontSize.lg,
     fontWeight: "600",
     color: colors.text.primary,
-  },
-  appleButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#000000",
-    borderRadius: borderRadius.md,
-    minHeight: 48,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-  },
-  appleButtonDisabled: {
-    opacity: 0.6,
-  },
-  appleIcon: {
-    marginRight: spacing.sm,
-  },
-  appleButtonText: {
-    fontSize: fontSize.base,
-    fontWeight: "600",
-    color: "#FFFFFF",
   },
 });

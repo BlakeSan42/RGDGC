@@ -38,7 +38,7 @@ async def test_create_event_admin(client: AsyncClient, admin_headers, seeded_lea
     res = await client.post(
         "/api/v1/admin/events",
         headers=admin_headers,
-        params={
+        json={
             "league_id": seeded_league["league_id"],
             "layout_id": seeded_course["layout_id"],
             "event_date": "2026-04-01",
@@ -56,7 +56,7 @@ async def test_event_checkin(client: AsyncClient, auth_headers, admin_headers, s
     event_res = await client.post(
         "/api/v1/admin/events",
         headers=admin_headers,
-        params={
+        json={
             "league_id": seeded_league["league_id"],
             "layout_id": seeded_course["layout_id"],
             "event_date": "2026-04-01",

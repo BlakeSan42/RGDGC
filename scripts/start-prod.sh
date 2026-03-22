@@ -38,6 +38,8 @@ else
   echo "ERROR: No venv. Run: cd backend && python3 -m venv venv && pip install -r requirements.txt"
   exit 1
 fi
+# Override CORS for prod preview ports
+export CORS_ORIGINS="http://localhost:9000,http://localhost:9001"
 uvicorn app.main:app --port 9000 --host 0.0.0.0 &
 BACKEND_PID=$!
 
@@ -59,8 +61,9 @@ echo "    Backend ready."
 echo "[4/5] Building static web export..."
 cd "$ROOT/mobile"
 
-# Set API URL to production backend
+# Set env vars for production preview build
 export EXPO_PUBLIC_API_URL=http://localhost:9000
+# Google OAuth client ID is read from mobile/.env (EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID)
 
 # Export static build
 npx expo export --platform web 2>/dev/null

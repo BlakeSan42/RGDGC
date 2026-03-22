@@ -1,13 +1,11 @@
-import { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Platform, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
-import { Link, router } from "expo-router";
+import { useEffect } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
+import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import * as AppleAuthentication from "expo-apple-authentication";
 import Constants from "expo-constants";
 import { useAuth } from "@/context/AuthContext";
 import { useGoogleAuth } from "@/hooks/useGoogleAuth";
-import { Button } from "@/components/common/Button";
 import { colors, spacing, fontSize, borderRadius } from "@/constants/theme";
 
 const GOOGLE_EXPO_CLIENT_ID = Constants.expoConfig?.extra?.googleExpoClientId ?? process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID ?? "";
@@ -16,8 +14,7 @@ const GOOGLE_ANDROID_CLIENT_ID = Constants.expoConfig?.extra?.googleAndroidClien
 const GOOGLE_WEB_CLIENT_ID = Constants.expoConfig?.extra?.googleWebClientId ?? process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? "";
 
 export default function WelcomeScreen() {
-  const { loginWithGoogle, loginWithApple } = useAuth();
-  const [appleLoading, setAppleLoading] = useState(false);
+  const { loginWithGoogle } = useAuth();
 
   const google = useGoogleAuth({
     clientId: GOOGLE_EXPO_CLIENT_ID,
@@ -30,7 +27,7 @@ export default function WelcomeScreen() {
     if (google.idToken) {
       handleGoogleAuth(google.idToken);
     } else if (google.error) {
-      Alert.alert("Google Sign-In Failed", google.error);
+      Alert.alert("Sign-In Failed", google.error);
     }
   }, [google.idToken, google.error]);
 
@@ -40,34 +37,6 @@ export default function WelcomeScreen() {
       router.replace("/(tabs)");
     } catch (err) {
       Alert.alert("Sign-In Failed", "Could not sign in with Google. Please try again.");
-    }
-  };
-
-  const handleApplePress = async () => {
-    setAppleLoading(true);
-    try {
-      const credential = await AppleAuthentication.signInAsync({
-        requestedScopes: [
-          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-        ],
-      });
-      const idToken = credential.identityToken;
-      if (!idToken) {
-        Alert.alert("Apple Sign-In Failed", "Could not retrieve authentication token. Please try again.");
-        return;
-      }
-      const fullName = [credential.fullName?.givenName, credential.fullName?.familyName]
-        .filter(Boolean)
-        .join(" ") || undefined;
-      await loginWithApple(idToken, fullName);
-      router.replace("/(tabs)");
-    } catch (err: any) {
-      if (err.code !== "ERR_REQUEST_CANCELED") {
-        Alert.alert("Apple Sign-In Failed", "Could not sign in with Apple. Please try again.");
-      }
-    } finally {
-      setAppleLoading(false);
     }
   };
 
@@ -99,41 +68,10 @@ export default function WelcomeScreen() {
           )}
         </TouchableOpacity>
 
-        {Platform.OS === "ios" && (
-          <TouchableOpacity
-            style={[styles.appleButton, appleLoading && styles.appleButtonDisabled]}
-            onPress={handleApplePress}
-            disabled={appleLoading}
-            activeOpacity={0.7}
-          >
-            {appleLoading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <>
-                <Ionicons name="logo-apple" size={20} color="#FFFFFF" style={styles.appleIcon} />
-                <Text style={styles.appleButtonText}>Continue with Apple</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        )}
-
-        <View style={styles.dividerContainer}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>or</Text>
-          <View style={styles.dividerLine} />
-        </View>
-
-        <Link href="/(tabs)" asChild>
-          <Button title="Start Scoring a Round" variant="primary" size="lg" onPress={() => {}} />
-        </Link>
-
-        <Link href="/(auth)/register" asChild>
-          <Button title="Create Account" variant="secondary" size="lg" onPress={() => {}} />
-        </Link>
-
-        <Link href="/(auth)/login" asChild>
-          <Button title="Already have an account? Log in" variant="ghost" onPress={() => {}} />
-        </Link>
+        <Text style={styles.hint}>
+          New players and existing members — just sign in with Google.{"\n"}
+          We'll find your account or create one automatically.
+        </Text>
       </View>
     </SafeAreaView>
   );
@@ -177,21 +115,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingBottom: spacing.xl,
   },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: spacing.xs,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.gray[300],
-  },
-  dividerText: {
-    paddingHorizontal: spacing.md,
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-  },
   googleButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -200,7 +123,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.gray[300],
     borderRadius: borderRadius.md,
-    minHeight: 48,
+    minHeight: 52,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
   },
@@ -211,29 +134,14 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   googleButtonText: {
-    fontSize: fontSize.base,
+    fontSize: fontSize.lg,
     fontWeight: "600",
     color: colors.text.primary,
   },
-  appleButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#000000",
-    borderRadius: borderRadius.md,
-    minHeight: 48,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-  },
-  appleButtonDisabled: {
-    opacity: 0.6,
-  },
-  appleIcon: {
-    marginRight: spacing.sm,
-  },
-  appleButtonText: {
-    fontSize: fontSize.base,
-    fontWeight: "600",
-    color: "#FFFFFF",
+  hint: {
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+    textAlign: "center",
+    lineHeight: 20,
   },
 });

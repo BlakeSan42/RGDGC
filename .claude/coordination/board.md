@@ -1,11 +1,11 @@
-# RGDGC Sprint Board — 2026-03-22
+# RGDGC Sprint Board — 2026-03-22 (Updated Evening)
 
 ## Current Sprint Goal
-Ship a working app: scoring flow end-to-end (DONE), sticker claim, putting practice, Mapbox maps, weather integration.
+Get to production: Railway deploy, Expo production build, OpenClaw bot live.
 
 ---
 
-## Completed This Sprint
+## Completed This Sprint (All Phases)
 
 ### Phase A — Sticker System: COMPLETE
 - generate_disc_codes.py moved to scripts (T3)
@@ -21,75 +21,89 @@ Ship a working app: scoring flow end-to-end (DONE), sticker claim, putting pract
 - Weather.gov API: /current + /wind endpoints (T2)
 
 ### Phase C — Backend QA: COMPLETE
-- All 12 API route groups verified (T4)
+- All route groups verified (T4)
 - Missing deps fixed (T4)
 - Alembic migrations fixed (T4)
 - Disc route double prefix fixed (T4)
 
+### Phase D — Contracts & Blockchain: COMPLETE
+- Contracts deployed to Sepolia (commit 14d855f)
+- 3 contracts: RGDGToken, RGDGTreasury, DiscRegistry
+- verify.ts, setup-testnet.ts, wire-backend.ts all executed
+- Backend blockchain service wired to live contract addresses
+- Web3 auth (nonce + verify), token balance, treasury, fee verification
+
+### Phase E — Admin Dashboard: COMPLETE
+- 11 pages wired to live API (no mock data)
+- Sticker management page (stats, generate, lookup, inventory, claims)
+- Admin endpoint fixes (query params to JSON body)
+
+### Phase F — Mobile Polish: COMPLETE
+- Offline sync: OfflineBanner, course/layout caching, offline round starts
+- Push notifications: token registration, routing, unread badges
+- Score editing, group play, scorecard sharing
+- 39 screens, 0 TypeScript errors
+
+### Phase G — Backend Features: COMPLETE
+- Redis caching layer (cache_service.py)
+- Stats service (scoring breakdown, personal bests)
+- Auto handicap calculation
+- Owner control system (/api/v1/owner/*)
+- Putting model recalibrated
+- Events and results seeded
+- KSA module (439 lines, added by another terminal)
+- OpenClaw bot: 7 skills done, all API calls verified
+
 ### Cross-Terminal
 - MCP server: 9/9 tools verified (T2)
 - CI pipeline: fixed PostGIS, admin-dashboard check, peer deps (T2)
-- Location fix: IL → Kingwood TX with real UDisc data (T2)
+- Location fix: IL to Kingwood TX with real UDisc data (T2)
 - End-to-end smoke test passing (T2 + T4)
-- 0 TypeScript errors across 36 mobile screens
 - Google OAuth, chat bot, disc management, notifications (T3)
 
 ---
 
-## Still Unclaimed
-
-### USGS 3DEP DEM for Kingwood TX
-- status: unclaimed
-- priority: P1
-- notes: 1m resolution bare-earth DEM for elevation profiles.
-
-### Harris County LIDAR via TNRIS
-- status: unclaimed
-- priority: P1
-- notes: Tree canopy height model.
-
-## Completed This Round (T2)
-
-### Admin Dashboard: Sticker Management Page — DONE
-- Stats overview (5 cards), generate batch form, code lookup, batch inventory, recent claims
-- Auto-refresh, CSV download, Sidebar + route wired
-
-### Deploy Contracts to Sepolia — READY
-- Deploy script verified (Token → Treasury → DiscRegistry, 1M supply, 500K to treasury)
-- verify.ts — Etherscan verification for all 3 contracts
-- setup-testnet.ts — Post-deploy: set fee, mint test tokens, register test disc
-- wire-backend.ts — Outputs env vars for backend .env
-- DEPLOY.md — Full step-by-step guide with faucet links
-
-### Owner Control System — DONE
-- /api/v1/owner/* endpoints (hidden from Swagger)
-- Two-factor: super_admin JWT + X-Owner-Key header
-- Impersonate, lock/unlock, role override, password reset, system status
-- Role escalation locked down (admins can't promote to admin/super_admin)
-
----
-
-## E2E Validation (T2) — 88/90 PASSING (2 test-script issues, 0 API bugs)
+## E2E Validation — 88+ TESTS PASSING (0 API bugs)
 - 12 complete user journeys tested live against running backend
-- Auth: register, login, logout, token revocation ✓
-- Scoring: start round, submit holes, complete ✓
-- Putting: log, batch sync, stats, probability, strokes gained ✓
-- Leagues: list, join, members, leaderboard ✓
-- Events: list, detail, results ✓
-- Discs: register, QR, lost/found/returned, public HTML ✓
-- Chat: standings, events, rules, help ✓
-- Admin: analytics, announcements, audit log, cache ✓
-- Geo: GeoJSON, weather, wind ✓
-- Blockchain: balance, transactions, treasury ✓
-- Bugs fixed: timezone mismatch in analytics (500→200), bcrypt version warning, Clawd keyword matching, putting model calibration, test user names, events seed data
+- Auth: register, login, logout, token revocation
+- Scoring: start round, submit holes, complete
+- Putting: log, batch sync, stats, probability, strokes gained
+- Leagues: list, join, members, leaderboard
+- Events: list, detail, results
+- Discs: register, QR, lost/found/returned, public HTML
+- Chat: standings, events, rules, help
+- Admin: analytics, announcements, audit log, cache
+- Geo: GeoJSON, weather, wind
+- Blockchain: balance, transactions, treasury
 
 ---
 
-## Backlog
-- Drone orthomosaic pipeline (PMTiles → R2)
-- 3D terrain rendering (Mapbox v11)
+## Active / Unclaimed Work
+
+### P0 — Ship Blockers (next up)
+
+| Task | Status | Owner | Notes |
+|------|--------|-------|-------|
+| Backend → Railway deploy | Unclaimed | — | Procfile exists, need env vars + deploy |
+| Mobile → Expo production build | Unclaimed | — | EAS config needed, production API URL |
+| OpenClaw bot → Go live | Unclaimed | — | Needs Discord bot token + Anthropic API key |
+
+### P1 — Core Gaps
+
+| Task | Status | Owner | Notes |
+|------|--------|-------|-------|
+| USGS 3DEP DEM for Kingwood TX | Unclaimed | — | 1m resolution bare-earth DEM |
+| Harris County LIDAR via TNRIS | Unclaimed | — | Tree canopy height model |
+| Celery background tasks | Unclaimed | — | Reminders, batch sync, leaderboard recalc |
+
+---
+
+## Backlog (P2/P3)
 - AR distance measurement (ARKit/ARCore)
 - Disc golf game engine (flight physics)
-- OpenClaw bot skills
-- Push notifications
-- Offline mode + sync
+- 3D terrain rendering (Mapbox v11)
+- Drone orthomosaic pipeline (PMTiles → R2)
+- Apple Watch / Wear OS companion
+- Stripe payment integration
+- Course builder
+- Tournament mode (online multiplayer)

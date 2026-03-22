@@ -57,18 +57,22 @@ def _optional_int(var: str) -> int | None:
 async def main() -> None:
     # Core services
     api_url = _required("RGDGC_API_URL")
-    api_key = _required("RGDGC_API_KEY")
-    anthropic_key = _required("ANTHROPIC_API_KEY")
+    api_key = os.getenv("RGDGC_API_KEY", "")  # Optional — public endpoints don't require auth
+    anthropic_key = os.getenv("ANTHROPIC_API_KEY")  # Optional — only needed for /ask and @mention AI
     claude_model = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-20250514")
 
     api_client = RGDGCClient(base_url=api_url, api_key=api_key)
-    ai_handler = AIHandler(
-        api_key=anthropic_key,
-        model=claude_model,
-        api_client=api_client,
-        rate_limit=int(os.getenv("AI_RATE_LIMIT_PER_USER", "20")),
-        rate_window=int(os.getenv("AI_RATE_LIMIT_WINDOW_SECONDS", "3600")),
-    )
+    ai_handler = None
+    if anthropic_key:
+        ai_handler = AIHandler(
+            api_key=anthropic_key,
+            model=claude_model,
+            api_client=api_client,
+            rate_limit=int(os.getenv("AI_RATE_LIMIT_PER_USER", "20")),
+            rate_window=int(os.getenv("AI_RATE_LIMIT_WINDOW_SECONDS", "3600")),
+        )
+    else:
+        logger.warning("ANTHROPIC_API_KEY not set — /ask and AI features disabled")
 
     # Scheduler
     standings_day = os.getenv("STANDINGS_POST_DAY", "monday")

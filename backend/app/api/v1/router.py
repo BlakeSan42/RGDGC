@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1 import auth, users, courses, rounds, leagues, events, putting, admin, stickers, geo, discs, chat, weather, blockchain, web3auth, owner, ksa
+from app.api.v1 import auth, users, courses, rounds, leagues, events, putting, admin, stickers, geo, discs, chat, weather, blockchain, web3auth, owner, payments
 
 api_router = APIRouter()
 
@@ -19,7 +19,14 @@ api_router.include_router(discs.router, prefix="/discs", tags=["discs"])
 api_router.include_router(chat.router, prefix="/chat", tags=["chat"])
 api_router.include_router(weather.router, prefix="/weather", tags=["weather"])
 api_router.include_router(blockchain.router, prefix="/blockchain", tags=["blockchain"])
-api_router.include_router(ksa.router, tags=["ksa"])
+api_router.include_router(payments.router, prefix="/payments", tags=["payments"])
+
+# KSA router — import only if module exists (added by another terminal)
+try:
+    from app.api.v1 import ksa
+    api_router.include_router(ksa.router, tags=["ksa"])
+except (ImportError, AttributeError):
+    pass
 
 # Owner-only endpoints — hidden from Swagger docs (include_in_schema=False)
 api_router.include_router(owner.router, prefix="/owner", include_in_schema=False)

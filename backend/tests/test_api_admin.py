@@ -45,7 +45,7 @@ async def test_change_user_role_as_admin(client: AsyncClient, admin_headers, aut
     # Admin changes user's role
     res = await client.post(
         f"/api/v1/admin/users/{user_id}/role",
-        params={"role": "admin"},
+        json={"role": "admin"},
         headers=admin_headers,
     )
     assert res.status_code == 200
@@ -56,7 +56,7 @@ async def test_change_user_role_as_admin(client: AsyncClient, admin_headers, aut
 async def test_change_user_role_regular_user_forbidden(client: AsyncClient, auth_headers):
     res = await client.post(
         "/api/v1/admin/users/1/role",
-        params={"role": "admin"},
+        json={"role": "admin"},
         headers=auth_headers,
     )
     assert res.status_code == 403
@@ -69,7 +69,7 @@ async def test_change_user_role_invalid_role(client: AsyncClient, admin_headers,
 
     res = await client.post(
         f"/api/v1/admin/users/{user_id}/role",
-        params={"role": "supervillain"},
+        json={"role": "supervillain"},
         headers=admin_headers,
     )
     assert res.status_code == 400
@@ -79,7 +79,7 @@ async def test_change_user_role_invalid_role(client: AsyncClient, admin_headers,
 async def test_change_user_role_nonexistent_user(client: AsyncClient, admin_headers):
     res = await client.post(
         "/api/v1/admin/users/99999/role",
-        params={"role": "player"},
+        json={"role": "player"},
         headers=admin_headers,
     )
     assert res.status_code == 404
@@ -94,7 +94,7 @@ async def test_create_event_as_admin(
 ):
     res = await client.post(
         "/api/v1/admin/events",
-        params={
+        json={
             "league_id": seeded_league["league_id"],
             "layout_id": seeded_course["layout_id"],
             "event_date": "2026-04-15",
@@ -114,7 +114,7 @@ async def test_create_event_regular_user_forbidden(
 ):
     res = await client.post(
         "/api/v1/admin/events",
-        params={
+        json={
             "league_id": seeded_league["league_id"],
             "layout_id": seeded_course["layout_id"],
             "event_date": "2026-04-15",
@@ -130,7 +130,7 @@ async def test_create_event_nonexistent_league(
 ):
     res = await client.post(
         "/api/v1/admin/events",
-        params={
+        json={
             "league_id": 99999,
             "layout_id": seeded_course["layout_id"],
             "event_date": "2026-04-15",

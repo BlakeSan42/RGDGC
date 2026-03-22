@@ -56,6 +56,38 @@ services:
       retries: 3
       start_period: 5s
 
+  # ---------- Celery Worker ----------
+  worker:
+    build: ./backend
+    container_name: rgdgc-worker
+    restart: unless-stopped
+    command: celery -A app.worker worker --loglevel=info --concurrency=2
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://rgdgc:rgdgc_dev@db:5432/rgdgc
+      - REDIS_URL=redis://redis:6379
+
+  # ---------- Celery Beat Scheduler ----------
+  beat:
+    build: ./backend
+    container_name: rgdgc-beat
+    restart: unless-stopped
+    command: celery -A app.worker beat --loglevel=info
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://rgdgc:rgdgc_dev@db:5432/rgdgc
+      - REDIS_URL=redis://redis:6379
+
 volumes:
   rgdgc_postgres_data:
   rgdgc_redis_data:

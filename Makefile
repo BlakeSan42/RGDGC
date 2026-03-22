@@ -23,7 +23,7 @@ ACTIVATE := source $(VENV)/bin/activate
 
 .PHONY: help setup install install-backend install-mobile install-admin install-contracts \
         db-start db-stop db-reset migrate seed \
-        dev dev-backend dev-mobile dev-admin stop \
+        dev dev-backend dev-mobile dev-admin dev-worker dev-beat stop \
         test test-backend test-contracts lint clean deploy-backend health
 
 # ── Help ─────────────────────────────────────────────────────────────────────
@@ -36,6 +36,8 @@ help:
 	@echo "  make setup          Full first-time setup (install + db + migrate + seed)"
 	@echo "  make install        Install all project dependencies"
 	@echo "  make dev            Start all dev servers in parallel"
+	@echo "  make dev-worker     Start Celery worker"
+	@echo "  make dev-beat       Start Celery beat scheduler"
 	@echo "  make stop           Stop all services and containers"
 	@echo ""
 	@echo "  make db-start       Start PostgreSQL + Redis containers"
@@ -148,12 +150,19 @@ dev-mobile:
 dev-admin:
 	@cd admin-dashboard && npm run dev
 
+dev-worker:
+	@$(ACTIVATE) && cd backend && celery -A app.worker worker --loglevel=info
+
+dev-beat:
+	@$(ACTIVATE) && cd backend && celery -A app.worker beat --loglevel=info
+
 # ── Stop ─────────────────────────────────────────────────────────────────────
 
 stop: db-stop
 	@-pkill -f "uvicorn app.main" 2>/dev/null
 	@-pkill -f "expo start" 2>/dev/null
 	@-pkill -f "vite" 2>/dev/null
+	@-pkill -f "celery" 2>/dev/null
 	@echo "All services stopped."
 
 # ── Testing ──────────────────────────────────────────────────────────────────
