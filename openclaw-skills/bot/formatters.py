@@ -270,6 +270,8 @@ def format_rule(data: dict[str, Any], *, html: bool = False) -> str:
 def format_course_info(data: dict[str, Any], *, html: bool = False) -> str:
     """Format course/layout information."""
     # Handle both single course and list responses
+    if not data:
+        return "Course information unavailable."
     course = data if "name" in data else (data.get("courses", [data])[0] if data else {})
 
     name = course.get("name", "Unknown Course")

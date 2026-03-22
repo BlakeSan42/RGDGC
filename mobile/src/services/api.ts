@@ -201,8 +201,11 @@ export const roundApi = {
     return api<Round[]>(path);
   },
 
-  submitScore: (roundId: number, data: { hole_number: number; strokes: number; putts?: number; ob_strokes?: number }) =>
+  submitScore: (roundId: number, data: { hole_number: number; strokes: number; putts?: number; ob_strokes?: number; disc_used?: string; is_dnf?: boolean }) =>
     api(`/api/v1/rounds/${roundId}/scores`, { method: "POST", body: data }),
+
+  updateScore: (roundId: number, holeNumber: number, data: { strokes: number; putts?: number; ob_strokes?: number; disc_used?: string; is_dnf?: boolean }) =>
+    api(`/api/v1/rounds/${roundId}/scores/${holeNumber}`, { method: "PUT", body: data }),
 
   complete: (roundId: number) =>
     api<RoundDetail>(`/api/v1/rounds/${roundId}/complete`, { method: "PUT" }),

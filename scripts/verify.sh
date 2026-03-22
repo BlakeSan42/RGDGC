@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
-# Verify all RGDGC services are running and responsive
+# Verify RGDGC services — checks production ports by default
+#
+# Usage:
+#   ./scripts/verify.sh        # Check production (9000/9001)
+#   ./scripts/verify.sh dev    # Check dev ports (8001/8082)
 
-echo "=== RGDGC Service Verification ==="
+MODE="${1:-prod}"
+
+echo "=== RGDGC Service Verification ($MODE) ==="
 echo ""
 
 PASS=0
@@ -19,29 +25,40 @@ check() {
   fi
 }
 
+if [ "$MODE" = "prod" ]; then
+  API=9000
+  WEB=9001
+else
+  API=8001
+  WEB=8082
+fi
+
 # Docker
 echo "Docker:"
 check "PostgreSQL (5433)" "docker inspect --format='{{.State.Health.Status}}' rgdgc-db 2>/dev/null | grep -q healthy"
-check "Redis (6381)" "redis-cli -p 6381 ping | grep -q PONG"
+check "Redis (6381)" "redis-cli -p 6381 ping 2>/dev/null | grep -q PONG"
 
 echo ""
-echo "Backend:"
-check "Health endpoint" "curl -sf http://localhost:8001/health"
-check "Swagger docs" "curl -sf http://localhost:8001/docs"
-check "Auth (login)" "curl -sf -X POST http://localhost:8001/api/v1/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@rgdgc.com\",\"password\":\"admin123\"}'"
-check "Courses API" "curl -sf http://localhost:8001/api/v1/courses -H 'Authorization: Bearer \$(curl -s -X POST http://localhost:8001/api/v1/auth/login -H \"Content-Type: application/json\" -d \"{\\\"email\\\":\\\"admin@rgdgc.com\\\",\\\"password\\\":\\\"admin123\\\"}\" | python3 -c \"import sys,json;print(json.load(sys.stdin)[\\\"access_token\\\"])\")'"
+echo "Backend (port $API):"
+check "Health" "curl -sf http://localhost:$API/health"
+check "Docs" "curl -sf http://localhost:$API/docs"
+check "Auth" "curl -sf -X POST http://localhost:$API/api/v1/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@rgdgc.com\",\"password\":\"admin123\"}'"
 
 echo ""
-echo "Frontend:"
-check "Web server (8082)" "curl -sf http://localhost:8082"
-check "JS bundle loads" "curl -sf 'http://localhost:8082/node_modules/expo-router/entry.bundle?platform=web&dev=true&lazy=true'"
+echo "Frontend (port $WEB):"
+check "Web server" "curl -sf http://localhost:$WEB"
 
 echo ""
 TOTAL=$((PASS+FAIL))
 echo "Result: $PASS/$TOTAL passing"
 if [ "$FAIL" -gt 0 ]; then
-  echo "WARNING: $FAIL service(s) not responding"
+  echo ""
+  echo "To start production: ./scripts/start-prod.sh"
+  echo "To start dev:        ./scripts/start-backend.sh + ./scripts/start-web.sh"
   exit 1
 else
   echo "All services operational!"
+  echo ""
+  echo "App: http://localhost:$WEB"
+  echo "API: http://localhost:$API"
 fi

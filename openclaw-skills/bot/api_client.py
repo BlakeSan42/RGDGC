@@ -79,18 +79,33 @@ class RGDGCClient:
 
     async def get_leaderboard(self, league_id: int) -> APIResponse | None:
         """Fetch season standings for a league."""
-        return await self._get(f"/leagues/{league_id}/leaderboard")
+        data = await self._get(f"/leagues/{league_id}/leaderboard")
+        # Backend returns a list; wrap it for the formatter
+        if isinstance(data, list):
+            league_info = await self._get(f"/leagues/{league_id}")
+            league_name = league_info.get("name", "League") if league_info else "League"
+            season = league_info.get("season", "") if league_info else ""
+            # Add position numbers if missing
+            for i, entry in enumerate(data):
+                if "position" not in entry or entry["position"] is None:
+                    entry["position"] = i + 1
+            return {"league_name": league_name, "season": season, "standings": data}
+        return data
 
     async def get_player_stats(self, player_id: int) -> APIResponse | None:
         """Fetch individual player statistics."""
-        return await self._get(f"/players/{player_id}/stats")
+        return await self._get(f"/users/{player_id}/stats")
 
     async def get_upcoming_events(self, league_id: int | None = None) -> APIResponse | None:
         """Fetch upcoming scheduled events, optionally filtered by league."""
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {"status": "upcoming"}
         if league_id is not None:
             params["league_id"] = league_id
-        return await self._get("/events", params={**params, "status": "upcoming"})
+        data = await self._get("/events", params=params)
+        # Backend returns a list; wrap for the formatter
+        if isinstance(data, list):
+            return {"events": data}
+        return data
 
     async def get_event_results(self, event_id: int) -> APIResponse | None:
         """Fetch results for a completed event."""
@@ -101,23 +116,43 @@ class RGDGCClient:
         return await self._post(f"/events/{event_id}/checkin", json={"user_id": user_id})
 
     async def lookup_disc(self, disc_code: str) -> APIResponse | None:
-        """Look up a disc by its code / name."""
-        return await self._get("/discs/lookup", params={"q": disc_code})
+        """Look up a disc by its code."""
+        return await self._get(f"/discs/{disc_code}/lookup")
 
     async def get_course_info(self, course_id: int | None = None) -> APIResponse | None:
-        """Fetch course/layout details. Defaults to the home course."""
+        """Fetch course/layout details. Defaults to the first course (home course)."""
         if course_id is not None:
             return await self._get(f"/courses/{course_id}")
-        return await self._get("/courses", params={"home": "true"})
+        # No home filter — get all courses, return the first one
+        courses = await self._get("/courses")
+        if isinstance(courses, list) and courses:
+            return await self._get(f"/courses/{courses[0]['id']}")
+        return courses
 
     async def lookup_rule(self, query: str) -> APIResponse | None:
-        """Search PDGA rules by keyword."""
-        return await self._get("/rules/search", params={"q": query})
+        """Search PDGA rules by keyword.
+
+        No dedicated rules search endpoint exists in the backend.
+        Returns a marker so the AI handler uses its own PDGA knowledge.
+        """
+        return {"rules": [], "query": query, "note": "No rules search API — Claude should answer from knowledge."}
 
     async def get_player_by_discord(self, discord_id: str) -> APIResponse | None:
-        """Resolve a Discord user ID to an RGDGC player record."""
-        return await self._get("/players/by-discord", params={"discord_id": discord_id})
+        """Resolve a Discord user ID to an RGDGC player record.
+
+        NOTE: Social identity linking not yet implemented in the backend.
+        Returns None until the backend adds discord_id to the user model.
+        """
+        return None
 
     async def get_player_by_telegram(self, telegram_id: int) -> APIResponse | None:
-        """Resolve a Telegram user ID to an RGDGC player record."""
-        return await self._get("/players/by-telegram", params={"telegram_id": telegram_id})
+        """Resolve a Telegram user ID to an RGDGC player record.
+
+        NOTE: Social identity linking not yet implemented in the backend.
+        Returns None until the backend adds telegram_id to the user model.
+        """
+        return None
+
+    async def get_users(self) -> list[APIResponse] | None:
+        """Fetch the list of all users (for player name resolution)."""
+        return await self._get("/users")

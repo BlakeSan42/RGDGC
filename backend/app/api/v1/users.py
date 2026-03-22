@@ -8,6 +8,7 @@ from app.models.user import User
 from app.models.round import Round
 from app.models.league import Result, Event
 from app.schemas.user import DeleteAccountRequest, PushTokenRequest, UserOut, UserUpdate
+from app.services.stats_service import get_player_stats, get_hole_averages
 from app.services.storage_service import delete_file, upload_file
 
 router = APIRouter()
@@ -19,22 +20,13 @@ async def get_user_stats(
     season: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
+    """Comprehensive player stats including per-hole analytics and scoring distribution."""
     user = await db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Round stats
-    round_stmt = select(
-        func.count(Round.id).label("total_rounds"),
-        func.count(Round.completed_at).label("completed_rounds"),
-        func.avg(Round.total_score).label("avg_score"),
-        func.min(Round.total_score).label("best_score"),
-        func.max(Round.total_score).label("worst_score"),
-        func.avg(Round.total_strokes).label("avg_strokes"),
-    ).where(Round.user_id == user_id, Round.completed_at.is_not(None))
-
-    round_result = await db.execute(round_stmt)
-    rr = round_result.one()
+    # Comprehensive round + hole-level stats from stats_service
+    player_stats = await get_player_stats(db, user_id)
 
     # League stats
     league_stmt = select(
@@ -56,13 +48,23 @@ async def get_user_stats(
     return {
         "user": UserOut.model_validate(user).model_dump(),
         "rounds": {
-            "total": rr.total_rounds or 0,
-            "completed": rr.completed_rounds or 0,
-            "avg_score": round(float(rr.avg_score), 1) if rr.avg_score else None,
-            "best_score": rr.best_score,
-            "worst_score": rr.worst_score,
-            "avg_strokes": round(float(rr.avg_strokes), 1) if rr.avg_strokes else None,
+            "total": player_stats["total_rounds"],
+            "avg_score": player_stats["avg_score"],
+            "best_score": player_stats["best_round"],
+            "worst_score": player_stats["worst_round"],
+            "avg_strokes": player_stats["avg_strokes"],
         },
+        "per_hole": {
+            "fairway_hit_pct": player_stats["fairway_hit_pct"],
+            "c1_in_regulation": player_stats["c1_in_regulation"],
+            "c2_in_regulation": player_stats["c2_in_regulation"],
+            "scramble_rate": player_stats["scramble_rate"],
+            "parked_pct": player_stats["parked_pct"],
+            "avg_putts_per_hole": player_stats["avg_putts_per_hole"],
+            "avg_ob_per_round": player_stats["avg_ob_per_round"],
+        },
+        "scoring_distribution": player_stats["scoring_distribution"],
+        "personal_bests": player_stats["personal_bests"],
         "league": {
             "events_played": lr.events_played or 0,
             "total_points": lr.total_points or 0,
@@ -72,6 +74,20 @@ async def get_user_stats(
         },
         "handicap": float(user.handicap) if user.handicap else None,
     }
+
+
+@router.get("/{user_id}/hole-averages")
+async def get_user_hole_averages(
+    user_id: int,
+    layout_id: int = Query(..., description="Layout to get hole averages for"),
+    db: AsyncSession = Depends(get_db),
+):
+    """Average score per hole on a layout for a specific player."""
+    user = await db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return await get_hole_averages(db, layout_id, user_id=user_id)
 
 
 @router.get("", response_model=list[UserOut])

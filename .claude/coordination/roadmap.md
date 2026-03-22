@@ -72,12 +72,12 @@
    - Added `userApi.registerPushToken()` to mobile API service
    - Backend was already complete (event results, announcements trigger push)
 
-7. **OpenClaw bot — first 3 skills**
-   - Standings query (uses /api/v1/leagues/{id}/leaderboard)
-   - Event info (uses /api/v1/events)
-   - Score lookup (uses /api/v1/rounds)
-   - Wire to Discord channel
-   - _Files:_ `openclaw-skills/skills/`, `openclaw-skills/bot/`
+7. ~~**OpenClaw bot — verified against live backend**~~ — DONE (2026-03-22)
+   - Fixed 5 API endpoint mismatches (players→users, disc lookup path, course list, leaderboard wrapping, events wrapping)
+   - All 5 core API calls verified: course info, leaderboard, events, disc lookup, rules
+   - Formatters produce clean Discord markdown output with real data
+   - Bot imports cleanly, venv created, deps installed
+   - Needs: Discord bot token + Anthropic API key in `.env` to go live
 
 8. **USGS 3DEP DEM for Kingwood TX**
    - Fetch 1m resolution bare-earth DEM
