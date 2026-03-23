@@ -21,7 +21,7 @@ async def llm_usage_summary(
     db: AsyncSession = Depends(get_db),
 ):
     """Get LLM usage summary: total cost, tokens, calls by model and time period."""
-    since = datetime.now(timezone.utc) - timedelta(days=days)
+    since = datetime.utcnow() - timedelta(days=days)
 
     # Total stats
     totals = await db.execute(
