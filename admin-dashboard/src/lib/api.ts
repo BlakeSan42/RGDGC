@@ -411,4 +411,66 @@ export const analyticsApi = {
     api.get('/admin/analytics/strategic/community-health').then(r => r.data),
 };
 
+// --- Cash Treasury (Real Accounting) ---
+
+export const cashTreasuryApi = {
+  getBalance: () =>
+    api.get('/treasury/balance').then(r => r.data),
+
+  getLedger: (params?: { limit?: number; offset?: number; entry_type?: string; event_id?: number }) =>
+    api.get('/treasury/ledger', { params }).then(r => r.data),
+
+  collectFee: (data: { event_id: number; player_id: number; amount: number; payment_method: string; notes?: string }) =>
+    api.post('/treasury/collect-fee', data).then(r => r.data),
+
+  collectBulk: (data: { event_id: number; player_ids: number[]; amount: number; payment_method: string }) =>
+    api.post('/treasury/collect-bulk', data).then(r => r.data),
+
+  payoutPrize: (data: { event_id: number; player_id: number; amount: number; payment_method: string; position?: number }) =>
+    api.post('/treasury/payout-prize', data).then(r => r.data),
+
+  recordExpense: (data: { amount: number; description: string; payment_method: string; category?: string; notes?: string }) =>
+    api.post('/treasury/record-expense', data).then(r => r.data),
+
+  getEventSummary: (eventId: number) =>
+    api.get(`/treasury/event/${eventId}/summary`).then(r => r.data),
+
+  getSeasonSummary: (season: string) =>
+    api.get(`/treasury/season/${season}`).then(r => r.data),
+
+  getUnpaid: (eventId: number) =>
+    api.get(`/treasury/unpaid/${eventId}`).then(r => r.data),
+
+  voidEntry: (entryId: number, reason: string) =>
+    api.post(`/treasury/${entryId}/void`, { reason }).then(r => r.data),
+
+  // New treasurer workflow endpoints (when backend adds them)
+  getExpensesByCategory: () =>
+    api.get('/treasury/expenses/by-category').then(r => r.data),
+
+  getBudgetVsActual: (season = '2026') =>
+    api.get(`/treasury/budget/vs-actual?season=${season}`).then(r => r.data),
+
+  setBudget: (data: { league_id: number; season: string; category: string; budgeted_amount: number }) =>
+    api.post('/treasury/budget', data).then(r => r.data),
+
+  getPlayerBalances: () =>
+    api.get('/treasury/player-balances').then(r => r.data),
+
+  exportCsv: (startDate: string, endDate: string) =>
+    api.get(`/treasury/export?format=csv&start_date=${startDate}&end_date=${endDate}`, {
+      responseType: 'blob',
+    }).then(r => {
+      const url = window.URL.createObjectURL(r.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rgdgc-ledger-${startDate}-to-${endDate}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    }),
+
+  validatePrizes: (eventId: number) =>
+    api.get(`/treasury/validate-prizes/${eventId}`).then(r => r.data),
+};
+
 export default api;

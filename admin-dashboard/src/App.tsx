@@ -13,6 +13,8 @@ import StickerManagement from './pages/StickerManagement';
 import TreasuryDashboard from './pages/TreasuryDashboard';
 import ClubSettings from './pages/ClubSettings';
 import KSAIntel from './pages/KSAIntel';
+import ClubAnalytics from './pages/ClubAnalytics';
+import Accounting from './pages/Accounting';
 
 export default function App() {
   return (
@@ -35,6 +37,8 @@ export default function App() {
         <Route path="discs" element={<DiscRegistry />} />
         <Route path="stickers" element={<StickerManagement />} />
         <Route path="treasury" element={<TreasuryDashboard />} />
+        <Route path="analytics" element={<ClubAnalytics />} />
+        <Route path="accounting" element={<Accounting />} />
         <Route path="settings" element={<ClubSettings />} />
         <Route path="ksa-intel" element={<KSAIntel />} />
         <Route path="ksa-intel/articles" element={<KSAIntel />} />

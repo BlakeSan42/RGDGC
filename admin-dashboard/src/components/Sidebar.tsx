@@ -13,6 +13,7 @@ import {
   CarFront,
   BookOpen,
   BarChart3,
+  Receipt,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -28,6 +29,7 @@ const navItems: Array<{ to: string; icon: any; label: string; end?: boolean; div
   { to: '/discs', icon: Disc3, label: 'Discs' },
   { to: '/stickers', icon: Tag, label: 'Stickers' },
   { to: '/treasury', icon: Wallet, label: 'Treasury' },
+  { to: '/accounting', icon: Receipt, label: 'Accounting' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics', divider: true },
   { to: '/settings', icon: Settings, label: 'Settings' },
   { to: '/ksa-intel', icon: Shield, label: 'KSA Intel', divider: true },
