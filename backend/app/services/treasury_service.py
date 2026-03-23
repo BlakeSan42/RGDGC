@@ -380,14 +380,15 @@ async def get_expenses_by_category(
             func.extract("year", LedgerEntry.created_at) == int(season)
         )
 
+    cat_col = func.coalesce(LedgerEntry.category, "uncategorized").label("cat")
     result = await db.execute(
         select(
-            func.coalesce(LedgerEntry.category, "uncategorized"),
+            cat_col,
             func.sum(LedgerEntry.amount),
             func.count(LedgerEntry.id),
         )
         .where(and_(*filters))
-        .group_by(func.coalesce(LedgerEntry.category, "uncategorized"))
+        .group_by(cat_col)
         .order_by(func.sum(LedgerEntry.amount))
     )
     rows = result.all()
@@ -478,13 +479,14 @@ async def get_budget_vs_actual(
         func.extract("year", LedgerEntry.created_at) == int(season),
     ]
 
+    cat_col2 = func.coalesce(LedgerEntry.category, "uncategorized").label("cat")
     actual_q = await db.execute(
         select(
-            func.coalesce(LedgerEntry.category, "uncategorized"),
+            cat_col2,
             func.sum(LedgerEntry.amount),
         )
         .where(and_(*expense_filters))
-        .group_by(func.coalesce(LedgerEntry.category, "uncategorized"))
+        .group_by(cat_col2)
     )
     actuals = {row[0]: abs(Decimal(str(row[1]))) for row in actual_q.all()}
 
