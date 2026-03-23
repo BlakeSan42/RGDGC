@@ -107,6 +107,31 @@ async def checkin(
     return {"message": "Checked in", "event_id": event_id, "players": event.num_players}
 
 
+@router.get("/{event_id}/checkins")
+async def get_checkins(
+    event_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """List all checked-in players for an event."""
+    results = await db.execute(
+        select(Result, User)
+        .join(User, User.id == Result.user_id)
+        .where(Result.event_id == event_id)
+        .order_by(Result.created_at)
+    )
+    rows = results.all()
+    return [
+        {
+            "user_id": r.user_id,
+            "username": u.username,
+            "display_name": u.display_name,
+            "handicap": float(u.handicap) if u.handicap else None,
+            "checked_in_at": r.created_at.isoformat() if r.created_at else None,
+        }
+        for r, u in rows
+    ]
+
+
 @router.post("/{event_id}/results", response_model=list[ResultOut])
 async def submit_results(
     event_id: int,

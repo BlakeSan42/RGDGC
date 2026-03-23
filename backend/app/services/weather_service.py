@@ -26,8 +26,11 @@ RIVER_GROVE_LNG = -95.208576
 
 async def _get_grid_info(lat: float, lng: float) -> dict | None:
     """Look up NWS grid point for coordinates."""
+    # NWS requires max 4 decimal places, and follow_redirects for precision adjustment
+    lat = round(lat, 4)
+    lng = round(lng, 4)
     try:
-        async with httpx.AsyncClient(timeout=10) as client:
+        async with httpx.AsyncClient(timeout=10, follow_redirects=True) as client:
             r = await client.get(
                 f"{NWS_BASE}/points/{lat},{lng}",
                 headers=NWS_HEADERS,

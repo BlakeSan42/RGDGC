@@ -228,6 +228,73 @@ async def weekly_rounds(
     return result
 
 
+@router.get("/users")
+async def admin_list_users(
+    search: str = Query(None),
+    role: str = Query(None),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(50, ge=1, le=100),
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """List all users (admin only). Supports search and role filter."""
+    query = select(User)
+    if search:
+        query = query.where(
+            User.username.ilike(f"%{search}%") | User.display_name.ilike(f"%{search}%") | User.email.ilike(f"%{search}%")
+        )
+    if role:
+        query = query.where(User.role == role)
+    query = query.order_by(User.created_at.desc()).offset((page - 1) * per_page).limit(per_page)
+    result = await db.execute(query)
+    users = result.scalars().all()
+
+    count_q = select(func.count(User.id))
+    if search:
+        count_q = count_q.where(
+            User.username.ilike(f"%{search}%") | User.display_name.ilike(f"%{search}%") | User.email.ilike(f"%{search}%")
+        )
+    if role:
+        count_q = count_q.where(User.role == role)
+    total = (await db.execute(count_q)).scalar() or 0
+
+    return {
+        "items": [
+            {
+                "id": u.id, "email": u.email, "username": u.username,
+                "display_name": u.display_name, "role": u.role,
+                "handicap": float(u.handicap) if u.handicap else None,
+                "is_active": u.is_active, "created_at": u.created_at.isoformat() if u.created_at else None,
+            }
+            for u in users
+        ],
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+    }
+
+
+@router.get("/users/{user_id}")
+async def admin_get_user(
+    user_id: int,
+    admin: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get user detail (admin only)."""
+    user = await db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {
+        "id": user.id, "email": user.email, "username": user.username,
+        "display_name": user.display_name, "role": user.role,
+        "handicap": float(user.handicap) if user.handicap else None,
+        "is_active": user.is_active, "phone": user.phone, "bio": getattr(user, 'bio', None),
+        "wallet_address": user.wallet_address,
+        "created_at": user.created_at.isoformat() if user.created_at else None,
+        "updated_at": user.updated_at.isoformat() if user.updated_at else None,
+    }
+
+
 class RoleChange(BaseModel):
     role: str
 

@@ -62,6 +62,8 @@ BLOCKED_PATTERNS = [
     r"print.*prompt",
     # Token/secret extraction
     r"(api|access|auth|jwt|bearer).*(key|token|secret)",
+    r"(what|tell|give|show).*(password|credential|secret)",
+    r"(database|db|redis|postgres).*(password|credential|connection\s*string)",
     r"\.env",
     r"environment.*variable",
     r"private.*key",
