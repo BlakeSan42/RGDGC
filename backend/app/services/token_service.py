@@ -46,10 +46,12 @@ EARNING_TYPES = {
     "referral",
     "season_bonus",
     "admin_grant",
+    "marketplace_sale",
 }
 SPENDING_TYPES = {
     "event_fee",
     "merch_purchase",
+    "marketplace_purchase",
     "side_pot",
     "gift_sent",
     "admin_deduct",

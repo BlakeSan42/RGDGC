@@ -22,7 +22,7 @@ class RegisteredDisc(Base):
     weight_grams: Mapped[int | None] = mapped_column(Integer)
     color: Mapped[str | None] = mapped_column(String(50))
     photo_url: Mapped[str | None] = mapped_column(String(500))
-    status: Mapped[str] = mapped_column(String(20), default="active")  # active, lost, found, retired
+    status: Mapped[str] = mapped_column(String(20), default="active")  # active, lost, found, retired, listed
     notes: Mapped[str | None] = mapped_column(Text)
     # NFT fields — populated when the disc is minted on-chain via DiscRegistry
     token_id: Mapped[int | None] = mapped_column(Integer, nullable=True)

@@ -20,6 +20,7 @@ from app.models.payment import EventPayment  # noqa: E402, F401
 from app.models.ledger import LedgerEntry, SeasonSummary, Budget  # noqa: E402, F401
 from app.models.token_ledger import TokenLedger, RewardConfig  # noqa: E402, F401
 from app.models.intel_report import IntelReport  # noqa: E402, F401
+from app.models.marketplace import DiscListing  # noqa: E402, F401
 
 # KSA models — import only if the file exists (added by another terminal)
 try:

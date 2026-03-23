@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, status
 from sqlalchemy import select, func, case
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,9 +9,11 @@ from app.db.database import get_db
 from app.models.user import User
 from app.models.round import Round
 from app.models.league import Result, Event
-from app.schemas.user import DeleteAccountRequest, PushTokenRequest, UserOut, UserPublicOut, UserUpdate
+from app.schemas.user import DeleteAccountRequest, PushTokenRequest, UserOut, UserPublicOut, UserUpdate, WalletLinkRequest
 from app.services.stats_service import get_player_stats, get_hole_averages
 from app.services.storage_service import delete_file, upload_file
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -108,25 +112,63 @@ async def list_users(
 
 @router.post("/me/wallet")
 async def link_wallet(
-    data: dict,
+    data: WalletLinkRequest,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Link a wallet address to the current user's account."""
-    wallet_address = data.get("wallet_address", "").strip()
-    if not wallet_address or len(wallet_address) != 42 or not wallet_address.startswith("0x"):
-        raise HTTPException(status_code=400, detail="Invalid wallet address")
+    """Link a MetaMask wallet to your account.
+
+    Requires signing a message to prove wallet ownership.
+    The client should call personal_sign with the provided message,
+    then submit the wallet_address, signature, and original message.
+    """
+    from app.services.blockchain_service import (
+        BlockchainUnavailableError,
+        is_valid_address,
+        verify_wallet_signature,
+    )
+
+    # Validate address format
+    if not is_valid_address(data.wallet_address):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid Ethereum wallet address.",
+        )
+
+    # Verify the signature proves wallet ownership
+    try:
+        valid = verify_wallet_signature(data.wallet_address, data.message, data.signature)
+    except BlockchainUnavailableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Signature verification unavailable: {exc}",
+        )
+
+    if not valid:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Signature verification failed. The signature does not match the wallet address.",
+        )
 
     # Check if wallet is already linked to another user
     existing = await db.execute(
-        select(User).where(User.wallet_address == wallet_address, User.id != user.id)
+        select(User).where(User.wallet_address == data.wallet_address, User.id != user.id)
     )
     if existing.scalar_one_or_none():
-        raise HTTPException(status_code=409, detail="Wallet already linked to another account")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This wallet is already linked to another account.",
+        )
 
-    user.wallet_address = wallet_address
+    user.wallet_address = data.wallet_address
     await db.flush()
-    return {"wallet_address": wallet_address}
+
+    logger.info("User %s linked wallet %s", user.username, data.wallet_address)
+
+    return {
+        "wallet_address": data.wallet_address,
+        "message": "Wallet linked successfully.",
+    }
 
 
 @router.put("/me", response_model=UserOut)

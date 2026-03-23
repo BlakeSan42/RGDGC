@@ -87,3 +87,20 @@ class SocialAuthResponse(BaseModel):
     token_type: str = "bearer"
     is_new_user: bool
     user: UserOut
+
+
+class WalletLinkRequest(BaseModel):
+    """Request body for linking a MetaMask wallet to an account."""
+
+    wallet_address: str = Field(
+        ..., min_length=42, max_length=42, pattern=r"^0x[a-fA-F0-9]{40}$",
+        description="Ethereum wallet address (0x...)",
+    )
+    signature: str = Field(
+        ..., min_length=1,
+        description="EIP-191 personal_sign signature proving wallet ownership",
+    )
+    message: str = Field(
+        ..., min_length=1,
+        description="The original message that was signed",
+    )

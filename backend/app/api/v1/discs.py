@@ -90,15 +90,30 @@ async def get_optional_user(
 # ---------------------------------------------------------------------------
 
 
-@router.post("/register", response_model=DiscResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register_disc_endpoint(
     data: DiscRegister,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Register a new disc and generate a unique RGDG code."""
+    """Register a new disc and generate a unique RGDG code.
+
+    The response includes `can_mint_nft` indicating whether the disc
+    can be minted as an NFT (requires a linked wallet and blockchain config).
+    """
     disc = await register_disc(db, user.id, data)
-    return DiscResponse(
+
+    # Check if user can mint this disc as an NFT
+    can_mint_nft = False
+    if user.wallet_address:
+        try:
+            from app.config import get_settings
+            settings = get_settings()
+            can_mint_nft = bool(settings.disc_registry_address and settings.web3_provider_url)
+        except Exception:
+            pass
+
+    response = DiscResponse(
         id=disc.id,
         disc_code=disc.disc_code,
         owner_id=disc.owner_id,
@@ -117,6 +132,10 @@ async def register_disc_endpoint(
         registered_at=disc.registered_at,
         updated_at=disc.updated_at,
     )
+    return {
+        **response.model_dump(),
+        "can_mint_nft": can_mint_nft,
+    }
 
 
 @router.get("/my-discs", response_model=list[DiscResponse])

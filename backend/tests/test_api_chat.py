@@ -5,7 +5,7 @@ from httpx import AsyncClient
 
 
 @pytest.mark.asyncio
-async def test_chat_help(client: AsyncClient, auth_headers):
+async def test_chat_help(client: AsyncClient, admin_headers):
     res = await client.post(
         "/api/v1/chat",
         headers=auth_headers,
@@ -19,7 +19,7 @@ async def test_chat_help(client: AsyncClient, auth_headers):
 
 
 @pytest.mark.asyncio
-async def test_chat_standings(client: AsyncClient, auth_headers):
+async def test_chat_standings(client: AsyncClient, admin_headers):
     res = await client.post(
         "/api/v1/chat",
         headers=auth_headers,
@@ -31,7 +31,7 @@ async def test_chat_standings(client: AsyncClient, auth_headers):
 
 
 @pytest.mark.asyncio
-async def test_chat_events(client: AsyncClient, auth_headers):
+async def test_chat_events(client: AsyncClient, admin_headers):
     res = await client.post(
         "/api/v1/chat",
         headers=auth_headers,
@@ -42,7 +42,7 @@ async def test_chat_events(client: AsyncClient, auth_headers):
 
 
 @pytest.mark.asyncio
-async def test_chat_rules(client: AsyncClient, auth_headers):
+async def test_chat_rules(client: AsyncClient, admin_headers):
     res = await client.post(
         "/api/v1/chat",
         headers=auth_headers,
@@ -54,7 +54,7 @@ async def test_chat_rules(client: AsyncClient, auth_headers):
 
 
 @pytest.mark.asyncio
-async def test_chat_default_response(client: AsyncClient, auth_headers):
+async def test_chat_default_response(client: AsyncClient, admin_headers):
     res = await client.post(
         "/api/v1/chat",
         headers=auth_headers,

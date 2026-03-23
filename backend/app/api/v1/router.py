@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1 import auth, users, courses, rounds, leagues, events, putting, admin, stickers, geo, discs, chat, weather, blockchain, web3auth, owner, payments, treasury, tokens, intel
+from app.api.v1 import auth, users, courses, rounds, leagues, events, putting, admin, stickers, geo, discs, chat, weather, blockchain, web3auth, owner, payments, treasury, tokens, intel, marketplace
 
 api_router = APIRouter()
 
@@ -23,6 +23,7 @@ api_router.include_router(payments.router, prefix="/payments", tags=["payments"]
 api_router.include_router(treasury.router, prefix="/treasury", tags=["treasury"])
 api_router.include_router(tokens.router, prefix="/tokens", tags=["tokens"])
 api_router.include_router(intel.router, prefix="/intel", tags=["intel"])
+api_router.include_router(marketplace.router, prefix="/marketplace", tags=["marketplace"])
 
 # Analytics router — club leader dashboard
 try:
