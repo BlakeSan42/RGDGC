@@ -17,14 +17,14 @@ const INITIAL_SUGGESTIONS = [
   'When is the next event?',
 ];
 
-export default function ClawdChat() {
+export default function AceChat() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome',
       role: 'assistant',
       content:
-        "Hey! I'm Clawd, your RGDGC admin assistant. Ask me about member analytics, standings, events, or system status.",
+        "Hey! I'm Ace, your RGDGC admin assistant. Ask me about member analytics, standings, events, or system status.",
       timestamp: new Date(),
     },
   ]);
@@ -76,7 +76,7 @@ export default function ClawdChat() {
     } catch (err: any) {
       const status = err?.response?.status;
       let errorMsg = "Something went wrong. Try again.";
-      if (status === 403) errorMsg = "Admin access required for Clawd.";
+      if (status === 403) errorMsg = "Admin access required for Ace.";
       if (status === 429) errorMsg = "Slow down! Too many messages. Try again in a minute.";
 
       setMessages((prev) => [
@@ -98,7 +98,7 @@ export default function ClawdChat() {
       <button
         onClick={() => setIsOpen(true)}
         className="fixed bottom-6 right-6 w-14 h-14 bg-forest-600 hover:bg-forest-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105 z-50"
-        title="Ask Clawd"
+        title="Ask Ace"
       >
         <MessageCircle className="w-6 h-6" />
       </button>
@@ -112,7 +112,7 @@ export default function ClawdChat() {
         <div className="flex items-center gap-2">
           <Bot className="w-5 h-5" />
           <div>
-            <h3 className="font-semibold text-sm">Clawd</h3>
+            <h3 className="font-semibold text-sm">Ace</h3>
             <p className="text-xs text-forest-200">RGDGC Admin Assistant</p>
           </div>
         </div>
@@ -179,7 +179,7 @@ export default function ClawdChat() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && sendMessage(input)}
-          placeholder="Ask Clawd..."
+          placeholder="Ask Ace..."
           className="flex-1 text-sm border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent"
           disabled={loading}
         />

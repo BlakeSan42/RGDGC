@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Menu, LogOut, Bell } from 'lucide-react';
 import Sidebar from './Sidebar';
-import ClawdChat from './ClawdChat';
+import AceChat from './AceChat';
 import { useAuth } from '../hooks/useAuth';
 
 export default function Layout() {
@@ -71,7 +71,7 @@ export default function Layout() {
       </div>
 
       {/* Clawd AI Assistant — floating chat */}
-      <ClawdChat />
+      <AceChat />
     </div>
   );
 }

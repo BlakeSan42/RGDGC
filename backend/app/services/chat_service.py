@@ -493,7 +493,7 @@ async def _llm_chat(
             endpoint="chat",
         )
 
-        if result.get("error") and not result.get("text"):
+        if result.get("error"):
             return await _keyword_chat(message, username, role, db_session)
 
         # Handle tool calls

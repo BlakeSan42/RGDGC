@@ -23,7 +23,7 @@ interface Message {
 
 const WELCOME_MESSAGE: Message = {
   id: "welcome",
-  text: "Hey! I'm Clawd, the RGDGC assistant. Ask me about standings, events, rules, or anything disc golf!",
+  text: "Hey! I'm Ace, the RGDGC assistant. Ask me about standings, events, rules, or anything disc golf!",
   sender: "bot",
   timestamp: new Date(),
 };
@@ -34,7 +34,7 @@ const QUICK_ACTIONS = [
   { label: "Rules", message: "What are the league rules?" },
 ];
 
-async function sendToClawd(_message: string): Promise<string> {
+async function sendToAce(_message: string): Promise<string> {
   // TODO: Connect to FastAPI backend at /api/v1/chat
   // const response = await fetch(`${API_BASE}/api/v1/chat`, {
   //   method: "POST",
@@ -81,7 +81,7 @@ export default function ChatScreen() {
       scrollToBottom();
 
       try {
-        const reply = await sendToClawd(messageText);
+        const reply = await sendToAce(messageText);
         const botMessage: Message = {
           id: `bot-${Date.now()}`,
           text: reply,
@@ -158,7 +158,7 @@ export default function ChatScreen() {
         </View>
         <View style={[styles.messageBubble, styles.botBubble, styles.typingBubble]}>
           <ActivityIndicator size="small" color={colors.text.secondary} />
-          <Text style={styles.typingText}>Clawd is typing...</Text>
+          <Text style={styles.typingText}>Ace is typing...</Text>
         </View>
       </View>
     );
@@ -214,7 +214,7 @@ export default function ChatScreen() {
             style={styles.textInput}
             value={inputText}
             onChangeText={setInputText}
-            placeholder="Ask Clawd anything..."
+            placeholder="Ask Ace anything..."
             placeholderTextColor={colors.text.disabled}
             multiline
             maxLength={500}
