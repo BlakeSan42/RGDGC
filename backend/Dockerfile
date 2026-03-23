@@ -26,5 +26,5 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=3 --start-period=15s \
 
 EXPOSE ${PORT}
 
-# Run migrations then start server
-CMD sh -c "alembic upgrade head 2>/dev/null; uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"
+# Start server (table creation handled by app lifespan)
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
