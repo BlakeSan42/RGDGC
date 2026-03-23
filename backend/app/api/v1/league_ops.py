@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, func, and_, desc, update
+from sqlalchemy import select, func, and_, desc, update, case
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel, Field
 import random
