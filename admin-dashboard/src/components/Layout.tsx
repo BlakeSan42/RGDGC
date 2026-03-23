@@ -70,7 +70,7 @@ export default function Layout() {
         </main>
       </div>
 
-      {/* Clawd AI Assistant — floating chat */}
+      {/* Ace AI Assistant — floating chat */}
       <AceChat />
     </div>
   );

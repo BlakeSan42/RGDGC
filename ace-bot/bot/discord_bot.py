@@ -213,7 +213,7 @@ async def _disc(interaction: discord.Interaction, code: str) -> None:
         await interaction.followup.send(f"Could not find disc '{code}'.")
 
 
-@app_commands.command(name="ask", description="Ask Clawd an AI-powered disc golf question")
+@app_commands.command(name="ask", description="Ask Ace an AI-powered disc golf question")
 @app_commands.describe(question="Your question about disc golf, the club, rules, etc.")
 async def _ask(interaction: discord.Interaction, question: str) -> None:
     bot = _get_bot(interaction)

@@ -40,7 +40,7 @@ WELCOME_MESSAGE = (
     "/rules &lt;query&gt; — PDGA rule lookup\n"
     "/disc &lt;name&gt; — Disc information\n"
     "/course — Course info\n"
-    "/ask &lt;question&gt; — Ask Clawd anything\n"
+    "/ask &lt;question&gt; — Ask Ace anything\n"
 )
 
 
