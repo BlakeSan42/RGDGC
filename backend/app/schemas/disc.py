@@ -57,6 +57,9 @@ class DiscResponse(BaseModel):
     photo_url: str | None
     status: str
     notes: str | None
+    is_nft: bool = False
+    token_id: int | None = None
+    tx_hash: str | None = None
     registered_at: datetime
     updated_at: datetime
 

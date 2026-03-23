@@ -111,6 +111,9 @@ async def register_disc_endpoint(
         photo_url=disc.photo_url,
         status=disc.status,
         notes=disc.notes,
+        is_nft=disc.is_nft,
+        token_id=disc.token_id,
+        tx_hash=disc.tx_hash,
         registered_at=disc.registered_at,
         updated_at=disc.updated_at,
     )
@@ -137,6 +140,9 @@ async def list_my_discs(
             photo_url=d.photo_url,
             status=d.status,
             notes=d.notes,
+            is_nft=d.is_nft,
+            token_id=d.token_id,
+            tx_hash=d.tx_hash,
             registered_at=d.registered_at,
             updated_at=d.updated_at,
         )
@@ -169,6 +175,9 @@ async def get_disc_detail(
         photo_url=disc.photo_url,
         status=disc.status,
         notes=disc.notes,
+        is_nft=disc.is_nft,
+        token_id=disc.token_id,
+        tx_hash=disc.tx_hash,
         registered_at=disc.registered_at,
         updated_at=disc.updated_at,
     )
@@ -207,6 +216,14 @@ async def mark_disc_lost(
     except PermissionError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the disc owner can mark it as lost")
 
+    # If disc is an NFT, also report on-chain (fire and forget)
+    if disc.is_nft and disc.token_id:
+        try:
+            from app.services.blockchain_service import report_disc_lost_onchain
+            report_disc_lost_onchain(disc.token_id)
+        except Exception:
+            pass  # On-chain sync failure must never break disc lost flow
+
     return DiscResponse(
         id=disc.id,
         disc_code=disc.disc_code,
@@ -220,6 +237,9 @@ async def mark_disc_lost(
         photo_url=disc.photo_url,
         status=disc.status,
         notes=disc.notes,
+        is_nft=disc.is_nft,
+        token_id=disc.token_id,
+        tx_hash=disc.tx_hash,
         registered_at=disc.registered_at,
         updated_at=disc.updated_at,
     )
@@ -252,6 +272,14 @@ async def confirm_disc_returned(
     except PermissionError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the disc owner can confirm return")
 
+    # If disc is an NFT, also confirm return on-chain (fire and forget)
+    if disc.is_nft and disc.token_id:
+        try:
+            from app.services.blockchain_service import confirm_disc_return_onchain
+            confirm_disc_return_onchain(disc.token_id)
+        except Exception:
+            pass  # On-chain sync failure must never break disc return flow
+
     # Award $RGDG tokens to finders who are registered users (fire and forget)
     try:
         from app.services.token_service import award_disc_return
@@ -277,6 +305,9 @@ async def confirm_disc_returned(
         photo_url=disc.photo_url,
         status=disc.status,
         notes=disc.notes,
+        is_nft=disc.is_nft,
+        token_id=disc.token_id,
+        tx_hash=disc.tx_hash,
         registered_at=disc.registered_at,
         updated_at=disc.updated_at,
     )
@@ -360,6 +391,19 @@ async def report_disc_found(
         )
     except ValueError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Disc not found")
+
+    # If disc is an NFT, also report found on-chain (fire and forget)
+    try:
+        disc_for_nft = await lookup_disc(db, disc_code)
+        if disc_for_nft and disc_for_nft.is_nft and disc_for_nft.token_id:
+            from app.services.blockchain_service import report_disc_found_onchain
+            # Use finder's wallet if available, otherwise zero address
+            finder_wallet = "0x0000000000000000000000000000000000000000"
+            if user and user.wallet_address:
+                finder_wallet = user.wallet_address
+            report_disc_found_onchain(disc_for_nft.token_id, finder_wallet)
+    except Exception:
+        pass  # On-chain sync failure must never break found report flow
 
     # Notify the disc owner that someone found their disc
     try:

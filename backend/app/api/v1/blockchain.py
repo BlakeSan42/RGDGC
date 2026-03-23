@@ -456,3 +456,184 @@ async def distribute(
     )
 
     return [TransactionResponse.model_validate(tr) for tr in tx_records]
+
+
+# ---------------------------------------------------------------------------
+#  Disc NFT endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.post("/discs/{disc_code}/mint-nft", response_model=MintDiscNFTResponse)
+async def mint_disc_as_nft(
+    disc_code: str,
+    user: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Mint a registered disc as an NFT on the DiscRegistry contract. Admin only.
+
+    The disc owner must have a wallet_address linked. The disc must not already
+    be minted as an NFT.
+    """
+    # Look up the disc
+    result = await db.execute(
+        select(RegisteredDisc).where(RegisteredDisc.disc_code == disc_code)
+    )
+    disc = result.scalar_one_or_none()
+    if disc is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Disc not found.",
+        )
+
+    if disc.is_nft:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Disc {disc_code} is already minted as NFT (token_id={disc.token_id}).",
+        )
+
+    # Get the owner's wallet address
+    owner_result = await db.execute(select(User).where(User.id == disc.owner_id))
+    owner = owner_result.scalar_one_or_none()
+    if not owner or not owner.wallet_address:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Disc owner does not have a wallet address linked.",
+        )
+
+    # Mint on-chain
+    try:
+        tx_hash, token_id = mint_disc_nft(
+            to_address=owner.wallet_address,
+            disc_code=disc.disc_code,
+            manufacturer=disc.manufacturer or "",
+            mold=disc.mold,
+            plastic=disc.plastic or "",
+            weight_grams=disc.weight_grams or 0,
+            color=disc.color or "",
+        )
+    except BlockchainUnavailableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Blockchain service unavailable: {exc}",
+        )
+
+    # Update disc record
+    disc.token_id = token_id
+    disc.tx_hash = tx_hash
+    disc.is_nft = True
+    await db.flush()
+
+    logger.info(
+        "Admin %s minted disc %s as NFT (token_id=%d) — tx %s",
+        user.username, disc_code, token_id, tx_hash,
+    )
+
+    return MintDiscNFTResponse(
+        disc_code=disc.disc_code,
+        token_id=token_id,
+        tx_hash=tx_hash,
+        owner_address=owner.wallet_address,
+    )
+
+
+@router.get("/discs/{disc_code}/nft", response_model=DiscNFTStatus)
+async def get_disc_nft_status(
+    disc_code: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Check if a disc has been minted as an NFT and its on-chain status."""
+    result = await db.execute(
+        select(RegisteredDisc).where(RegisteredDisc.disc_code == disc_code)
+    )
+    disc = result.scalar_one_or_none()
+    if disc is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Disc not found.",
+        )
+
+    if not disc.is_nft:
+        return DiscNFTStatus(is_nft=False)
+
+    # Try to get on-chain info (optional — gracefully degrade)
+    onchain_owner = None
+    onchain_status = None
+    try:
+        nft_info = get_disc_nft_info(disc_code)
+        if nft_info:
+            onchain_owner = nft_info.get("owner")
+            onchain_status = nft_info.get("status")
+    except BlockchainUnavailableError:
+        pass  # On-chain lookup failed — return DB data only
+
+    return DiscNFTStatus(
+        is_nft=True,
+        token_id=disc.token_id,
+        tx_hash=disc.tx_hash,
+        onchain_owner=onchain_owner,
+        onchain_status=onchain_status,
+    )
+
+
+@router.post("/discs/{disc_code}/transfer-nft", response_model=MintDiscNFTResponse)
+async def transfer_disc_nft(
+    disc_code: str,
+    data: TransferDiscNFTRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Transfer a disc NFT to a new owner. Only the current disc owner can transfer."""
+    result = await db.execute(
+        select(RegisteredDisc).where(RegisteredDisc.disc_code == disc_code)
+    )
+    disc = result.scalar_one_or_none()
+    if disc is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Disc not found.",
+        )
+
+    if disc.owner_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the disc owner can transfer it.",
+        )
+
+    if not disc.is_nft or not disc.token_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This disc has not been minted as an NFT.",
+        )
+
+    # Transfer on-chain
+    try:
+        tx_hash = transfer_disc_onchain(disc.token_id, data.to_address)
+    except BlockchainUnavailableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Blockchain service unavailable: {exc}",
+        )
+
+    # Update the DB — find or create the new owner by wallet address
+    new_owner_result = await db.execute(
+        select(User).where(User.wallet_address == data.to_address)
+    )
+    new_owner = new_owner_result.scalar_one_or_none()
+    if new_owner:
+        disc.owner_id = new_owner.id
+
+    disc.tx_hash = tx_hash
+    await db.flush()
+
+    logger.info(
+        "User %s transferred disc %s (token %d) to %s — tx %s",
+        user.username, disc_code, disc.token_id, data.to_address, tx_hash,
+    )
+
+    return MintDiscNFTResponse(
+        disc_code=disc.disc_code,
+        token_id=disc.token_id,
+        tx_hash=tx_hash,
+        owner_address=data.to_address,
+    )
