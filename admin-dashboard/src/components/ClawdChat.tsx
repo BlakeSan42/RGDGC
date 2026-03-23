@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Bot, Loader2 } from 'lucide-react';
-import { api } from '../lib/api';
+import api from '../lib/api';
 
 interface ChatMessage {
   id: string;

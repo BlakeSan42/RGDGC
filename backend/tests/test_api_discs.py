@@ -70,7 +70,7 @@ async def test_list_my_discs_returns_own_only(client: AsyncClient, auth_headers)
     res2 = await client.post("/api/v1/auth/register", json={
         "email": "other@rgdgc.com",
         "username": "otherplayer",
-        "password": "pass123",
+        "password": "pass12345",
     })
     other_headers = {"Authorization": f"Bearer {res2.json()['access_token']}"}
     await client.post(
@@ -195,7 +195,7 @@ async def test_report_lost_non_owner_forbidden(client: AsyncClient, auth_headers
     res2 = await client.post("/api/v1/auth/register", json={
         "email": "other2@rgdgc.com",
         "username": "other2",
-        "password": "pass123",
+        "password": "pass12345",
     })
     other_headers = {"Authorization": f"Bearer {res2.json()['access_token']}"}
 
@@ -255,7 +255,7 @@ async def test_confirm_returned_non_owner_forbidden(client: AsyncClient, auth_he
     res2 = await client.post("/api/v1/auth/register", json={
         "email": "other3@rgdgc.com",
         "username": "other3",
-        "password": "pass123",
+        "password": "pass12345",
     })
     other_headers = {"Authorization": f"Bearer {res2.json()['access_token']}"}
 

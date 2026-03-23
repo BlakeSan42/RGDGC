@@ -517,6 +517,7 @@ async def update_reward_config(
         db.add(config)
 
     await db.flush()
+    await db.refresh(config)
     return config
 
 

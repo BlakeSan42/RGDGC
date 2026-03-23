@@ -15,7 +15,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Shield, BookOpen, CarFront, Plus, FileText, AlertTriangle,
   TrendingUp, TrendingDown, DollarSign, Users, Calendar,
-  ChevronRight, Download, Eye, Pin, Pencil,
+  Download, Eye, Pin, Pencil,
 } from 'lucide-react';
 import api from '../lib/api';
 
@@ -99,7 +99,7 @@ const SIMULATION_RESULTS = {
 
 export default function KSAIntel() {
   const [activeTab, setActiveTab] = useState<'overview' | 'articles' | 'towing'>('overview');
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
 
   const { data: articles } = useQuery<KSAArticle[]>({
     queryKey: ['ksa-articles'],

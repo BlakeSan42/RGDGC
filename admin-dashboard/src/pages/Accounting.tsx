@@ -14,7 +14,7 @@ export default function Accounting() {
   const queryClient = useQueryClient();
 
   const { data: balance } = useQuery({ queryKey: ['treasury-balance'], queryFn: cashTreasuryApi.getBalance });
-  const { data: ledger } = useQuery({ queryKey: ['treasury-ledger'], queryFn: () => cashTreasuryApi.getLedger({ limit: 50 }) });
+  const { data: ledger } = useQuery({ queryKey: ['treasury-ledger'], queryFn: () => cashTreasuryApi.getLedger({ per_page: 50 }) });
   const { data: financial } = useQuery({ queryKey: ['financial-summary'], queryFn: () => analyticsApi.financialSummary(12) });
   const { data: unpaidFees } = useQuery({ queryKey: ['unpaid-fees'], queryFn: analyticsApi.unpaidFees });
 
@@ -245,7 +245,7 @@ function CollectFeesTab({ queryClient }: { queryClient: any }) {
   const [amount, setAmount] = useState('5.00');
   const [method, setMethod] = useState('cash');
 
-  const { data: events } = useQuery({ queryKey: ['events'], queryFn: () => getEvents({ limit: 20 }) });
+  const { data: events } = useQuery({ queryKey: ['events'], queryFn: () => getEvents({ per_page: 20 }) });
 
   const collectMutation = useMutation({
     mutationFn: () => cashTreasuryApi.collectFee({
