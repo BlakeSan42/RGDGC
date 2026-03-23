@@ -63,7 +63,7 @@ class HoleScore(Base):
     circle_hit: Mapped[str | None] = mapped_column(String(10))  # "c1", "c2", "parked", "none"
     scramble: Mapped[bool | None] = mapped_column(Boolean)  # saved par after missing fairway
     drive_distance: Mapped[int | None] = mapped_column(Integer)  # feet
-    is_dnf: Mapped[bool] = mapped_column(Boolean, default=False)  # Did Not Finish
+    is_dnf: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")  # Did Not Finish
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 

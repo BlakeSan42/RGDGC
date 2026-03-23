@@ -116,6 +116,7 @@ async def submit_score(
         circle_hit=data.circle_hit,
         scramble=data.scramble,
         drive_distance=data.drive_distance,
+        is_dnf=False,
     )
     db.add(score)
     await db.flush()
