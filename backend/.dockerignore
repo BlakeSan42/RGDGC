@@ -1,0 +1,33 @@
+# Don't copy local env files into production image
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Tests
+tests/
+pytest.ini
+conftest.py
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Docker
+Dockerfile
+docker-compose*.yml
+
+# Docs
+*.md
+LICENSE

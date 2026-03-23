@@ -1,4 +1,157 @@
-Here are the commands to run manually:
+
+
+P0-1: Backend → Railway Deploy
+
+  Time: ~10 minutes
+
+  # 1. Install Railway CLI (if not already)
+  brew install railway
+
+  # 2. Login
+  railway login
+
+  # 3. Create project + link
+  cd backend
+  railway init        # creates project, pick a name like "rgdgc-backend"
+  railway link        # links this directory
+
+  # 4. Add PostgreSQL + Redis
+  railway add --plugin postgresql
+  railway add --plugin redis
+
+  # 5. Set environment variables
+  # Railway auto-sets DATABASE_URL and REDIS_URL from the plugins above,
+  # but the backend expects asyncpg format. Set these:
+  railway variables set \
+    DATABASE_URL='${{Postgres.DATABASE_URL}}' \
+    REDIS_URL='${{Redis.REDIS_URL}}' \
+    ENVIRONMENT=production \
+    SECRET_KEY="$(python3 -c 'import secrets; print(secrets.token_hex(32))')" \
+    JWT_SECRET="$(python3 -c 'import secrets; print(secrets.token_hex(32))')" \
+    OWNER_KEY="$(python3 -c 'import secrets; print(secrets.token_hex(32))')" \
+    CORS_ORIGINS="https://rgdgc.com,https://admin.rgdgc.com,https://rgdgc-admin.vercel.app"
+
+  # ⚠️   SAVE the OWNER_KEY somewhere safe — you'll need it for admin operations
+
+  # 6. Deploy
+  railway up
+
+  # 7. Get your URL
+  railway domain        # generates a *.up.railway.app URL
+
+  # 8. Verify
+  curl https://YOUR-URL.up.railway.app/health
+  # Should return: {"status":"healthy","service":"rgdgc-api"}
+
+  # 9. Seed production database
+  railway run python -m scripts.seed_data
+  railway run python -m scripts.seed_geo
+  railway run python -m scripts.seed_elevation --offline
+
+  Optional env vars (add when you have them):
+  railway variables set \
+    GOOGLE_CLIENT_ID="your-google-client-id" \
+    GOOGLE_CLIENT_SECRET="your-google-secret" \
+    ANTHROPIC_API_KEY="your-key" \
+    WEB3_PROVIDER_URL="https://sepolia.infura.io/v3/YOUR_KEY"
+
+  After deploy, note your Railway URL — you need it for P0-2.
+
+  ---
+  P0-2: Mobile → EAS Production Build
+
+  Time: ~15 minutes (plus build queue)
+
+  # 1. Install EAS CLI
+  npm install -g eas-cli
+
+  # 2. Login to Expo
+  cd mobile
+  eas login          # use your Expo account (or create one at expo.dev)
+
+  # 3. Initialize EAS for this project
+  eas init           # interactive — creates project on expo.dev, sets projectId
+
+  # 4. Update app.json with your project ID
+  # eas init does this automatically, but verify:
+  # "extra.eas.projectId" should be set in app.json
+
+  # 5. Set the production API URL (use your Railway URL from P0-1)
+  # Edit mobile/eas.json — the "production" profile:
+  #   "env": { "EXPO_PUBLIC_API_URL": "https://YOUR-URL.up.railway.app" }
+
+  # 6. Build for iOS
+  eas build --platform ios --profile production
+  # First time: prompts for Apple Developer account (apple ID + team ID)
+  # If you don't have certs, EAS can manage them for you (recommended)
+
+  # 7. Build for Android
+  eas build --platform android --profile production
+  # First time: EAS generates a keystore for you (recommended)
+
+  # 8. Submit to stores (when ready)
+  eas submit --platform ios      # needs ASC API key or Apple ID
+  eas submit --platform android  # needs Google Play service account JSON
+
+  # 9. For now, test with a preview build on your phone:
+  eas build --platform ios --profile preview
+  # Scan the QR code when build completes to install
+
+  GitHub Actions secret (for CI auto-deploys):
+  # Get your Expo token from expo.dev → Account Settings → Access Tokens
+  # Then add it to GitHub:
+  gh secret set EXPO_TOKEN --body "your-expo-token"
+
+  ---
+  P0-3: Clean Up ace-bot/ Directory
+
+  Time: ~2 minutes
+
+  The real bot is in-app (backend/app/services/chat_service.py). The ace-bot/ directory is legacy Telegram/Discord code that confuses every session. You have two
+  options:
+
+  Option A — Delete it entirely (recommended):
+  rm -rf ace-bot/
+  git add -A ace-bot/
+  git commit -m "Remove legacy ace-bot/ — real bot is in-app via chat_service.py"
+
+  Option B — Keep it as a standalone Telegram companion (if you want that too):
+  # It works — just needs tokens. Deploy to Railway as a separate service:
+  cd ace-bot
+  railway init       # separate project from backend
+  railway variables set \
+    RGDGC_API_URL="https://YOUR-URL.up.railway.app/api/v1" \
+    TELEGRAM_BOT_TOKEN="your-telegram-bot-token" \
+    ANTHROPIC_API_KEY="your-anthropic-key"
+  railway up
+
+
+
+
+
+Open http://localhost:9001 in your browser. That's your production preview — static build, no dev server noise, no port
+  conflicts.
+
+  Here's the setup going forward:
+
+  ┌──────────────┬─────────────┬───────────────────────────────────────────────────────┬───────────────────┐
+  │     What     │    Port     │                        Command                        │        Who        │
+  ├──────────────┼─────────────┼───────────────────────────────────────────────────────┼───────────────────┤
+  │ Your app     │ 9000 + 9001 │ ./scripts/start-prod.sh                               │ You only          │
+  ├──────────────┼─────────────┼───────────────────────────────────────────────────────┼───────────────────┤
+  │ Dev backend  │ 8001        │ ./scripts/start-backend.sh                            │ Terminal sessions │
+  ├──────────────┼─────────────┼───────────────────────────────────────────────────────┼───────────────────┤
+  │ Dev frontend │ 8082        │ ./scripts/start-web.sh                                │ Terminal sessions │
+  ├──────────────┼─────────────┼───────────────────────────────────────────────────────┼───────────────────┤
+  │ Verify       │ —           │ ./scripts/verify.sh (prod) or ./scripts/verify.sh dev │ Anyone            │
+  └──────────────┴─────────────┴───────────────────────────────────────────────────────┴───────────────────┘
+
+
+
+
+
+
+
 
   Terminal A — Backend API:
   cd ~/RGDGC/backend
@@ -6,8 +159,8 @@ Here are the commands to run manually:
   uvicorn app.main:app --reload --port 8001
 
   Terminal B — Mobile Web:
-  cd ~/RGDGC/mobile
-  npx expo start --web --port 8082
+  
+  
 
   Prerequisites (should already be running):
   cd ~/RGDGC
@@ -16,3 +169,60 @@ Here are the commands to run manually:
   Then open http://localhost:8082 in your browser.
 
   The backend API docs are at http://localhost:8001/docs (Swagger UI).
+
+
+
+  all terminals should always check in with each other. this should be embedded in memory and always remembered. every claude code terminal needs to also       
+  fundamentally understand project management with the other team and how to effectively implement continuous development across the entire team no matter how    
+  many claude code terminal sessions are running
+
+
+
+
+doing this now. but make sure we opt out of everything: Railway now collects CLI usage data to improve the developer experience.
+  You can opt out by running `railway telemetry disable` or by setting RAILWAY_NO_TELEMETRY=1 in your environment.    
+
+
+
+backend % railway init
+Railway now collects CLI usage data to improve the developer experience.
+You can opt out by running `railway telemetry disable` or by setting RAILWAY_NO_TELEMETRY=1 in your environment.
+Learn more: https://docs.railway.com/cli/telemetry
+> Select a workspace Blake Sanders's Projects
+> Project Name rgdgc-backend
+
+Created project rgdgc-backend on Blake Sanders's Projects
+https://railway.com/project/752a564e-82dd-4eb8-a942-d04a893d4901
+
+
+backend % ! railway add -d postgres
+> What do you need? Database
+  🎉 Added PostgreSQL to project and linked                                                                                                                       
+blakesanders@MacBook-Pro-2 backend % ! railway add -d redis
+> What do you need? Database
+  🎉 Added Redis to project  
+
+
+
+   ⎿  Project: rgdgc-backend
+     Environment: production
+     Service: rgdgc-api    
+     \
+
+
+
+     Bash(git show 0bf44c8 --stat)
+  ⎿  commit 0bf44c820613934538da45eddda356213b3f2d54
+     Author: Uraholy <bt84725@gmail.com>
+     Date:   Mon Mar 23 00:51:14 2026 -0500
+
+
+      - Admin login: admin@rgdgc.com / admin123
+  - Role: super_admin
+  - OWNER_KEY: fdc188e94c9e7ca76d57ea0a0898d307c92f38e4a822cd36adc01e048e4362ad
+  - Neon DB: Connected, PostGIS 3.5 enabled
+
+
+when this is done and fully working, simulated, tested, verified - see what you can get done with the game that is planned 
+
+consider using another clawdbot as a qa human tester to help.

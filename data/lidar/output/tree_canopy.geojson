@@ -1,0 +1,931 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "tree-0",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.20985,
+          30.02654
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H1 left guardian",
+        "height_m": 22,
+        "canopy_radius_m": 5,
+        "species": "Loblolly Pine",
+        "affects_holes": "1",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-1",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.21,
+          30.02648
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H1 right sentinel",
+        "height_m": 18,
+        "canopy_radius_m": 6,
+        "species": "Water Oak",
+        "affects_holes": "1",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-2",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2102,
+          30.02656
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H1 fairway pine",
+        "height_m": 25,
+        "canopy_radius_m": 4,
+        "species": "Loblolly Pine",
+        "affects_holes": "1",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-3",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2109,
+          30.0266
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H2 entrance oak",
+        "height_m": 20,
+        "canopy_radius_m": 5,
+        "species": "Water Oak",
+        "affects_holes": "2",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-4",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2112,
+          30.02648
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H2 mid pine",
+        "height_m": 24,
+        "canopy_radius_m": 4,
+        "species": "Loblolly Pine",
+        "affects_holes": "2",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-5",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2114,
+          30.02662
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H2 sweetgum",
+        "height_m": 19,
+        "canopy_radius_m": 6,
+        "species": "Sweetgum",
+        "affects_holes": "2",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-6",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.21155,
+          30.02645
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H2 approach pine",
+        "height_m": 22,
+        "canopy_radius_m": 5,
+        "species": "Loblolly Pine",
+        "affects_holes": "2",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-7",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.211,
+          30.02625
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H3 right oak",
+        "height_m": 21,
+        "canopy_radius_m": 5,
+        "species": "Water Oak",
+        "affects_holes": "3",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-8",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2108,
+          30.0261
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H3 fairway post oak",
+        "height_m": 18,
+        "canopy_radius_m": 4,
+        "species": "Post Oak",
+        "affects_holes": "3",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-9",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2113,
+          30.026
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H4 launch pine",
+        "height_m": 26,
+        "canopy_radius_m": 5,
+        "species": "Loblolly Pine",
+        "affects_holes": "4",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-10",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2116,
+          30.0262
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H4 dogleg oak",
+        "height_m": 20,
+        "canopy_radius_m": 6,
+        "species": "Water Oak",
+        "affects_holes": "4",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-11",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.212,
+          30.0264
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H4 mid sweetgum",
+        "height_m": 23,
+        "canopy_radius_m": 5,
+        "species": "Sweetgum",
+        "affects_holes": "4",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-12",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2123,
+          30.02655
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H4 approach oak",
+        "height_m": 19,
+        "canopy_radius_m": 5,
+        "species": "Water Oak",
+        "affects_holes": "4",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-13",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2123,
+          30.0269
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H5 left post oak",
+        "height_m": 17,
+        "canopy_radius_m": 5,
+        "species": "Post Oak",
+        "affects_holes": "5",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-14",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2121,
+          30.0268
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H5 right pine",
+        "height_m": 22,
+        "canopy_radius_m": 4,
+        "species": "Loblolly Pine",
+        "affects_holes": "5",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-15",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2114,
+          30.02685
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H6 mid oak",
+        "height_m": 20,
+        "canopy_radius_m": 5,
+        "species": "Water Oak",
+        "affects_holes": "6",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-16",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2111,
+          30.02695
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H6 approach pine",
+        "height_m": 24,
+        "canopy_radius_m": 4,
+        "species": "Loblolly Pine",
+        "affects_holes": "6",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-17",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2104,
+          30.02688
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H7 mid-left pine",
+        "height_m": 25,
+        "canopy_radius_m": 5,
+        "species": "Loblolly Pine",
+        "affects_holes": "7",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-18",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2102,
+          30.0268
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H7 sweetgum",
+        "height_m": 19,
+        "canopy_radius_m": 6,
+        "species": "Sweetgum",
+        "affects_holes": "7",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-19",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.21,
+          30.02695
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H7 approach pine",
+        "height_m": 22,
+        "canopy_radius_m": 4,
+        "species": "Loblolly Pine",
+        "affects_holes": "7",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-20",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2099,
+          30.02715
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H8 right oak",
+        "height_m": 18,
+        "canopy_radius_m": 5,
+        "species": "Water Oak",
+        "affects_holes": "8",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-21",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2101,
+          30.0272
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H8 left pine",
+        "height_m": 21,
+        "canopy_radius_m": 4,
+        "species": "Loblolly Pine",
+        "affects_holes": "8",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-22",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.21045,
+          30.02718
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H9 early pine",
+        "height_m": 23,
+        "canopy_radius_m": 5,
+        "species": "Loblolly Pine",
+        "affects_holes": "9",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-23",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2107,
+          30.0271
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H9 mid oak",
+        "height_m": 20,
+        "canopy_radius_m": 6,
+        "species": "Water Oak",
+        "affects_holes": "9",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-24",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2109,
+          30.0272
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H9 approach sweetgum",
+        "height_m": 18,
+        "canopy_radius_m": 5,
+        "species": "Sweetgum",
+        "affects_holes": "9",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-25",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2115,
+          30.0273
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H10 left guardian",
+        "height_m": 22,
+        "canopy_radius_m": 5,
+        "species": "Loblolly Pine",
+        "affects_holes": "10",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-26",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2116,
+          30.0272
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H10 right oak",
+        "height_m": 17,
+        "canopy_radius_m": 6,
+        "species": "Water Oak",
+        "affects_holes": "10",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-27",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.21235,
+          30.0272
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H11 launch pine",
+        "height_m": 25,
+        "canopy_radius_m": 5,
+        "species": "Loblolly Pine",
+        "affects_holes": "11",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-28",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2125,
+          30.02735
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H11 mid oak",
+        "height_m": 21,
+        "canopy_radius_m": 6,
+        "species": "Water Oak",
+        "affects_holes": "11",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-29",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.21265,
+          30.0275
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H11 tunnel pine",
+        "height_m": 24,
+        "canopy_radius_m": 4,
+        "species": "Loblolly Pine",
+        "affects_holes": "11",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-30",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2124,
+          30.0276
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H12 left post oak",
+        "height_m": 19,
+        "canopy_radius_m": 5,
+        "species": "Post Oak",
+        "affects_holes": "12",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-31",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.21225,
+          30.02745
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H12 right pine",
+        "height_m": 22,
+        "canopy_radius_m": 4,
+        "species": "Loblolly Pine",
+        "affects_holes": "12",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-32",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2118,
+          30.0276
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H13 early sweetgum",
+        "height_m": 23,
+        "canopy_radius_m": 5,
+        "species": "Sweetgum",
+        "affects_holes": "13",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-33",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2117,
+          30.0278
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H13 mid oak",
+        "height_m": 20,
+        "canopy_radius_m": 5,
+        "species": "Water Oak",
+        "affects_holes": "13",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-34",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.21155,
+          30.02795
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H13 approach pine",
+        "height_m": 18,
+        "canopy_radius_m": 4,
+        "species": "Loblolly Pine",
+        "affects_holes": "13",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-35",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.21115,
+          30.02808
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H14 left oak",
+        "height_m": 21,
+        "canopy_radius_m": 5,
+        "species": "Water Oak",
+        "affects_holes": "14",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-36",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.211,
+          30.028
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H14 right pine",
+        "height_m": 24,
+        "canopy_radius_m": 4,
+        "species": "Loblolly Pine",
+        "affects_holes": "14",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-37",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2109,
+          30.02785
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H15 guardian post oak",
+        "height_m": 19,
+        "canopy_radius_m": 5,
+        "species": "Post Oak",
+        "affects_holes": "15",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-38",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2114,
+          30.02758
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H16 early pine",
+        "height_m": 22,
+        "canopy_radius_m": 5,
+        "species": "Loblolly Pine",
+        "affects_holes": "16",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-39",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2111,
+          30.0275
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H16 mid oak",
+        "height_m": 20,
+        "canopy_radius_m": 6,
+        "species": "Water Oak",
+        "affects_holes": "16",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-40",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2108,
+          30.02765
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H17 tall pine",
+        "height_m": 25,
+        "canopy_radius_m": 4,
+        "species": "Loblolly Pine",
+        "affects_holes": "17",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-41",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2105,
+          30.02758
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H17 sweetgum",
+        "height_m": 19,
+        "canopy_radius_m": 5,
+        "species": "Sweetgum",
+        "affects_holes": "17",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-42",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.20975,
+          30.02755
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H18 fairway oak",
+        "height_m": 21,
+        "canopy_radius_m": 5,
+        "species": "Water Oak",
+        "affects_holes": "18",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-43",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.2096,
+          30.0274
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H18 approach pine",
+        "height_m": 23,
+        "canopy_radius_m": 4,
+        "species": "Loblolly Pine",
+        "affects_holes": "18",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-44",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.21085,
+          30.02575
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H3A right oak",
+        "height_m": 18,
+        "canopy_radius_m": 5,
+        "species": "Water Oak",
+        "affects_holes": "19",
+        "source": "course_knowledge"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tree-45",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.21075,
+          30.0259
+        ]
+      },
+      "properties": {
+        "type": "tree",
+        "name": "H3A pine",
+        "height_m": 20,
+        "canopy_radius_m": 4,
+        "species": "Loblolly Pine",
+        "affects_holes": "19",
+        "source": "course_knowledge"
+      }
+    }
+  ],
+  "properties": {
+    "total_trees": 46,
+    "course": "River Grove DGC",
+    "source": "Course knowledge + UDisc imagery",
+    "note": "Refine with LIDAR data when available"
+  }
+}
