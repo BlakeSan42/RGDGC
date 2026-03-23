@@ -51,3 +51,11 @@ signals/*.jsonl
 
 # Private / confidential research
 docs/KSA-Research*/
+
+# Team coordination (untracked, local-only)
+.team-lock.json
+.team-board.log
+.terminal-id
+.dev-server.pid
+.dev-celery.pid
+.dev-celery-beat.pid

@@ -11,18 +11,18 @@ An ecosystem — not just an app — for River Grove Disc Golf Club:
 | `admin-dashboard/` | Web admin panel | React + Vite |
 | `mcp-server/` | Claude MCP server | TypeScript, MCP SDK |
 | `contracts/` | Smart contracts (P1) | Solidity, Hardhat |
-| `clawd-bot/` | AI chatbot skills | Clawd AI bot (Discord/Telegram) |
+| `ace-bot/` | AI chatbot (Telegram) | Clawd AI bot |
 
 ### Five Pillars
 1. **Disc Golf Game** — Full playable mobile game with physics-based flight, career mode, 8 game modes, skill progression
 2. **Putting Analytics** — Physics-based probability model (Gelman & Nolan), player parameter fitting, strokes gained
 3. **AR Training** — ARKit/ARCore distance measurement, putting overlay, stance guide, practice challenges
 4. **League Management** — Events, scoring, standings, prizes, $RGDG token payments
-5. **AI Assistant** — OpenClaw bot (Discord/Telegram/WhatsApp) + Claude MCP server
+5. **AI Assistant** — In-app Clawd bot + Claude MCP server
 
 ## The Golden Rule
 **PostgreSQL is the source of truth.** All league standings, scores, and player data
-come from the database. The MCP server, OpenClaw bot, and mobile app all read/write
+come from the database. The MCP server, Clawd bot, and mobile app all read/write
 through the FastAPI backend — never directly to the database.
 
 ## Architecture Overview
@@ -30,8 +30,8 @@ through the FastAPI backend — never directly to the database.
 ┌─────────────────────────────────────────────────────────┐
 │                    CLIENT LAYER                          │
 ├──────────────┬──────────────┬──────────────┬────────────┤
-│  Mobile App  │ Admin Dash   │  OpenClaw    │  Claude    │
-│ (Expo/RN)   │ (React Web)  │  Bot         │  MCP       │
+│  Mobile App  │ Admin Dash   │  Clawd Bot   │  Claude    │
+│ (Expo/RN)   │ (React Web)  │  (In-App)    │  MCP       │
 └──────┬───────┴──────┬───────┴──────┬───────┴─────┬──────┘
        │              │              │             │
        ▼              ▼              ▼             ▼
@@ -63,7 +63,7 @@ through the FastAPI backend — never directly to the database.
 | **Storage** | S3 / Cloudflare R2 | AWS or Cloudflare |
 | **Blockchain** | Solidity + Hardhat | Sepolia → Mainnet |
 | | Infura / Alchemy | Ethereum RPC |
-| **Bot** | OpenClaw (Python) | Railway or Fly.io |
+| **Bot** | Clawd (Python) | Railway or Fly.io |
 | **MCP** | TypeScript MCP SDK | Local (Claude Code) |
 | **CI/CD** | GitHub Actions + EAS Build | — |
 | **Monitoring** | Sentry, UptimeRobot, PostHog | Free tiers |
@@ -100,7 +100,7 @@ One MCP server exposes club data tools:
 ## Tool Separation (CRITICAL)
 - **Mobile App**: Player-facing. Scoring, game, AR, putting, leagues. React Native.
 - **Admin Dashboard**: Admin-facing. Event management, results, treasury. React web.
-- **OpenClaw Bot**: Messaging platforms ONLY (Discord, Telegram, WhatsApp).
+- **Clawd Bot**: In-app AI assistant (Chat tab in mobile app).
 - **Claude Code (this interface)**: ALL local development. Use MCP tools + direct DB.
 - All interfaces share the same FastAPI backend. They are independent.
 
@@ -303,7 +303,7 @@ Example (8 players):
 ## Issue Detection → Resolution Workflow
 1. **Data first:** Query the database or API for hard numbers
 2. **Logs second:** Check application logs (Railway dashboard / Sentry)
-3. **Bot third:** Check OpenClaw for user complaints or failures
+3. **Bot third:** Check Clawd for user complaints or failures
 4. **Log the signal:** Write findings to `signals/active_issues.json`
 5. **Propose the fix:** Specify changes in the relevant component
 
@@ -348,19 +348,77 @@ See `.claude/skills/` for workflows:
 - `diagnose.md` — Step-by-step issue diagnosis
 - `visualize.md` — Data visualization & architecture diagrams
 
+## Multi-Terminal Team Protocol (MANDATORY)
+
+Up to 6 Claude Code terminals work simultaneously. You are a team member.
+
+### Rules (enforced by pre-commit hook)
+1. **Never commit to main.** Work on a feature branch: `t<N>/<task-name>`
+2. **Claim files before editing.** `./scripts/team.sh claim <path> "description"`
+3. **Check in regularly.** `./scripts/team.sh checkin "what I'm doing"`
+4. **Merge via script.** `./scripts/team.sh merge` (runs tests, rebases, merges)
+
+### On Session Startup
+```bash
+./scripts/team.sh status          # See active terminals and claims
+./scripts/team.sh init t<N>       # Register (pick unclaimed t1-t6)
+git checkout -b t<N>/<task-name>  # Create feature branch
+./scripts/team.sh claim <path>    # Claim your work area
+./scripts/dev-server.sh start     # Shared backend on :8001
+```
+
+### Quick Reference
+| Action | Command |
+|--------|---------|
+| See team | `./scripts/team.sh status` |
+| See history | `./scripts/team.sh board` |
+| Register | `./scripts/team.sh init t1` |
+| Claim files | `./scripts/team.sh claim backend/app/tasks/ "celery"` |
+| Release claim | `./scripts/team.sh release backend/app/tasks/` |
+| Check who owns | `./scripts/team.sh check backend/app/tasks/` |
+| Post update | `./scripts/team.sh checkin "finished X"` |
+| Sync branch | `./scripts/team.sh sync` |
+| Merge to main | `./scripts/team.sh merge` |
+
+### Shared Resources (DO NOT duplicate)
+- **PostgreSQL** on :5433 (Docker: rgdgc-db)
+- **Redis** on :6381 (Docker: rgdgc-redis)
+- **Dev server** on :8001 (`./scripts/dev-server.sh`)
+
 ## Autonomous Operation
 When starting a session without specific instructions, enter **autopilot mode**:
-1. Read `.claude/coordination/roadmap.md` for prioritized task queue
-2. Read `.claude/coordination/board.md` to see what's claimed
+1. Run `./scripts/team.sh status` — see who's active, what's claimed
+2. Read `.claude/coordination/roadmap.md` for prioritized task queue
 3. Pick the highest-priority unclaimed task
-4. Claim it, execute it, mark it done, pick the next one
-5. See `.claude/coordination/autopilot.md` for full protocol
+4. Create a branch, claim files, execute, merge, pick the next one
+
+## Development Server (CRITICAL — READ THIS)
+
+**DO NOT start your own uvicorn process.** Multiple terminals sharing one backend
+is required — starting duplicate servers causes port conflicts, DB pool exhaustion,
+and data corruption.
+
+```bash
+# Use the shared dev server manager:
+./scripts/dev-server.sh start           # Start (or confirm already running)
+./scripts/dev-server.sh status          # Health check + DB connections
+./scripts/dev-server.sh restart         # After code changes (has --reload, rarely needed)
+./scripts/dev-server.sh logs            # Tail server output
+./scripts/dev-server.sh stop            # Only when done for the day
+```
+
+The dev server runs on **http://localhost:8001** with `--reload` enabled.
+All terminals, scripts, and tests should hit this API — never start a second uvicorn.
+
+**For seed scripts** that need direct DB access (e.g., `seed_elevation_profiles.py`),
+the shared server can stay running — they use separate short-lived connections.
+Just don't run multiple write-heavy scripts simultaneously.
 
 ## Deployment
 ```bash
 # Local development
 docker compose up -d                    # PostgreSQL + Redis
-cd backend && uvicorn app.main:app --reload
+./scripts/dev-server.sh start           # Shared backend (ONE instance)
 cd mobile && npx expo start             # Expo dev server
 
 # Production (Railway)
