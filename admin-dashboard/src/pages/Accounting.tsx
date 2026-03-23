@@ -14,7 +14,7 @@ export default function Accounting() {
   const queryClient = useQueryClient();
 
   const { data: balance } = useQuery({ queryKey: ['treasury-balance'], queryFn: cashTreasuryApi.getBalance });
-  const { data: ledger } = useQuery({ queryKey: ['treasury-ledger'], queryFn: () => cashTreasuryApi.getLedger({ per_page: 50 }) });
+  const { data: ledger } = useQuery({ queryKey: ['treasury-ledger'], queryFn: () => cashTreasuryApi.getLedger({ limit: 50 }) });
   const { data: financial } = useQuery({ queryKey: ['financial-summary'], queryFn: () => analyticsApi.financialSummary(12) });
   const { data: unpaidFees } = useQuery({ queryKey: ['unpaid-fees'], queryFn: analyticsApi.unpaidFees });
 
@@ -74,7 +74,7 @@ export default function Accounting() {
       {/* Tab Navigation */}
       <div className="border-b border-gray-200">
         <nav className="flex gap-6">
-          {tabs.map(t => (
+          {tabs?.items?.map(t => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
@@ -133,7 +133,7 @@ function OverviewTab({ financial, unpaidFees }: { financial: any; unpaidFees: an
         <h3 className="font-semibold text-gray-900 mb-4">Income by Type</h3>
         {financial?.income_by_type ? (
           <div className="space-y-3">
-            {Object.entries(financial.income_by_type).map(([type, data]: [string, any]) => (
+            {Object.entries(financial.income_by_type)?.items?.map(([type, data]: [string, any]) => (
               <div key={type} className="flex items-center justify-between">
                 <span className="text-sm text-gray-600 capitalize">{type.replace(/_/g, ' ')}</span>
                 <div className="text-right">
@@ -153,7 +153,7 @@ function OverviewTab({ financial, unpaidFees }: { financial: any; unpaidFees: an
         <h3 className="font-semibold text-gray-900 mb-4">Expenses by Type</h3>
         {financial?.expenses_by_type ? (
           <div className="space-y-3">
-            {Object.entries(financial.expenses_by_type).map(([type, data]: [string, any]) => (
+            {Object.entries(financial.expenses_by_type)?.items?.map(([type, data]: [string, any]) => (
               <div key={type} className="flex items-center justify-between">
                 <span className="text-sm text-gray-600 capitalize">{type.replace(/_/g, ' ')}</span>
                 <div className="text-right">
@@ -176,7 +176,7 @@ function OverviewTab({ financial, unpaidFees }: { financial: any; unpaidFees: an
             <h3 className="font-semibold text-yellow-800">{unpaidFees.length} Unpaid Fees</h3>
           </div>
           <div className="space-y-2">
-            {unpaidFees.slice(0, 10).map((u: any, i: number) => (
+            {unpaidFees.slice(0, 10)?.items?.map((u: any, i: number) => (
               <div key={i} className="flex items-center justify-between text-sm">
                 <span className="text-yellow-800">{u.username ?? u.display_name ?? `Player #${u.player_id}`}</span>
                 <span className="text-yellow-600">{u.event_name} — ${u.amount_owed?.toFixed(2)}</span>
@@ -209,7 +209,7 @@ function LedgerTab({ entries }: { entries: any[] }) {
         <tbody className="divide-y divide-gray-100">
           {entries.length === 0 ? (
             <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">No ledger entries yet. Record fees or expenses to get started.</td></tr>
-          ) : entries.map((e: any) => (
+          ) : entries?.items?.map((e: any) => (
             <tr key={e.id} className={e.is_voided ? 'opacity-50 line-through' : 'hover:bg-gray-50'}>
               <td className="px-4 py-3 text-gray-500">{new Date(e.created_at).toLocaleDateString()}</td>
               <td className="px-4 py-3">
@@ -245,7 +245,7 @@ function CollectFeesTab({ queryClient }: { queryClient: any }) {
   const [amount, setAmount] = useState('5.00');
   const [method, setMethod] = useState('cash');
 
-  const { data: events } = useQuery({ queryKey: ['events'], queryFn: () => getEvents({ per_page: 20 }) });
+  const { data: events } = useQuery({ queryKey: ['events'], queryFn: () => getEvents({ limit: 20 }) });
 
   const collectMutation = useMutation({
     mutationFn: () => cashTreasuryApi.collectFee({
@@ -271,7 +271,7 @@ function CollectFeesTab({ queryClient }: { queryClient: any }) {
           <label className="block text-sm font-medium text-gray-700 mb-1">Event</label>
           <select value={eventId} onChange={e => setEventId(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm">
             <option value="">Select event...</option>
-            {(events ?? []).map((e: any) => (
+            {(events ?? [])?.items?.map((e: any) => (
               <option key={e.id} value={e.id}>{e.name} ({e.event_date})</option>
             ))}
           </select>
@@ -362,7 +362,7 @@ function ExpensesTab({ queryClient }: { queryClient: any }) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
               <select value={category} onChange={e => setCategory(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm">
-                {categories.map(c => (
+                {categories?.items?.map(c => (
                   <option key={c} value={c}>{c.replace(/_/g, ' ')}</option>
                 ))}
               </select>
@@ -391,7 +391,7 @@ function ExpensesTab({ queryClient }: { queryClient: any }) {
         <h3 className="font-semibold text-gray-900 mb-4">Expenses by Category</h3>
         {byCategory ? (
           <div className="space-y-3">
-            {Object.entries(byCategory).map(([cat, data]: [string, any]) => (
+            {Object.entries(byCategory)?.items?.map(([cat, data]: [string, any]) => (
               <div key={cat} className="flex items-center justify-between">
                 <span className="text-sm text-gray-600 capitalize">{cat.replace(/_/g, ' ')}</span>
                 <span className="text-sm font-medium text-red-600">-${data.total?.toFixed(2) ?? '0.00'}</span>
@@ -434,7 +434,7 @@ function PlayerBalancesTab() {
           <tbody className="divide-y divide-gray-100">
             {(balances ?? []).length === 0 ? (
               <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-400">No player transactions yet</td></tr>
-            ) : (balances ?? []).map((p: any) => (
+            ) : (balances ?? [])?.items?.map((p: any) => (
               <tr key={p.player_id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 text-gray-900">{p.username ?? p.display_name}</td>
                 <td className="px-4 py-3 text-right text-green-600 font-mono">${p.fees_paid?.toFixed(2)}</td>
@@ -480,7 +480,7 @@ function BudgetTab() {
           <tbody className="divide-y divide-gray-100">
             {(budgetVsActual ?? []).length === 0 ? (
               <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">No budgets set. Use the API to set category budgets.</td></tr>
-            ) : (budgetVsActual ?? []).map((b: any) => {
+            ) : (budgetVsActual ?? [])?.items?.map((b: any) => {
               const variance = (b.budgeted ?? 0) - (b.actual ?? 0);
               const pctUsed = b.budgeted ? ((b.actual ?? 0) / b.budgeted * 100) : 0;
               return (

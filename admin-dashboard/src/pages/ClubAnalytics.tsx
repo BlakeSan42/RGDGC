@@ -16,8 +16,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   BarChart3, DollarSign, Users, TrendingUp, Target, Calendar,
-  AlertTriangle, ArrowUpRight, ArrowDownRight, Minus,
-  Heart, Zap, Download,
+  AlertTriangle, ArrowUpRight, ArrowDownRight,
 } from 'lucide-react';
 import { analyticsApi } from '../lib/api';
 

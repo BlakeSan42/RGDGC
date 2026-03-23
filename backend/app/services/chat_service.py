@@ -109,8 +109,11 @@ You have additional tools to help manage the club:
 - Check system health and cache status
 - View audit logs of admin actions
 - View and manage announcements
+- Search intel reports about KSA, River Grove, disc golf news, and club updates
 
 When an admin asks about member data, analytics, or system status, use the admin tools.
+When asked about KSA, River Grove news, what's happening, neighborhood updates, disc golf news,
+or community info, use the search_intel_reports tool to find relevant intelligence reports.
 Always be factual — report numbers exactly as returned by the tools.
 """
 
@@ -173,6 +176,37 @@ ADMIN_TOOLS = PLAYER_TOOLS + [
         "name": "admin_system_status",
         "description": "Get system health: database, cache, API status.",
         "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "search_intel_reports",
+        "description": "Search intel reports about KSA, River Grove, disc golf news, community updates, and club activity. Use when asked about KSA, neighborhood news, what's happening, disc golf events, or River Grove.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Search keyword (e.g. 'KSA', 'parking', 'tournament', 'River Grove')",
+                },
+                "category": {
+                    "type": "string",
+                    "description": "Optional category filter: ksa, river_grove, disc_golf, club, general",
+                },
+            },
+            "required": ["query"],
+        },
+    },
+    {
+        "name": "get_intel_digest",
+        "description": "Get a weekly digest of all intel reports. Use when asked for a summary of what's been happening or 'give me an update'.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "days": {
+                    "type": "integer",
+                    "description": "Number of days to include (default 7)",
+                },
+            },
+        },
     },
 ]
 
@@ -345,6 +379,38 @@ async def _execute_tool(name: str, inputs: dict, db_session, is_admin: bool) -> 
         elif name == "admin_system_status" and is_admin:
             return {"api": "healthy", "database": "connected", "note": "Use /api/v1/admin/analytics/dashboard for full stats"}
 
+        elif name == "search_intel_reports" and is_admin:
+            from app.services.intel_service import search_reports, get_reports, report_to_dict
+            query_text = inputs.get("query", "")
+            category = inputs.get("category")
+            if query_text:
+                reports = await search_reports(db_session, query=query_text, limit=5)
+            elif category:
+                reports = await get_reports(db_session, category=category, limit=5)
+            else:
+                reports = await get_reports(db_session, limit=5)
+            if not reports:
+                return {"results": [], "message": "No intel reports found matching your query."}
+            return {
+                "results": [
+                    {
+                        "title": r.title,
+                        "date": r.report_date.isoformat(),
+                        "category": r.category,
+                        "summary": r.summary[:500],
+                        "sentiment": r.sentiment,
+                        "key_findings": json.loads(r.key_findings)[:3] if r.key_findings else [],
+                    }
+                    for r in reports
+                ]
+            }
+
+        elif name == "get_intel_digest" and is_admin:
+            from app.services.intel_service import get_report_digest
+            days = inputs.get("days", 7)
+            digest = await get_report_digest(db_session, days=days)
+            return {"digest": digest}
+
         return {"error": f"Unknown tool: {name}"}
 
     except Exception as e:
@@ -380,6 +446,41 @@ async def _keyword_chat(message: str, username: str, role: str, db_session) -> d
             "suggestions": _get_suggestions(role),
             "blocked": False,
         }
+
+    # Intel-related keyword responses
+    if any(kw in msg for kw in ("ksa", "river grove news", "what's happening", "what is happening",
+                                  "neighborhood", "community update", "intel", "digest")):
+        try:
+            from app.services.intel_service import search_reports, get_report_digest
+            if any(kw in msg for kw in ("digest", "update", "summary", "what's happening", "what is happening")):
+                digest = await get_report_digest(db_session, days=7)
+                return {
+                    "response": digest if digest else "No recent intel reports. Admins can submit reports via the Intel API.",
+                    "suggestions": ["KSA updates", "Disc golf news", "Show standings"],
+                    "blocked": False,
+                }
+            else:
+                # Extract a search term
+                search_term = msg.replace("news", "").replace("update", "").strip()
+                reports = await search_reports(db_session, query=search_term, limit=3)
+                if reports:
+                    lines = []
+                    for r in reports:
+                        lines.append(f"**{r.title}** ({r.report_date.isoformat()})")
+                        lines.append(r.summary[:200] + ("..." if len(r.summary) > 200 else ""))
+                    return {
+                        "response": "\n\n".join(lines),
+                        "suggestions": ["Show me the digest", "KSA updates", "Disc golf news"],
+                        "blocked": False,
+                    }
+                else:
+                    return {
+                        "response": "No intel reports found on that topic yet. Admins can submit reports via the Intel API.",
+                        "suggestions": ["Show standings", "When is the next event?"],
+                        "blocked": False,
+                    }
+        except Exception:
+            pass  # Fall through to default
 
     # Admin-specific keyword responses
     if is_admin and any(kw in msg for kw in ("members", "analytics", "stats", "how many")):

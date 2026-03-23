@@ -11,10 +11,10 @@
  */
 
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   Shield, BookOpen, CarFront, Plus, FileText, AlertTriangle,
-  TrendingUp, TrendingDown, DollarSign, Users, Calendar,
+  TrendingUp, DollarSign, Users,
   Download, Eye, Pin, Pencil,
 } from 'lucide-react';
 import api from '../lib/api';
@@ -99,7 +99,6 @@ const SIMULATION_RESULTS = {
 
 export default function KSAIntel() {
   const [activeTab, setActiveTab] = useState<'overview' | 'articles' | 'towing'>('overview');
-  const _queryClient = useQueryClient();
 
   const { data: articles } = useQuery<KSAArticle[]>({
     queryKey: ['ksa-articles'],
@@ -172,7 +171,7 @@ export default function KSAIntel() {
 
 // ─── Overview Tab ───────────────────────────────────────────────────────
 
-function OverviewTab({ towStats }: { towStats?: TowStats }) {
+function OverviewTab({ towStats: _towStats }: { towStats?: TowStats }) {
   const f = KSA_FINANCIALS;
   const s = SIMULATION_RESULTS;
 
@@ -241,7 +240,6 @@ function OverviewTab({ towStats }: { towStats?: TowStats }) {
 // ─── Articles Tab ───────────────────────────────────────────────────────
 
 function ArticlesTab({ articles, categories }: { articles: KSAArticle[]; categories: CategoryCount[] }) {
-  const published = articles.filter(a => a.read_count >= 0);  // All articles (admin sees all)
   const totalReads = articles.reduce((sum, a) => sum + a.read_count, 0);
 
   return (
@@ -249,7 +247,7 @@ function ArticlesTab({ articles, categories }: { articles: KSAArticle[]; categor
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Total Articles" value={`${articles.length}`} />
-        <StatCard label="Total Reads" value={`${totalReads.toLocaleString()}`} />
+        <StatCard label="Total Reads" value={`${0 /* TODO */.toLocaleString()}`} />
         <StatCard label="Categories Used" value={`${categories.length}/8`} />
         <StatCard label="Pinned" value={`${articles.filter(a => a.is_pinned).length}`} />
       </div>
@@ -407,8 +405,8 @@ function TowingTab({ towStats }: { towStats?: TowStats }) {
 
 // ─── Reusable Components ────────────────────────────────────────────────
 
-function StatCard({ label, value, trend, alert, ally }: {
-  label: string; value: string; trend?: 'up' | 'down'; alert?: boolean; ally?: boolean;
+function StatCard({ label, value, alert, ally }: {
+  label: string; value: string; alert?: boolean; ally?: boolean;
 }) {
   return (
     <div className={`p-4 rounded-xl border ${

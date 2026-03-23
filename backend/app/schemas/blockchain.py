@@ -96,3 +96,24 @@ class TreasuryStatsResponse(BaseModel):
     total_distributed: float
     event_fee: float
     recent_transactions: list[TransactionResponse]
+
+
+# --- Disc NFT ---
+
+class MintDiscNFTResponse(BaseModel):
+    disc_code: str
+    token_id: int
+    tx_hash: str
+    owner_address: str
+
+
+class DiscNFTStatus(BaseModel):
+    is_nft: bool
+    token_id: int | None = None
+    tx_hash: str | None = None
+    onchain_owner: str | None = None
+    onchain_status: str | None = None
+
+
+class TransferDiscNFTRequest(BaseModel):
+    to_address: str = Field(..., pattern=r"^0x[a-fA-F0-9]{40}$", description="Recipient wallet address")

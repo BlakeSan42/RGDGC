@@ -21,22 +21,30 @@ from app.db.database import get_db
 from app.models.league import Event, Prize, Result
 from app.models.transaction import Transaction
 from app.models.user import User
+from app.models.disc import RegisteredDisc
 from app.schemas.blockchain import (
+    DiscNFTStatus,
+    MintDiscNFTResponse,
     MintRequest,
     PayFeeRequest,
     PayFeeResponse,
     TokenBalanceResponse,
     TransactionListResponse,
     TransactionResponse,
+    TransferDiscNFTRequest,
     TreasuryStatsResponse,
 )
 from app.services.blockchain_service import (
     BlockchainUnavailableError,
     distribute_prizes,
+    get_disc_nft_info,
+    get_disc_owner_onchain,
     get_event_fee,
     get_token_balance,
     get_treasury_balance,
+    mint_disc_nft,
     mint_tokens,
+    transfer_disc_onchain,
     verify_fee_payment,
 )
 

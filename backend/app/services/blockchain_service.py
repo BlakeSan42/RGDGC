@@ -65,6 +65,112 @@ ERC20_ABI = [
     },
 ]
 
+DISC_REGISTRY_ABI = [
+    # mint(address, string, string, string, string, uint16, string) → uint256
+    {
+        "inputs": [
+            {"name": "to", "type": "address"},
+            {"name": "discCode", "type": "string"},
+            {"name": "manufacturer", "type": "string"},
+            {"name": "mold", "type": "string"},
+            {"name": "plastic", "type": "string"},
+            {"name": "weightGrams", "type": "uint16"},
+            {"name": "color", "type": "string"},
+        ],
+        "name": "mint",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "stateMutability": "nonpayable",
+        "type": "function",
+    },
+    # reportLost(uint256)
+    {
+        "inputs": [{"name": "tokenId", "type": "uint256"}],
+        "name": "reportLost",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function",
+    },
+    # reportFound(uint256, address)
+    {
+        "inputs": [
+            {"name": "tokenId", "type": "uint256"},
+            {"name": "finderAddress", "type": "address"},
+        ],
+        "name": "reportFound",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function",
+    },
+    # confirmReturn(uint256)
+    {
+        "inputs": [{"name": "tokenId", "type": "uint256"}],
+        "name": "confirmReturn",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function",
+    },
+    # transferDisc(uint256, address)
+    {
+        "inputs": [
+            {"name": "tokenId", "type": "uint256"},
+            {"name": "to", "type": "address"},
+        ],
+        "name": "transferDisc",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function",
+    },
+    # getDiscByCode(string) → uint256
+    {
+        "inputs": [{"name": "discCode", "type": "string"}],
+        "name": "getDiscByCode",
+        "outputs": [{"name": "tokenId", "type": "uint256"}],
+        "stateMutability": "view",
+        "type": "function",
+    },
+    # getDiscInfo(uint256) → tuple
+    {
+        "inputs": [{"name": "tokenId", "type": "uint256"}],
+        "name": "getDiscInfo",
+        "outputs": [
+            {
+                "components": [
+                    {"name": "discCode", "type": "string"},
+                    {"name": "manufacturer", "type": "string"},
+                    {"name": "mold", "type": "string"},
+                    {"name": "plastic", "type": "string"},
+                    {"name": "weightGrams", "type": "uint16"},
+                    {"name": "color", "type": "string"},
+                    {"name": "status", "type": "uint8"},
+                ],
+                "name": "",
+                "type": "tuple",
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function",
+    },
+    # ownerOf(uint256) → address  (ERC-721)
+    {
+        "inputs": [{"name": "tokenId", "type": "uint256"}],
+        "name": "ownerOf",
+        "outputs": [{"name": "", "type": "address"}],
+        "stateMutability": "view",
+        "type": "function",
+    },
+    # DiscMinted event — used to extract tokenId from mint receipt
+    {
+        "anonymous": False,
+        "inputs": [
+            {"indexed": True, "name": "tokenId", "type": "uint256"},
+            {"indexed": True, "name": "owner", "type": "address"},
+            {"indexed": False, "name": "discCode", "type": "string"},
+        ],
+        "name": "DiscMinted",
+        "type": "event",
+    },
+]
+
 TREASURY_ABI = [
     {
         "inputs": [],
@@ -117,6 +223,7 @@ TREASURY_ABI = [
 _w3 = None
 _token_contract = None
 _treasury_contract = None
+_disc_registry_contract = None
 
 
 class BlockchainUnavailableError(Exception):
@@ -193,12 +300,31 @@ def _get_treasury_contract():
     return _treasury_contract
 
 
+def _get_disc_registry_contract():
+    """Return cached DiscRegistry contract instance."""
+    global _disc_registry_contract
+    if _disc_registry_contract is not None:
+        return _disc_registry_contract
+
+    settings = get_settings()
+    if not settings.disc_registry_address:
+        raise BlockchainUnavailableError("disc_registry_address is not configured")
+
+    w3 = _get_web3()
+    _disc_registry_contract = w3.eth.contract(
+        address=w3.to_checksum_address(settings.disc_registry_address),
+        abi=DISC_REGISTRY_ABI,
+    )
+    return _disc_registry_contract
+
+
 def reset_connections():
     """Reset cached connections (useful for testing or config changes)."""
-    global _w3, _token_contract, _treasury_contract
+    global _w3, _token_contract, _treasury_contract, _disc_registry_contract
     _w3 = None
     _token_contract = None
     _treasury_contract = None
+    _disc_registry_contract = None
 
 
 # ---------------------------------------------------------------------------
@@ -504,3 +630,264 @@ def distribute_prizes(
     except Exception as exc:
         logger.error("Failed to distribute prizes: %s", exc)
         raise BlockchainUnavailableError(f"Prize distribution failed: {exc}") from exc
+
+
+# ---------------------------------------------------------------------------
+#  DiscRegistry NFT functions
+# ---------------------------------------------------------------------------
+
+# Map on-chain status enum to human-readable strings
+_DISC_STATUS_MAP = {0: "active", 1: "lost", 2: "found", 3: "returned"}
+
+
+def mint_disc_nft(
+    to_address: str,
+    disc_code: str,
+    manufacturer: str,
+    mold: str,
+    plastic: str,
+    weight_grams: int,
+    color: str,
+) -> tuple[str, int]:
+    """Mint a disc as an NFT on the DiscRegistry contract.
+
+    Args:
+        to_address: Wallet address of the disc owner.
+        disc_code: Unique RGDG disc code.
+        manufacturer: Disc manufacturer name.
+        mold: Disc mold name.
+        plastic: Plastic type.
+        weight_grams: Disc weight in grams (uint16, max 65535).
+        color: Primary disc color.
+
+    Returns:
+        (tx_hash, token_id) of the confirmed mint transaction.
+    """
+    try:
+        w3, account = _get_deployer_account()
+        contract = _get_disc_registry_contract()
+        checksum_to = w3.to_checksum_address(to_address)
+
+        tx_data = contract.functions.mint(
+            checksum_to,
+            disc_code,
+            manufacturer or "",
+            mold,
+            plastic or "",
+            weight_grams or 0,
+            color or "",
+        ).build_transaction({"from": account.address})
+        tx_hash = _send_signed_tx(w3, account, tx_data)
+
+        receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+        if receipt["status"] != 1:
+            raise BlockchainUnavailableError(
+                f"DiscRegistry mint transaction {tx_hash} reverted on-chain"
+            )
+
+        # Extract token_id from DiscMinted event
+        token_id = 0
+        try:
+            mint_events = contract.events.DiscMinted().process_receipt(receipt)
+            if mint_events:
+                token_id = mint_events[0]["args"]["tokenId"]
+        except Exception:
+            logger.warning("Could not parse DiscMinted event from tx %s", tx_hash)
+
+        logger.info(
+            "Minted disc NFT %s (token %d) to %s — tx %s",
+            disc_code, token_id, to_address, tx_hash,
+        )
+        return tx_hash, token_id
+    except BlockchainUnavailableError:
+        raise
+    except Exception as exc:
+        logger.error("Failed to mint disc NFT %s: %s", disc_code, exc)
+        raise BlockchainUnavailableError(f"Disc NFT mint failed: {exc}") from exc
+
+
+def report_disc_lost_onchain(token_id: int) -> str:
+    """Report a disc as lost on the DiscRegistry contract.
+
+    Returns:
+        tx_hash of the confirmed transaction.
+    """
+    try:
+        w3, account = _get_deployer_account()
+        contract = _get_disc_registry_contract()
+
+        tx_data = contract.functions.reportLost(token_id).build_transaction(
+            {"from": account.address}
+        )
+        tx_hash = _send_signed_tx(w3, account, tx_data)
+
+        receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+        if receipt["status"] != 1:
+            raise BlockchainUnavailableError(
+                f"reportLost transaction {tx_hash} reverted on-chain"
+            )
+
+        logger.info("Reported disc token %d as lost — tx %s", token_id, tx_hash)
+        return tx_hash
+    except BlockchainUnavailableError:
+        raise
+    except Exception as exc:
+        logger.error("Failed to report disc %d as lost on-chain: %s", token_id, exc)
+        raise BlockchainUnavailableError(f"reportLost failed: {exc}") from exc
+
+
+def report_disc_found_onchain(token_id: int, finder_address: str) -> str:
+    """Report a disc as found on the DiscRegistry contract.
+
+    Args:
+        token_id: On-chain NFT token ID.
+        finder_address: Wallet address of the finder (use zero address if unknown).
+
+    Returns:
+        tx_hash of the confirmed transaction.
+    """
+    try:
+        w3, account = _get_deployer_account()
+        contract = _get_disc_registry_contract()
+        checksum_finder = w3.to_checksum_address(finder_address)
+
+        tx_data = contract.functions.reportFound(
+            token_id, checksum_finder
+        ).build_transaction({"from": account.address})
+        tx_hash = _send_signed_tx(w3, account, tx_data)
+
+        receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+        if receipt["status"] != 1:
+            raise BlockchainUnavailableError(
+                f"reportFound transaction {tx_hash} reverted on-chain"
+            )
+
+        logger.info(
+            "Reported disc token %d as found by %s — tx %s",
+            token_id, finder_address, tx_hash,
+        )
+        return tx_hash
+    except BlockchainUnavailableError:
+        raise
+    except Exception as exc:
+        logger.error("Failed to report disc %d as found on-chain: %s", token_id, exc)
+        raise BlockchainUnavailableError(f"reportFound failed: {exc}") from exc
+
+
+def confirm_disc_return_onchain(token_id: int) -> str:
+    """Confirm disc return on the DiscRegistry contract.
+
+    Returns:
+        tx_hash of the confirmed transaction.
+    """
+    try:
+        w3, account = _get_deployer_account()
+        contract = _get_disc_registry_contract()
+
+        tx_data = contract.functions.confirmReturn(token_id).build_transaction(
+            {"from": account.address}
+        )
+        tx_hash = _send_signed_tx(w3, account, tx_data)
+
+        receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+        if receipt["status"] != 1:
+            raise BlockchainUnavailableError(
+                f"confirmReturn transaction {tx_hash} reverted on-chain"
+            )
+
+        logger.info("Confirmed return for disc token %d — tx %s", token_id, tx_hash)
+        return tx_hash
+    except BlockchainUnavailableError:
+        raise
+    except Exception as exc:
+        logger.error("Failed to confirm return for disc %d on-chain: %s", token_id, exc)
+        raise BlockchainUnavailableError(f"confirmReturn failed: {exc}") from exc
+
+
+def transfer_disc_onchain(token_id: int, to_address: str) -> str:
+    """Transfer a disc NFT to a new owner on the DiscRegistry contract.
+
+    Args:
+        token_id: On-chain NFT token ID.
+        to_address: New owner's wallet address.
+
+    Returns:
+        tx_hash of the confirmed transaction.
+    """
+    try:
+        w3, account = _get_deployer_account()
+        contract = _get_disc_registry_contract()
+        checksum_to = w3.to_checksum_address(to_address)
+
+        tx_data = contract.functions.transferDisc(
+            token_id, checksum_to
+        ).build_transaction({"from": account.address})
+        tx_hash = _send_signed_tx(w3, account, tx_data)
+
+        receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+        if receipt["status"] != 1:
+            raise BlockchainUnavailableError(
+                f"transferDisc transaction {tx_hash} reverted on-chain"
+            )
+
+        logger.info(
+            "Transferred disc token %d to %s — tx %s",
+            token_id, to_address, tx_hash,
+        )
+        return tx_hash
+    except BlockchainUnavailableError:
+        raise
+    except Exception as exc:
+        logger.error("Failed to transfer disc %d on-chain: %s", token_id, exc)
+        raise BlockchainUnavailableError(f"transferDisc failed: {exc}") from exc
+
+
+def get_disc_nft_info(disc_code: str) -> dict | None:
+    """Look up disc NFT info by its RGDG code.
+
+    Returns:
+        Dict with token_id, owner, status, and disc metadata, or None if not found.
+    """
+    try:
+        w3 = _get_web3()
+        contract = _get_disc_registry_contract()
+
+        token_id = contract.functions.getDiscByCode(disc_code).call()
+        if token_id == 0:
+            return None
+
+        owner = contract.functions.ownerOf(token_id).call()
+        info = contract.functions.getDiscInfo(token_id).call()
+
+        return {
+            "token_id": token_id,
+            "owner": owner,
+            "disc_code": info[0],
+            "manufacturer": info[1],
+            "mold": info[2],
+            "plastic": info[3],
+            "weight_grams": info[4],
+            "color": info[5],
+            "status": _DISC_STATUS_MAP.get(info[6], "unknown"),
+        }
+    except BlockchainUnavailableError:
+        raise
+    except Exception as exc:
+        logger.error("Failed to get disc NFT info for %s: %s", disc_code, exc)
+        return None
+
+
+def get_disc_owner_onchain(token_id: int) -> str:
+    """Get the current on-chain owner of a disc NFT.
+
+    Returns:
+        The owner wallet address as a checksum string.
+    """
+    try:
+        contract = _get_disc_registry_contract()
+        return contract.functions.ownerOf(token_id).call()
+    except BlockchainUnavailableError:
+        raise
+    except Exception as exc:
+        logger.error("Failed to get owner for disc token %d: %s", token_id, exc)
+        raise BlockchainUnavailableError(f"ownerOf query failed: {exc}") from exc

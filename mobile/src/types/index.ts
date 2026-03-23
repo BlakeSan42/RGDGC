@@ -5,7 +5,8 @@ export interface User {
   username: string;
   display_name: string | null;
   avatar_url: string | null;
-  role: "admin" | "player" | "guest";
+  role: "super_admin" | "admin" | "player" | "guest";
+  wallet_address: string | null;
   handicap: number | null;
   created_at: string;
 }

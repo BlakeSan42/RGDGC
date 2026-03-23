@@ -67,12 +67,13 @@ export default function KSAKnowledgeBase() {
       if (selectedCategory) params.category = selectedCategory;
       if (searchQuery) params.search = searchQuery;
 
-      const [articlesRes, alertsRes] = await Promise.all([
-        api.get("/ksa/articles", { params }),
-        api.get("/tow-alerts", { params: { status: "active", limit: "1" } }),
+      const paramStr = Object.entries(params).map(([k,v]) => `${k}=${encodeURIComponent(v)}`).join("&");
+      const [articles, alerts] = await Promise.all([
+        api<any[]>(`/api/v1/ksa/articles${paramStr ? `?${paramStr}` : ""}`),
+        api<any[]>(`/api/v1/tow-alerts?status=active&limit=1`),
       ]);
-      setArticles(articlesRes.data);
-      setActiveAlert(alertsRes.data.length > 0 ? alertsRes.data[0] : null);
+      setArticles(articles);
+      setActiveAlert(alerts.length > 0 ? alerts[0] : null);
     } catch {
       // Silently handle — articles may not be seeded yet
     } finally {

@@ -44,7 +44,7 @@ async def test_update_profile_username_uniqueness(client: AsyncClient, auth_head
     await client.post("/api/v1/auth/register", json={
         "email": "taken@rgdgc.com",
         "username": "takenname",
-        "password": "pass123",
+        "password": "pass12345",
     })
 
     # Try to change to the taken username

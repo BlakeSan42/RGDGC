@@ -79,13 +79,16 @@ export default function ReportTowScreen() {
 
     setSending(true);
     try {
-      await api.post("/tow-alerts", {
-        alert_type: selectedType,
-        park_name: "River Grove Park",
-        latitude: location.latitude,
-        longitude: location.longitude,
-        location_description: locationDesc || null,
-        description: description || null,
+      await api("/api/v1/tow-alerts", {
+        method: "POST",
+        body: {
+          alert_type: selectedType,
+          park_name: "River Grove Park",
+          latitude: location.latitude,
+          longitude: location.longitude,
+          location_description: locationDesc || null,
+          description: description || null,
+        },
       });
 
       Alert.alert(

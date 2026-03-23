@@ -24,6 +24,10 @@ class RegisteredDisc(Base):
     photo_url: Mapped[str | None] = mapped_column(String(500))
     status: Mapped[str] = mapped_column(String(20), default="active")  # active, lost, found, retired
     notes: Mapped[str | None] = mapped_column(Text)
+    # NFT fields — populated when the disc is minted on-chain via DiscRegistry
+    token_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    tx_hash: Mapped[str | None] = mapped_column(String(66), nullable=True)
+    is_nft: Mapped[bool] = mapped_column(Boolean, default=False)
     registered_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now()
