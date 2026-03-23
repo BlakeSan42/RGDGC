@@ -59,3 +59,11 @@ docs/KSA-Research*/
 .dev-server.pid
 .dev-celery.pid
 .dev-celery-beat.pid
+
+# Runtime / local
+.env.production
+*.schedule.db
+backend/celerybeat-schedule.db
+mobile/.expo/
+scripts/*_cache.json
+.claude/settings.json
