@@ -8,7 +8,7 @@ from httpx import AsyncClient
 async def test_chat_help(client: AsyncClient, admin_headers):
     res = await client.post(
         "/api/v1/chat",
-        headers=auth_headers,
+        headers=admin_headers,
         json={"message": "help"},
     )
     assert res.status_code == 200
@@ -22,7 +22,7 @@ async def test_chat_help(client: AsyncClient, admin_headers):
 async def test_chat_standings(client: AsyncClient, admin_headers):
     res = await client.post(
         "/api/v1/chat",
-        headers=auth_headers,
+        headers=admin_headers,
         json={"message": "show me the standings"},
     )
     assert res.status_code == 200
@@ -34,7 +34,7 @@ async def test_chat_standings(client: AsyncClient, admin_headers):
 async def test_chat_events(client: AsyncClient, admin_headers):
     res = await client.post(
         "/api/v1/chat",
-        headers=auth_headers,
+        headers=admin_headers,
         json={"message": "when is the next event?"},
     )
     assert res.status_code == 200
@@ -45,7 +45,7 @@ async def test_chat_events(client: AsyncClient, admin_headers):
 async def test_chat_rules(client: AsyncClient, admin_headers):
     res = await client.post(
         "/api/v1/chat",
-        headers=auth_headers,
+        headers=admin_headers,
         json={"message": "what are the rules?"},
     )
     assert res.status_code == 200
@@ -57,7 +57,7 @@ async def test_chat_rules(client: AsyncClient, admin_headers):
 async def test_chat_default_response(client: AsyncClient, admin_headers):
     res = await client.post(
         "/api/v1/chat",
-        headers=auth_headers,
+        headers=admin_headers,
         json={"message": "random nonsense xyzzy"},
     )
     assert res.status_code == 200
