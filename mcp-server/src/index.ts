@@ -253,6 +253,75 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ["event_id"],
       },
     },
+    // ── League Operations Tools ──
+    {
+      name: "get_ace_fund_balance",
+      description:
+        "Get the current ace fund balance. Players always ask 'how much is in the ace fund?'",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          league_id: {
+            type: "integer",
+            description: "Optional league ID to filter by",
+          },
+        },
+      },
+    },
+    {
+      name: "get_ctp_results",
+      description:
+        "Get closest-to-pin results for a completed event. Shows winner per CTP hole with distance.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          event_id: {
+            type: "integer",
+            description: "Event ID",
+          },
+        },
+        required: ["event_id"],
+      },
+    },
+    {
+      name: "get_shareable_results",
+      description:
+        "Generate formatted event results text with emoji, ready to copy-paste to Facebook Group, iMessage, or Discord. Includes standings, CTP winners, and ace fund balance.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          event_id: {
+            type: "integer",
+            description: "Event ID",
+          },
+        },
+        required: ["event_id"],
+      },
+    },
+    {
+      name: "get_shareable_standings",
+      description:
+        "Generate formatted season standings text with emoji, ready to share on social media.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          league_id: {
+            type: "integer",
+            description: "League ID (1=Sunday Singles, 2=Dubs)",
+          },
+        },
+        required: ["league_id"],
+      },
+    },
+    {
+      name: "get_community_health",
+      description:
+        "Get the community health score (0-100) — composite of engagement, growth, events, and financial health. The one number the club manager should watch.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {},
+      },
+    },
   ],
 }));
 
