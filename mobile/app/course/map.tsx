@@ -470,6 +470,51 @@ export default function CourseMapScreen() {
                   </>
                 )}
               </View>
+              {/* AR buttons */}
+              {currentHole.basket_coords && (
+                <View style={styles.arBtnRow}>
+                  <Pressable
+                    style={styles.arBtn}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/ar/distance",
+                        params: {
+                          hole: String(currentHole.hole_number),
+                          lat: String(currentHole.basket_coords![1]),
+                          lng: String(currentHole.basket_coords![0]),
+                          par: String(currentHole.par),
+                          elev: currentHole.elevation_change_ft != null
+                            ? String(currentHole.elevation_change_ft)
+                            : undefined,
+                        },
+                      })
+                    }
+                  >
+                    <Ionicons name="camera" size={16} color="#fff" />
+                    <Text style={styles.arBtnText}>AR GPS</Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.arBtn, styles.arBtnSpatial]}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/ar/spatial",
+                        params: {
+                          hole: String(currentHole.hole_number),
+                          lat: String(currentHole.basket_coords![1]),
+                          lng: String(currentHole.basket_coords![0]),
+                          par: String(currentHole.par),
+                          elev: currentHole.elevation_change_ft != null
+                            ? String(currentHole.elevation_change_ft)
+                            : undefined,
+                        },
+                      })
+                    }
+                  >
+                    <Ionicons name="cube" size={16} color="#fff" />
+                    <Text style={styles.arBtnText}>Spatial AR</Text>
+                  </Pressable>
+                </View>
+              )}
             </View>
 
             <Pressable onPress={nextHole} hitSlop={12} style={styles.holeNavBtn}>
@@ -637,6 +682,28 @@ const styles = StyleSheet.create({
   },
   statLabel: { fontSize: 10, color: colors.text.secondary, fontWeight: "600" },
   statDivider: { width: 1, height: 28, backgroundColor: colors.gray[200] },
+  arBtnRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: spacing.xs,
+  },
+  arBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: colors.secondary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  arBtnSpatial: {
+    backgroundColor: colors.accent.purple,
+  },
+  arBtnText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+  },
 
   // Hole selector strip
   holeSelectorContainer: {

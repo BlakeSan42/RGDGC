@@ -11,13 +11,20 @@
       "resizeMode": "contain",
       "backgroundColor": "#1B5E20"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.rgdgc.app",
       "infoPlist": {
         "NSCameraUsageDescription": "RGDGC uses the camera for AR distance measurement and putting analysis.",
-        "NSLocationWhenInUseUsageDescription": "RGDGC uses your location to find nearby courses and measure distances."
+        "NSLocationWhenInUseUsageDescription": "RGDGC uses your location to find nearby courses and measure distances.",
+        "NSPhotoLibraryUsageDescription": "RGDGC may save AR screenshots.",
+        "NSPhotoLibraryAddUsageDescription": "RGDGC may save AR screenshots."
+      },
+      "config": {
+        "usesNonExemptEncryption": false
       }
     },
     "android": {
@@ -29,7 +36,15 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "@reactvision/react-viro",
+        {
+          "androidXRMode": [
+            "AR"
+          ]
+        }
+      ]
     ],
     "web": {
       "bundler": "metro",

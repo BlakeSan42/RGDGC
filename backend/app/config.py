@@ -72,6 +72,23 @@ class Settings(BaseSettings):
     model_config = {"env_file": ".env", "extra": "ignore"}
 
     @property
+    def async_database_url(self) -> str:
+        """Ensure DATABASE_URL uses asyncpg. Converts sslmode for asyncpg compatibility."""
+        url = self.database_url
+        if url.startswith("postgresql://"):
+            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        # asyncpg doesn't understand sslmode — convert to ssl param
+        url = url.replace("sslmode=require", "ssl=require")
+        # Remove channel_binding (not supported by asyncpg)
+        url = url.replace("&channel_binding=require", "").replace("?channel_binding=require", "?")
+        return url
+
+    @property
+    def sync_database_url(self) -> str:
+        """Sync URL for Alembic/Celery (strip asyncpg if present)."""
+        return self.database_url.replace("+asyncpg", "")
+
+    @property
     def cors_origin_list(self) -> list[str]:
         origins = self.cors_origins.strip()
         if origins == "*":

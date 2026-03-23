@@ -15,6 +15,7 @@ class ScoreSubmit(BaseModel):
     putts: int | None = Field(None, ge=0, le=15)
     ob_strokes: int = Field(0, ge=0, le=10)
     fairway_hit: bool | None = None
+    is_dnf: bool = False
     disc_used: str | None = Field(None, max_length=100)
     circle_hit: str | None = Field(None, pattern=r"^(c1|c2|parked|none)$")
     scramble: bool | None = None
@@ -28,6 +29,7 @@ class HoleScoreOut(BaseModel):
     putts: int | None
     ob_strokes: int
     fairway_hit: bool | None
+    is_dnf: bool = False
     disc_used: str | None = None
     circle_hit: str | None = None
     scramble: bool | None = None

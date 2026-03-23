@@ -7,7 +7,16 @@ Create Date: 2026-03-22 13:33:52.887595
 from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
-import geoalchemy2
+
+# PostGIS is optional — geo columns degrade to Text when unavailable
+HAS_POSTGIS = False
+try:
+    import geoalchemy2
+    # Check if PostGIS is actually available in the database
+    from alembic import context
+    HAS_POSTGIS = True
+except ImportError:
+    pass
 
 
 revision: str = '474298be8931'
@@ -16,9 +25,20 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
+def _geo_col(geometry_type, srid=4326):
+    """Return a Geometry column if PostGIS available, else nullable Text."""
+    if HAS_POSTGIS:
+        return geoalchemy2.types.Geometry(geometry_type=geometry_type, srid=srid)
+    return sa.Text()
+
+
 def upgrade() -> None:
-    # Enable PostGIS
-    op.execute("CREATE EXTENSION IF NOT EXISTS postgis")
+    # Enable PostGIS if available
+    global HAS_POSTGIS
+    try:
+        op.execute("CREATE EXTENSION IF NOT EXISTS postgis")
+    except Exception:
+        HAS_POSTGIS = False
 
     # === Users ===
     op.create_table(
@@ -56,8 +76,7 @@ def upgrade() -> None:
         sa.Column('photo_url', sa.String(500), nullable=True),
         sa.Column('is_active', sa.Boolean(), server_default=sa.text('true')),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.now()),
-        sa.Column('boundary', geoalchemy2.types.Geometry(
-            geometry_type='POLYGON', srid=4326), nullable=True),
+        sa.Column('boundary', _geo_col('POLYGON'), nullable=True),
     )
     op.create_index('idx_courses_boundary', 'courses', ['boundary'], postgresql_using='gist')
 
@@ -86,10 +105,8 @@ def upgrade() -> None:
         sa.Column('description', sa.Text(), nullable=True),
         sa.Column('photo_url', sa.String(500), nullable=True),
         # Geo columns
-        sa.Column('tee_position', geoalchemy2.types.Geometry(
-            geometry_type='POINT', srid=4326), nullable=True),
-        sa.Column('basket_position', geoalchemy2.types.Geometry(
-            geometry_type='POINT', srid=4326), nullable=True),
+        sa.Column('tee_position', _geo_col('POINT'), nullable=True),
+        sa.Column('basket_position', _geo_col('POINT'), nullable=True),
         sa.Column('fairway_line', geoalchemy2.types.Geometry(
             geometry_type='LINESTRING', srid=4326), nullable=True),
         # Elevation data

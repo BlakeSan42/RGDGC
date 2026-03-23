@@ -473,4 +473,38 @@ export const cashTreasuryApi = {
     api.get(`/treasury/validate-prizes/${eventId}`).then(r => r.data),
 };
 
+// --- League Day Operations ---
+
+export const leagueOpsApi = {
+  assignCards: (data: { event_id: number; method: string; group_size: number; shotgun_start: boolean }) =>
+    api.post('/league-ops/cards/assign', data).then(r => r.data),
+
+  notifyCards: (eventId: number) =>
+    api.post('/league-ops/cards/notify', { event_id: eventId }).then(r => r.data),
+
+  recordCTP: (data: { event_id: number; hole_number: number; player_id: number; distance_feet: number; distance_inches?: number }) =>
+    api.post('/league-ops/ctp/record', data).then(r => r.data),
+
+  getCTPResults: (eventId: number) =>
+    api.get(`/league-ops/ctp/results/${eventId}`).then(r => r.data),
+
+  getAceFundBalance: (leagueId?: number) =>
+    api.get(`/league-ops/ace-fund/balance${leagueId ? `?league_id=${leagueId}` : ''}`).then(r => r.data),
+
+  collectAceFund: (eventId: number, amountPerPlayer?: number) =>
+    api.post('/league-ops/ace-fund/collect', { event_id: eventId, amount_per_player: amountPerPlayer || 1.0 }).then(r => r.data),
+
+  payoutAceFund: (data: { player_id: number; event_id: number; hole_number: number }) =>
+    api.post('/league-ops/ace-fund/payout', data).then(r => r.data),
+
+  setupRecurring: (data: { league_id: number; layout_id: number; name_template: string; day_of_week: number; hour: number; entry_fee: number; weeks_ahead: number }) =>
+    api.post('/league-ops/recurring/setup', data).then(r => r.data),
+
+  shareResults: (eventId: number) =>
+    api.get(`/league-ops/share/event-results/${eventId}`).then(r => r.data),
+
+  shareStandings: (leagueId: number) =>
+    api.get(`/league-ops/share/standings/${leagueId}`).then(r => r.data),
+};
+
 export default api;

@@ -11,7 +11,8 @@ import { colors, spacing, fontSize } from "@/constants/theme";
 import type { CourseDetail, Layout } from "@/types";
 
 export default function SelectLayoutScreen() {
-  const { courseId, courseName } = useLocalSearchParams<{ courseId: string; courseName: string }>();
+  const { courseId, courseName, practice } = useLocalSearchParams<{ courseId: string; courseName: string; practice?: string }>();
+  const isPractice = practice === "1";
   const { isOnline } = useOffline();
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,7 +42,7 @@ export default function SelectLayoutScreen() {
   const startRound = async (layout: Layout) => {
     setStarting(true);
     try {
-      const round = await roundApi.start(layout.id);
+      const round = await roundApi.start(layout.id, isPractice);
       router.replace({
         pathname: "/scoring/scorecard",
         params: {

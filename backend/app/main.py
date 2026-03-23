@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -32,10 +33,27 @@ async def lifespan(app: FastAPI):
         if "change-in-production" in settings.secret_key or len(settings.secret_key) < 32:
             raise RuntimeError("SECRET_KEY must be a strong random string in production")
 
-    if settings.environment == "development":
+    # Create tables on startup — non-blocking with 10s timeout
+    import asyncio
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Starting RGDGC API ({settings.environment})")
+
+    async def _init_db():
         engine = get_engine()
         async with engine.begin() as conn:
+            try:
+                await conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
+            except Exception:
+                logger.warning("PostGIS not available")
             await conn.run_sync(Base.metadata.create_all)
+            logger.info("Database tables ready")
+
+    try:
+        await asyncio.wait_for(_init_db(), timeout=10)
+    except Exception as e:
+        logger.warning(f"DB init deferred: {e}")
+
     yield
     # Shutdown — skip dispose in testing (engine is managed by test fixtures)
     if settings.environment != "testing":

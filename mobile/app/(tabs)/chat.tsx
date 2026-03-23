@@ -13,12 +13,14 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, fontSize, borderRadius } from "@/constants/theme";
+import { chatApi } from "@/services/api";
 
 interface Message {
   id: string;
   text: string;
   sender: "user" | "bot";
   timestamp: Date;
+  suggestions?: string[];
 }
 
 const WELCOME_MESSAGE: Message = {
@@ -34,19 +36,24 @@ const QUICK_ACTIONS = [
   { label: "Rules", message: "What are the league rules?" },
 ];
 
-async function sendToAce(_message: string): Promise<string> {
-  // TODO: Connect to FastAPI backend at /api/v1/chat
-  // const response = await fetch(`${API_BASE}/api/v1/chat`, {
-  //   method: "POST",
-  //   headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-  //   body: JSON.stringify({ message }),
-  // });
-  // const data = await response.json();
-  // return data.reply;
-
-  // Placeholder until backend is connected
-  await new Promise((resolve) => setTimeout(resolve, 1200));
-  return "I'm being set up! Check back soon for live responses.";
+async function sendToAce(message: string): Promise<{ text: string; suggestions: string[] }> {
+  try {
+    const data = await chatApi.send(message);
+    return {
+      text: data.response,
+      suggestions: data.suggestions ?? [],
+    };
+  } catch (err) {
+    // Offline or auth error — provide a helpful message
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    if (msg.includes("401") || msg.includes("Unauthorized")) {
+      return { text: "Please log in to chat with Ace.", suggestions: [] };
+    }
+    return {
+      text: "I'm having trouble connecting right now. Check your internet and try again.",
+      suggestions: ["Show standings", "Next event"],
+    };
+  }
 }
 
 export default function ChatScreen() {
@@ -81,12 +88,13 @@ export default function ChatScreen() {
       scrollToBottom();
 
       try {
-        const reply = await sendToAce(messageText);
+        const { text, suggestions } = await sendToAce(messageText);
         const botMessage: Message = {
           id: `bot-${Date.now()}`,
-          text: reply,
+          text,
           sender: "bot",
           timestamp: new Date(),
+          suggestions: suggestions.length > 0 ? suggestions : undefined,
         };
         setMessages((prev) => [...prev, botMessage]);
       } catch {

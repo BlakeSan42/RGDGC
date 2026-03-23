@@ -31,8 +31,9 @@ async def finalize_event(db: AsyncSession, event_id: int) -> list[Result]:
     )
     results = list(result.scalars().all())
 
-    completed = [r for r in results if not r.dnf and not r.dq]
-    incomplete = [r for r in results if r.dnf or r.dq]
+    # Exclude DNF, DQ, and check-in placeholders (total_strokes=0 with no position)
+    completed = [r for r in results if not r.dnf and not r.dq and r.total_strokes > 0]
+    incomplete = [r for r in results if r.dnf or r.dq or r.total_strokes <= 0]
 
     # Sort by total_score ascending (lower is better in golf)
     completed.sort(key=lambda r: r.total_score)

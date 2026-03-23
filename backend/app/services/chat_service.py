@@ -38,15 +38,15 @@ logger = logging.getLogger(__name__)
 # ── Security: blocked topics ──
 
 BLOCKED_PATTERNS = [
-    # Architecture probing
-    r"(what|which).*(tech|stack|framework|language|database|server|cloud|host|deploy)",
-    r"(how|what).*(built|created|developed|coded|programmed|architected|designed).*(app|system|platform|backend|frontend|api)",
-    r"(what|which).*(api|endpoint|route|url|schema|model|table|column|field|migration)",
-    r"(show|reveal|tell|list|dump|export).*(code|source|config|env|secret|key|token|password|credential)",
-    r"(what|which).*(library|package|module|dependency|version|sdk|framework)",
-    r"(how|where).*(data|info|information).*(stored|saved|kept|persisted|database)",
-    r"(what|which|how).*(server|infrastructure|docker|container|railway|vercel|aws|cloud)",
-    r"(system|admin|owner).*(prompt|instruction|config|setup|architecture)",
+    # Architecture probing — narrowed to avoid blocking disc golf questions
+    r"(what|which).*(tech\s*stack|framework|programming\s*language|database\s*engine|cloud\s*host|deploy\s*to)",
+    r"(how|what).*(built|coded|programmed|architected).*(this\s*app|the\s*system|the\s*platform|the\s*backend|the\s*api)",
+    r"(what|which).*(api\s*endpoint|route\s*path|database\s*schema|db\s*table|sql\s*column|migration\s*file)",
+    r"(show|reveal|dump|export).*(source\s*code|config\s*file|env\s*file|secret|api\s*key|password|credential)",
+    r"(what|which).*(npm|pip|cargo)\s*(package|module|dependency)",
+    r"(how|where).*(user\s*data|player\s*data|pii).*(stored|persisted|database)",
+    r"(what|which|how).*(server\s*infra|docker\s*container|railway\s*config|vercel\s*config|aws\s*setup)",
+    r"(system|admin|owner).*(prompt|instruction|config\s*file|architecture\s*doc)",
     # Prompt injection attempts
     r"ignore.*previous.*instructions",
     r"ignore.*system.*prompt",

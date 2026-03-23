@@ -63,28 +63,42 @@ interface RequestOptions {
   auth?: boolean;
 }
 
+// Mutex to prevent concurrent refresh attempts
+let refreshPromise: Promise<string | null> | null = null;
+
 async function refreshAccessToken(): Promise<string | null> {
-  const refreshToken = await tokenStore.get(REFRESH_KEY);
-  if (!refreshToken) return null;
+  // If a refresh is already in flight, wait for it instead of firing another
+  if (refreshPromise) return refreshPromise;
 
-  try {
-    const res = await fetch(`${API_URL}/api/v1/auth/refresh`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh_token: refreshToken }),
-    });
+  refreshPromise = (async () => {
+    const refreshToken = await tokenStore.get(REFRESH_KEY);
+    if (!refreshToken) return null;
 
-    if (!res.ok) {
+    try {
+      const res = await fetch(`${API_URL}/api/v1/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+
+      if (!res.ok) {
+        await clearTokens();
+        return null;
+      }
+
+      const data = await res.json();
+      await setTokens(data.access_token, data.refresh_token);
+      return data.access_token;
+    } catch {
       await clearTokens();
       return null;
     }
+  })();
 
-    const data = await res.json();
-    await setTokens(data.access_token, data.refresh_token);
-    return data.access_token;
-  } catch {
-    await clearTokens();
-    return null;
+  try {
+    return await refreshPromise;
+  } finally {
+    refreshPromise = null;
   }
 }
 
@@ -178,6 +192,9 @@ export const authApi = {
     }),
 
   me: () => api<AuthTokens["user"]>("/api/v1/auth/me"),
+
+  logout: () =>
+    api("/api/v1/auth/logout", { method: "POST" }),
 };
 
 export const courseApi = {
@@ -355,4 +372,28 @@ export const puttingApi = {
     api<PuttProbability>(
       `/api/v1/putting/probability?distance_meters=${distanceMeters}&wind_speed=${windSpeed}&wind_direction=${windDirection}&elevation_change=${elevationChange}`
     ),
+};
+
+// ── Chat ──
+
+export interface ChatResponse {
+  response: string;
+  suggestions: string[];
+  blocked: boolean;
+  model: string | null;
+  cost_usd: number | null;
+}
+
+export const chatApi = {
+  send: (message: string) =>
+    api<ChatResponse>("/api/v1/chat", {
+      method: "POST",
+      body: { message },
+    }),
+
+  feedback: (messageText: string, rating: "up" | "down", correction?: string) =>
+    api<{ status: string; learning_id: number | null }>("/api/v1/chat/feedback", {
+      method: "POST",
+      body: { message_text: messageText, rating, correction },
+    }),
 };

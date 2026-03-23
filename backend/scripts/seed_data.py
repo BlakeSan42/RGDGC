@@ -169,7 +169,8 @@ async def seed():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    async with async_session() as db:
+    session_factory = async_session()
+    async with session_factory() as db:
 
         # ── 1. Admin User ─────────────────────────────────────────────
         print("Seeding admin user...")

@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, RefreshControl } from "react-native";
+import { useState, useEffect, useCallback } from "react";
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Alert } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Card } from "@/components/common/Card";
@@ -13,6 +13,8 @@ export default function PlayScreen() {
   const { user } = useAuth();
   const [recentRounds, setRecentRounds] = useState<Round[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<LeagueEvent[]>([]);
+  const [checkedIn, setCheckedIn] = useState<Set<number>>(new Set());
+  const [checkingIn, setCheckingIn] = useState<number | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -51,7 +53,7 @@ export default function PlayScreen() {
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <View style={styles.actionRow}>
           <Button title="Start Round" onPress={() => router.push("/scoring/select-course")} size="lg" />
-          <Button title="Practice" onPress={() => router.push("/scoring/select-course")} variant="secondary" size="lg" />
+          <Button title="Practice" onPress={() => router.push("/scoring/select-course?practice=1")} variant="secondary" size="lg" />
         </View>
         <View style={styles.actionRow}>
           <Button
@@ -105,9 +107,26 @@ export default function PlayScreen() {
                 {event.num_players ?? 0} players registered
               </Text>
               <Button
-                title="Check In"
-                onPress={() => eventApi.checkin(event.id)}
-                variant="primary"
+                title={checkedIn.has(event.id) ? "Checked In ✓" : "Check In"}
+                onPress={async () => {
+                  if (checkedIn.has(event.id) || checkingIn === event.id) return;
+                  setCheckingIn(event.id);
+                  try {
+                    await eventApi.checkin(event.id);
+                    setCheckedIn((prev) => new Set(prev).add(event.id));
+                  } catch (err) {
+                    const msg = err instanceof Error ? err.message : "Check-in failed";
+                    if (msg.includes("already")) {
+                      setCheckedIn((prev) => new Set(prev).add(event.id));
+                    } else {
+                      Alert.alert("Check-in Failed", msg);
+                    }
+                  } finally {
+                    setCheckingIn(null);
+                  }
+                }}
+                variant={checkedIn.has(event.id) ? "secondary" : "primary"}
+                loading={checkingIn === event.id}
                 size="sm"
                 style={{ marginTop: spacing.sm }}
               />

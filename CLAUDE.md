@@ -351,8 +351,9 @@ See `.claude/skills/` for workflows:
 ## Multi-Terminal Team Protocol (MANDATORY)
 
 Up to 6 Claude Code terminals work simultaneously. You are a team member.
+**Redis on :6381 is the shared brain.** All coordination state is instant and atomic — no stale files.
 
-### Rules (enforced by pre-commit hook)
+### Rules (enforced by pre-commit hook via Redis)
 1. **Never commit to main.** Work on a feature branch: `t<N>/<task-name>`
 2. **Claim files before editing.** `./scripts/team.sh claim <path> "description"`
 3. **Check in regularly.** `./scripts/team.sh checkin "what I'm doing"`
@@ -360,7 +361,7 @@ Up to 6 Claude Code terminals work simultaneously. You are a team member.
 
 ### On Session Startup
 ```bash
-./scripts/team.sh status          # See active terminals and claims
+./scripts/team.sh status          # Live team state from Redis
 ./scripts/team.sh init t<N>       # Register (pick unclaimed t1-t6)
 git checkout -b t<N>/<task-name>  # Create feature branch
 ./scripts/team.sh claim <path>    # Claim your work area
@@ -370,19 +371,21 @@ git checkout -b t<N>/<task-name>  # Create feature branch
 ### Quick Reference
 | Action | Command |
 |--------|---------|
-| See team | `./scripts/team.sh status` |
-| See history | `./scripts/team.sh board` |
+| See team (live) | `./scripts/team.sh status` |
+| Activity stream | `./scripts/team.sh board` |
 | Register | `./scripts/team.sh init t1` |
 | Claim files | `./scripts/team.sh claim backend/app/tasks/ "celery"` |
 | Release claim | `./scripts/team.sh release backend/app/tasks/` |
 | Check who owns | `./scripts/team.sh check backend/app/tasks/` |
 | Post update | `./scripts/team.sh checkin "finished X"` |
+| Broadcast message | `./scripts/team.sh msg "text"` |
+| Read messages | `./scripts/team.sh read` |
 | Sync branch | `./scripts/team.sh sync` |
 | Merge to main | `./scripts/team.sh merge` |
 
 ### Shared Resources (DO NOT duplicate)
 - **PostgreSQL** on :5433 (Docker: rgdgc-db)
-- **Redis** on :6381 (Docker: rgdgc-redis)
+- **Redis** on :6381 (Docker: rgdgc-redis) — also the coordination backend
 - **Dev server** on :8001 (`./scripts/dev-server.sh`)
 
 ## Autonomous Operation

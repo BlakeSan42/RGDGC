@@ -26,7 +26,7 @@ export interface OfflineRound {
   layout_id: number;
   started_at: string;
   scores: {
-    hole_id: number;
+    hole_id?: number;
     hole_number: number;
     strokes: number;
     putts?: number;

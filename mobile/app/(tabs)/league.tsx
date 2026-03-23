@@ -13,6 +13,7 @@ export default function LeagueScreen() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [events, setEvents] = useState<LeagueEvent[]>([]);
   const [selectedLeague, setSelectedLeague] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const loadData = async () => {
@@ -29,7 +30,9 @@ export default function LeagueScreen() {
         setLeaderboard(lb);
         setEvents(ev);
       }
-    } catch {}
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load league data");
+    }
   };
 
   useEffect(() => { loadData(); }, []);
@@ -105,8 +108,12 @@ export default function LeagueScreen() {
           </Card>
         ) : (
           <Card>
-            <Text style={styles.emptyTitle}>No standings yet</Text>
-            <Text style={styles.emptyText}>Play in league events to earn points and appear on the leaderboard.</Text>
+            <Text style={styles.emptyTitle}>{error ? "Connection Error" : "No standings yet"}</Text>
+            <Text style={styles.emptyText}>
+              {error
+                ? "Pull down to retry. Check your internet connection."
+                : "Play in league events to earn points and appear on the leaderboard."}
+            </Text>
           </Card>
         )}
       </View>

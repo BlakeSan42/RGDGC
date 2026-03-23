@@ -11,7 +11,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     googleAndroidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
     googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
     eas: {
-      projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID || '',
+      projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID || 'abf9a20a-a221-44aa-a812-e8b62db0a2cb',
     },
   },
 });

@@ -53,6 +53,21 @@ async def batch_sync(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    if len(data.attempts) > 500:
+        raise HTTPException(status_code=400, detail="Maximum 500 putts per batch")
+
+    # For large batches (>10), offload to Celery if available
+    if len(data.attempts) > 10:
+        try:
+            from app.tasks.scheduled import process_putt_batch
+            process_putt_batch.delay(
+                user.id,
+                [a.model_dump() for a in data.attempts],
+            )
+            return {"synced": len(data.attempts), "async": True}
+        except Exception:
+            pass  # Fall through to synchronous processing
+
     created = 0
     for a in data.attempts:
         attempt = PuttAttempt(

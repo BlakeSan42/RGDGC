@@ -125,9 +125,13 @@ def get_tour_average(distance_meters: float) -> float:
 
 
 def classify_zone(distance_meters: float) -> str:
-    """Classify putting zone from distance."""
-    if distance_meters <= 10:
+    """Classify putting zone from distance.
+    C1 = 0-3.3m (tap-in range), C1X = 3.3-10m, C2 = 10-20m.
+    """
+    if distance_meters <= 3.3:
         return "c1"
+    elif distance_meters <= 10:
+        return "c1x"
     elif distance_meters <= 20:
         return "c2"
     else:

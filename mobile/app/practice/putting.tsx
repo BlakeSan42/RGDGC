@@ -7,9 +7,11 @@ import {
   Pressable,
   Animated,
   Dimensions,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Platform } from "react-native";
+import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import * as HapticsModule from "expo-haptics";
 
 // No-op haptics on web
@@ -410,6 +412,17 @@ export default function PuttingPracticeScreen() {
               </Text>
             </Pressable>
           ))}
+        </View>
+
+        {/* AR Quick Launch */}
+        <View style={styles.arLaunchRow}>
+          <Pressable
+            style={styles.arLaunchBtn}
+            onPress={() => router.push("/ar/stance")}
+          >
+            <Ionicons name="body" size={16} color="#fff" />
+            <Text style={styles.arLaunchText}>Stance Guide</Text>
+          </Pressable>
         </View>
 
         {/* Mode-specific header */}
@@ -867,6 +880,28 @@ const styles = StyleSheet.create({
   },
   modeTabTextActive: {
     color: colors.primary,
+  },
+
+  // AR launch
+  arLaunchRow: {
+    flexDirection: "row" as const,
+    justifyContent: "center" as const,
+    gap: 12,
+    marginBottom: spacing.md,
+  },
+  arLaunchBtn: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 6,
+    backgroundColor: colors.secondary,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 18,
+  },
+  arLaunchText: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "700" as const,
   },
 
   // Mode headers

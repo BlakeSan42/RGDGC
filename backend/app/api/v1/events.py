@@ -23,7 +23,9 @@ async def list_events(
     limit: int = Query(20, le=100),
     db: AsyncSession = Depends(get_db),
 ):
-    stmt = select(Event).order_by(Event.event_date.desc()).limit(limit)
+    # Upcoming events: nearest first (asc). Past events: most recent first (desc).
+    order = Event.event_date.asc() if status == "upcoming" else Event.event_date.desc()
+    stmt = select(Event).order_by(order).limit(limit)
     if status:
         stmt = stmt.where(Event.status == status)
     if league_id:
@@ -45,7 +47,15 @@ async def get_event_results(event_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(Result).where(Result.event_id == event_id).order_by(Result.position)
     )
-    return [ResultOut.model_validate(r) for r in result.scalars().all()]
+    results_out = []
+    for r in result.scalars().all():
+        out = ResultOut.model_validate(r)
+        # Populate player name from user relationship
+        user = await db.get(User, r.user_id)
+        if user:
+            out.player_name = user.display_name or user.username
+        results_out.append(out)
+    return results_out
 
 
 @router.post("/{event_id}/checkin", status_code=201)
@@ -67,12 +77,15 @@ async def checkin(
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Already checked in")
 
-    # Create placeholder result (scores filled in later)
+    # Create placeholder result (scores filled in later by admin or round completion)
+    # position=None + points_earned=0 ensures this doesn't affect standings until scored
     result = Result(
         event_id=event_id,
         user_id=user.id,
         total_strokes=0,
         total_score=0,
+        position=None,
+        points_earned=0,
     )
     db.add(result)
 

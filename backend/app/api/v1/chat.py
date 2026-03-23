@@ -10,7 +10,10 @@ Clawd Chat Endpoint — AI-powered assistant for RGDGC.
 - Feedback: users can rate responses and provide corrections
 """
 
-from fastapi import APIRouter, Depends
+import time
+from collections import defaultdict
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,6 +23,21 @@ from app.models.user import User
 from app.services.chat_service import handle_chat, handle_feedback
 
 router = APIRouter()
+
+# Simple rate limiter: max 10 messages per 60 seconds per user
+_rate_limits: dict[int, list[float]] = defaultdict(list)
+RATE_LIMIT = 10
+RATE_WINDOW = 60  # seconds
+
+
+def _check_rate_limit(user_id: int) -> None:
+    now = time.time()
+    window_start = now - RATE_WINDOW
+    # Remove old entries
+    _rate_limits[user_id] = [t for t in _rate_limits[user_id] if t > window_start]
+    if len(_rate_limits[user_id]) >= RATE_LIMIT:
+        raise HTTPException(status_code=429, detail="Too many messages. Please wait a minute.")
+    _rate_limits[user_id].append(now)
 
 
 class ChatRequest(BaseModel):
@@ -58,6 +76,8 @@ async def chat(
     Security guardrails block questions about system architecture and secrets.
     Conversation history is maintained per user for multi-turn context.
     """
+    _check_rate_limit(user.id)
+
     result = await handle_chat(
         message=data.message,
         user_id=user.id,

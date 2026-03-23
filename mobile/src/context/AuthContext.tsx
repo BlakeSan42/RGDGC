@@ -71,6 +71,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // Best-effort — still clear local tokens even if backend unreachable
+    }
     await clearTokens();
     setUser(null);
   };

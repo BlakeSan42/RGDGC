@@ -33,6 +33,7 @@ class ResultOut(BaseModel):
     id: int
     event_id: int
     user_id: int
+    player_name: str | None = None
     total_strokes: int
     total_score: int
     position: int | None

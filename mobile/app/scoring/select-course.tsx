@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Card } from "@/components/common/Card";
 import { courseApi } from "@/services/api";
@@ -10,6 +10,7 @@ import { colors, spacing, fontSize } from "@/constants/theme";
 import type { Course } from "@/types";
 
 export default function SelectCourseScreen() {
+  const { practice } = useLocalSearchParams<{ practice?: string }>();
   const { isOnline } = useOffline();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,7 +68,7 @@ export default function SelectCourseScreen() {
             onPress={() =>
               router.push({
                 pathname: "/scoring/select-layout",
-                params: { courseId: String(course.id), courseName: course.name },
+                params: { courseId: String(course.id), courseName: course.name, practice: practice || undefined },
               })
             }
             style={styles.card}

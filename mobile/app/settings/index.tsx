@@ -22,10 +22,8 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
 
-  // Wallet state
-  const [walletAddress, setWalletAddress] = useState<string | null>(
-    user?.wallet_address ?? null
-  );
+  // Wallet state (fetched from blockchain API, not user profile)
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [connectingWallet, setConnectingWallet] = useState(false);
 

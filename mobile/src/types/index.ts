@@ -4,9 +4,10 @@ export interface User {
   email: string;
   username: string;
   display_name: string | null;
+  phone: string | null;
+  bio: string | null;
   avatar_url: string | null;
   role: "super_admin" | "admin" | "player" | "guest";
-  wallet_address: string | null;
   handicap: number | null;
   created_at: string;
 }
@@ -63,6 +64,9 @@ export interface Round {
   id: number;
   user_id: number;
   layout_id: number;
+  group_id: number | null;
+  share_code: string | null;
+  event_id: number | null;
   started_at: string;
   completed_at: string | null;
   total_score: number | null;
@@ -78,6 +82,11 @@ export interface HoleScore {
   putts: number | null;
   ob_strokes: number;
   fairway_hit: boolean | null;
+  is_dnf: boolean;
+  disc_used: string | null;
+  circle_hit: string | null;
+  scramble: boolean | null;
+  drive_distance: number | null;
 }
 
 export interface RoundDetail extends Round {
@@ -173,7 +182,7 @@ export interface PuttingStats {
   c1_percentage: number;
   c1x_percentage: number;
   c2_percentage: number;
-  by_distance: Record<string, { attempts: number; makes: number; pct: number }>;
+  by_zone: Record<string, { attempts: number; makes: number; percentage: number }>;
 }
 
 export interface PuttProbability {

@@ -192,7 +192,7 @@ export default function ScorecardScreen() {
     setHoles((prev) => {
       const updated = [...prev];
       const hole = updated[currentHole];
-      const newVal = Math.max(1, Math.min(12, hole.strokes + delta));
+      const newVal = Math.max(1, Math.min(20, hole.strokes + delta));
       updated[currentHole] = { ...hole, strokes: newVal, isDnf: false };
       return updated;
     });
@@ -322,6 +322,7 @@ export default function ScorecardScreen() {
   };
 
   const completeRound = async () => {
+    if (completing) return; // Prevent double-tap
     setCompleting(true);
 
     // Try online submission first
@@ -348,7 +349,6 @@ export default function ScorecardScreen() {
         layout_id: Number(layoutId),
         started_at: new Date().toISOString(),
         scores: holes.map((h) => ({
-          hole_id: h.holeNumber,
           hole_number: h.holeNumber,
           strokes: h.strokes,
         })),
