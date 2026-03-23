@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import Integer, select, func, case
+from sqlalchemy import Integer, literal, select, func, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import get_admin_user
@@ -31,7 +31,7 @@ async def llm_usage_summary(
             func.sum(LLMUsage.output_tokens).label("total_output_tokens"),
             func.sum(LLMUsage.cost_usd).label("total_cost_usd"),
             func.avg(LLMUsage.latency_ms).label("avg_latency_ms"),
-            func.sum(case((LLMUsage.success == False, 1), else_=0)).label("error_count"),
+            func.sum(case((LLMUsage.success == False, literal(1)), else_=literal(0))).label("error_count"),
         ).where(LLMUsage.created_at >= since)
     )
     t = totals.one()
