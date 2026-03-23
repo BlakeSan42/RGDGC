@@ -185,7 +185,7 @@ function OverviewTab({ towStats: _towStats }: { towStats?: TowStats }) {
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard label="Revenue" value={`$${(f.revenue_2024 / 1e6).toFixed(2)}M`} />
-          <StatCard label="Expenses" value={`$${(f.expenses_2024 / 1e6).toFixed(2)}M`} trend="up" alert />
+          <StatCard label="Expenses" value={`$${(f.expenses_2024 / 1e6).toFixed(2)}M`} alert />
           <StatCard label="Net Loss" value={`-$${Math.abs(f.net_loss_2024 / 1e3).toFixed(0)}K`} alert />
           <StatCard label="Total Assets" value={`$${(f.assets_2024 / 1e6).toFixed(2)}M`} />
           <StatCard label="Cash Reserves" value={`$${(f.cash_2024 / 1e6).toFixed(2)}M`} />

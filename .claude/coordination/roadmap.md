@@ -91,7 +91,7 @@
 3. **OpenClaw bot → Go live**
    - Set Discord bot token + Anthropic API key in `.env`
    - Deploy to Railway or Fly.io
-   - _Files:_ `openclaw-skills/.env`, `openclaw-skills/Dockerfile`
+   - _Files:_ `clawd-bot/.env`, `clawd-bot/Dockerfile`
 
 ### P1 — Core Feature Gaps
 

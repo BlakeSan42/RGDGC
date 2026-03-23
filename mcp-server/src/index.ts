@@ -447,6 +447,58 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return text(JSON.stringify(data, null, 2));
     }
 
+    // ── League Ops: Ace Fund ──
+    case "get_ace_fund_balance": {
+      const leagueId = (args as Record<string, unknown>).league_id;
+      const path = leagueId
+        ? `/api/v1/league-ops/ace-fund/balance?league_id=${leagueId}`
+        : `/api/v1/league-ops/ace-fund/balance`;
+      const data = (await apiGet(path)) as Record<string, unknown>;
+      return text(
+        `💰 **Ace Fund Balance: $${data.balance}**\n\n` +
+        `Collected: $${data.total_collected}\n` +
+        `Paid out: $${data.total_paid_out}\n` +
+        `${data.note}`
+      );
+    }
+
+    // ── League Ops: CTP Results ──
+    case "get_ctp_results": {
+      const eventId = (args as Record<string, unknown>).event_id;
+      const data = (await apiGet(`/api/v1/league-ops/ctp/results/${eventId}`)) as Array<Record<string, unknown>>;
+      if (!Array.isArray(data) || data.length === 0) return text("No CTP results recorded for this event.");
+      let result = "🎯 **CTP Results**\n\n";
+      data.forEach((ctp: Record<string, unknown>) => {
+        result += `Hole ${ctp.hole_number}: ${ctp.winner_name} — ${ctp.distance} ($${ctp.pot})\n`;
+      });
+      return text(result);
+    }
+
+    // ── League Ops: Shareable Results ──
+    case "get_shareable_results": {
+      const eventId = (args as Record<string, unknown>).event_id;
+      const data = (await apiGet(`/api/v1/league-ops/share/event-results/${eventId}`)) as Record<string, unknown>;
+      return text(String(data.text || "No results available."));
+    }
+
+    // ── League Ops: Shareable Standings ──
+    case "get_shareable_standings": {
+      const leagueId = (args as Record<string, unknown>).league_id;
+      const data = (await apiGet(`/api/v1/league-ops/share/standings/${leagueId}`)) as Record<string, unknown>;
+      return text(String(data.text || "No standings available."));
+    }
+
+    // ── Community Health Score ──
+    case "get_community_health": {
+      const data = (await apiGet(`/api/v1/admin/analytics/strategic/community-health`)) as Record<string, unknown>;
+      const components = data.components as Record<string, Record<string, unknown>>;
+      let result = `**Community Health Score: ${data.overall_score}/100** (${data.trend})\n\n`;
+      for (const [key, comp] of Object.entries(components)) {
+        result += `${key}: ${comp.score}/100\n`;
+      }
+      return text(result);
+    }
+
     default:
       return text(`Unknown tool: ${name}`);
   }

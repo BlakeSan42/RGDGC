@@ -26,7 +26,7 @@
       "description": "7 skills built and API-verified, but bot cannot go live without Discord bot token + Anthropic API key.",
       "status": "blocked",
       "owner": "blake",
-      "files": ["openclaw-skills/.env"]
+      "files": ["clawd-bot/.env"]
     },
     {
       "id": "GEO-001",

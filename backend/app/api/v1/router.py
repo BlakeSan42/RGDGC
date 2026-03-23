@@ -25,6 +25,10 @@ api_router.include_router(tokens.router, prefix="/tokens", tags=["tokens"])
 api_router.include_router(intel.router, prefix="/intel", tags=["intel"])
 api_router.include_router(marketplace.router, prefix="/marketplace", tags=["marketplace"])
 
+# Bot admin — learnings and skills management
+from app.api.v1 import bot_admin
+api_router.include_router(bot_admin.router, prefix="/admin", tags=["bot-admin"])
+
 # LLM usage analytics
 from app.api.v1 import llm_analytics
 api_router.include_router(llm_analytics.router, prefix="/admin", tags=["llm-analytics"])

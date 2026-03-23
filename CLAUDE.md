@@ -11,7 +11,7 @@ An ecosystem — not just an app — for River Grove Disc Golf Club:
 | `admin-dashboard/` | Web admin panel | React + Vite |
 | `mcp-server/` | Claude MCP server | TypeScript, MCP SDK |
 | `contracts/` | Smart contracts (P1) | Solidity, Hardhat |
-| `openclaw-skills/` | AI chatbot skills | OpenClaw skill YAML |
+| `clawd-bot/` | AI chatbot skills | Clawd AI bot (Discord/Telegram) |
 
 ### Five Pillars
 1. **Disc Golf Game** — Full playable mobile game with physics-based flight, career mode, 8 game modes, skill progression

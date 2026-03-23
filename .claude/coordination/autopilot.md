@@ -85,7 +85,7 @@ Sessions should self-assign based on what they're best at:
 | `mobile/` | Mobile session | Screens, components, native features |
 | `admin-dashboard/` | Frontend session | Admin pages, API integration |
 | `contracts/`, `mcp-server/` | Infrastructure session | Blockchain, MCP, CI/CD |
-| `openclaw-skills/` | Bot session | Skills, integrations, chat |
+| `clawd-bot/` | Bot session | Skills, integrations, chat |
 
 But any session can work on anything unclaimed.
 

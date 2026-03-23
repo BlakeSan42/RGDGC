@@ -9,12 +9,27 @@ Security guardrails:
 - Blocks probing questions about system architecture, codebase, secrets
 - Never reveals tech stack, API structure, database schema, or deployment details
 - Admin tools only available to admin/super_admin role users
+
+Conversation memory:
+- Maintains persistent conversation history per user
+- Loads last 10 messages as context for LLM calls
+- Injects active BotLearnings into the system prompt
+
+Bot learning:
+- Queries active BotLearnings before building system prompt
+- Matches trigger_pattern against user message
+- Injects learned_response into system prompt context
+- Tracks usage count for each learning applied
 """
 
 import json
 import logging
 import re
+from datetime import datetime, timezone
 from typing import Any
+
+from sqlalchemy import select, update, desc, or_
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 
@@ -211,6 +226,174 @@ ADMIN_TOOLS = PLAYER_TOOLS + [
 ]
 
 
+# ── Conversation memory helpers ──
+
+async def _get_or_create_conversation(db_session: AsyncSession, user_id: int) -> "Conversation":
+    """Find the user's active conversation or create a new one."""
+    from app.models.conversation import Conversation
+
+    result = await db_session.execute(
+        select(Conversation)
+        .where(Conversation.user_id == user_id, Conversation.is_active.is_(True))
+        .order_by(desc(Conversation.last_message_at))
+        .limit(1)
+    )
+    conversation = result.scalar_one_or_none()
+
+    if conversation is None:
+        conversation = Conversation(user_id=user_id)
+        db_session.add(conversation)
+        await db_session.flush()
+
+    return conversation
+
+
+async def _load_recent_messages(db_session: AsyncSession, conversation_id: int, limit: int = 10) -> list[dict]:
+    """Load the last N messages from a conversation as LLM message dicts."""
+    from app.models.conversation import ChatMessage
+
+    result = await db_session.execute(
+        select(ChatMessage)
+        .where(ChatMessage.conversation_id == conversation_id)
+        .order_by(desc(ChatMessage.created_at))
+        .limit(limit)
+    )
+    rows = result.scalars().all()
+
+    # Reverse so oldest is first (chronological order)
+    messages = []
+    for msg in reversed(rows):
+        entry = {"role": msg.role, "content": msg.content}
+        if msg.role == "tool" and msg.tool_name:
+            entry["tool_call_id"] = msg.tool_name  # stored tool_call_id in tool_name
+        messages.append(entry)
+
+    return messages
+
+
+async def _save_message(
+    db_session: AsyncSession,
+    conversation_id: int,
+    role: str,
+    content: str,
+    tool_name: str | None = None,
+    tokens_used: int | None = None,
+) -> None:
+    """Save a message to the conversation history."""
+    from app.models.conversation import ChatMessage, Conversation
+
+    msg = ChatMessage(
+        conversation_id=conversation_id,
+        role=role,
+        content=content,
+        tool_name=tool_name,
+        tokens_used=tokens_used,
+    )
+    db_session.add(msg)
+
+    # Update conversation metadata
+    await db_session.execute(
+        update(Conversation)
+        .where(Conversation.id == conversation_id)
+        .values(
+            last_message_at=datetime.now(timezone.utc),
+            message_count=Conversation.message_count + 1,
+        )
+    )
+    await db_session.flush()
+
+
+# ── Bot learning helpers ──
+
+async def _get_relevant_learnings(db_session: AsyncSession, message: str, limit: int = 5) -> list:
+    """Query active BotLearnings that match the user's message."""
+    from app.models.bot_learning import BotLearning
+
+    msg_lower = message.lower()
+
+    # Get all active learnings — for small tables this is fine.
+    # For scale, move to full-text search or vector similarity.
+    result = await db_session.execute(
+        select(BotLearning)
+        .where(BotLearning.is_active.is_(True))
+        .order_by(desc(BotLearning.confidence))
+    )
+    all_learnings = result.scalars().all()
+
+    matched = []
+    for learning in all_learnings:
+        # Learnings with no trigger pattern always apply (general knowledge)
+        if not learning.trigger_pattern:
+            matched.append(learning)
+            continue
+
+        # Check if trigger pattern words appear in the message
+        trigger_words = [w.strip().lower() for w in learning.trigger_pattern.split(",")]
+        if any(tw in msg_lower for tw in trigger_words):
+            matched.append(learning)
+
+    return matched[:limit]
+
+
+async def _mark_learnings_used(db_session: AsyncSession, learning_ids: list[int]) -> None:
+    """Increment used_count and set last_used_at for applied learnings."""
+    if not learning_ids:
+        return
+    from app.models.bot_learning import BotLearning
+
+    await db_session.execute(
+        update(BotLearning)
+        .where(BotLearning.id.in_(learning_ids))
+        .values(
+            used_count=BotLearning.used_count + 1,
+            last_used_at=datetime.now(timezone.utc),
+        )
+    )
+
+
+async def _get_active_skills(db_session: AsyncSession, message: str) -> list:
+    """Get enabled BotSkills whose trigger keywords match the message."""
+    from app.models.bot_learning import BotSkill
+
+    msg_lower = message.lower()
+
+    result = await db_session.execute(
+        select(BotSkill)
+        .where(BotSkill.is_enabled.is_(True))
+        .order_by(desc(BotSkill.priority))
+    )
+    all_skills = result.scalars().all()
+
+    matched = []
+    for skill in all_skills:
+        try:
+            keywords = json.loads(skill.trigger_keywords)
+        except (json.JSONDecodeError, TypeError):
+            keywords = []
+
+        if any(kw.lower() in msg_lower for kw in keywords):
+            matched.append(skill)
+
+    return matched
+
+
+def _build_learning_context(learnings: list, skills: list) -> str:
+    """Build a context block from matched learnings and skills to inject into the system prompt."""
+    parts = []
+
+    if learnings:
+        parts.append("\n--- LEARNED KNOWLEDGE ---")
+        for l in learnings:
+            parts.append(f"[{l.category}] {l.learned_response}")
+
+    if skills:
+        for s in skills:
+            parts.append(f"\n--- SKILL: {s.name} ---")
+            parts.append(s.system_prompt_addition)
+
+    return "\n".join(parts)
+
+
 # ── Chat handler ──
 
 async def handle_chat(
@@ -249,12 +432,38 @@ async def _llm_chat(
     role: str,
     db_session,
 ) -> dict:
-    """Multi-provider LLM chat via LiteLLM router with tool use."""
+    """Multi-provider LLM chat via LiteLLM router with tool use and conversation memory."""
     from app.services.llm_router import completion
 
     is_admin = role in ("admin", "super_admin")
     system = ADMIN_SYSTEM_PROMPT if is_admin else PLAYER_SYSTEM_PROMPT
     tools_def = ADMIN_TOOLS if is_admin else PLAYER_TOOLS
+
+    # ── Load learnings and skills ──
+    try:
+        learnings = await _get_relevant_learnings(db_session, message)
+        skills = await _get_active_skills(db_session, message)
+        learning_context = _build_learning_context(learnings, skills)
+        if learning_context:
+            system += learning_context
+        learning_ids = [l.id for l in learnings]
+    except Exception as e:
+        logger.warning("Failed to load learnings/skills: %s", e)
+        learnings = []
+        skills = []
+        learning_ids = []
+
+    # ── Get or create conversation ──
+    try:
+        conversation = await _get_or_create_conversation(db_session, user_id)
+        conversation_id = conversation.id
+
+        # Load recent message history
+        history = await _load_recent_messages(db_session, conversation_id, limit=10)
+    except Exception as e:
+        logger.warning("Failed to load conversation: %s", e)
+        conversation_id = None
+        history = []
 
     # Convert tool definitions to OpenAI format (LiteLLM uses OpenAI format)
     openai_tools = []
@@ -268,10 +477,10 @@ async def _llm_chat(
             },
         })
 
-    messages = [
-        {"role": "system", "content": system},
-        {"role": "user", "content": f"[{username}]: {message}"},
-    ]
+    # Build messages: system + history + current user message
+    messages = [{"role": "system", "content": system}]
+    messages.extend(history)
+    messages.append({"role": "user", "content": f"[{username}]: {message}"})
 
     try:
         # First completion — may include tool calls
@@ -322,11 +531,26 @@ async def _llm_chat(
                 endpoint="chat",
             )
             response_text = follow_up.get("text", "")
+            total_tokens = result.get("total_tokens", 0) + follow_up.get("total_tokens", 0)
         else:
             response_text = result.get("text", "")
+            total_tokens = result.get("total_tokens", 0)
 
         if not response_text:
             response_text = "I'm not sure how to help with that."
+
+        # ── Save messages to conversation history ──
+        if conversation_id:
+            try:
+                await _save_message(db_session, conversation_id, "user", f"[{username}]: {message}")
+                await _save_message(
+                    db_session, conversation_id, "assistant", response_text,
+                    tokens_used=total_tokens,
+                )
+                # Mark learnings as used
+                await _mark_learnings_used(db_session, learning_ids)
+            except Exception as e:
+                logger.warning("Failed to save conversation messages: %s", e)
 
         return {
             "response": response_text,
@@ -441,7 +665,7 @@ async def _execute_tool(name: str, inputs: dict, db_session, is_admin: bool) -> 
 
 
 async def _keyword_chat(message: str, username: str, role: str, db_session) -> dict:
-    """Fallback keyword-matching chat (no Claude API key)."""
+    """Fallback keyword-matching chat (no LLM provider configured)."""
     msg = message.lower().strip()
     is_admin = role in ("admin", "super_admin")
 
@@ -507,7 +731,7 @@ async def _keyword_chat(message: str, username: str, role: str, db_session) -> d
     # Admin-specific keyword responses
     if is_admin and any(kw in msg for kw in ("members", "analytics", "stats", "how many")):
         return {
-            "response": "For admin analytics, visit the Admin Dashboard or check /api/v1/admin/analytics/dashboard. Set ANTHROPIC_API_KEY for AI-powered admin queries.",
+            "response": "For admin analytics, visit the Admin Dashboard or check /api/v1/admin/analytics/dashboard. Set OPENAI_API_KEY for AI-powered admin queries.",
             "suggestions": ["How many active members?", "Round analytics", "Show standings"],
             "blocked": False,
         }
@@ -524,3 +748,31 @@ def _get_suggestions(role: str) -> list[str]:
     if role in ("admin", "super_admin"):
         base.extend(["How many active members?", "Round analytics"])
     return base
+
+
+# ── Feedback handler ──
+
+async def handle_feedback(
+    message_text: str,
+    rating: str,
+    correction: str | None,
+    user_id: int,
+    db_session: AsyncSession,
+) -> dict:
+    """Handle user feedback on a bot response. Creates a BotLearning if correction provided."""
+    from app.models.bot_learning import BotLearning
+
+    if correction and rating == "down":
+        learning = BotLearning(
+            category="correction",
+            trigger_pattern=message_text[:200] if message_text else None,
+            learned_response=correction,
+            source="user_feedback",
+            confidence=0.8,
+            created_by=user_id,
+        )
+        db_session.add(learning)
+        await db_session.flush()
+        return {"status": "learning_created", "learning_id": learning.id}
+
+    return {"status": "feedback_recorded"}
