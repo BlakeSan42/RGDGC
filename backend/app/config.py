@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     apple_team_id: str = ""
     apple_key_id: str = ""
 
+    # Anthropic (Clawd AI chat)
+    anthropic_api_key: str = ""
+
     # Storage
     storage_backend: str = "local"  # local or s3
     s3_bucket: str = ""

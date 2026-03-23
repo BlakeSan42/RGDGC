@@ -92,7 +92,7 @@ async def login(request: Request, data: UserLogin, db: AsyncSession = Depends(ge
 async def refresh(request: Request, data: RefreshRequest, db: AsyncSession = Depends(get_db)):
     # Check if refresh token has been blacklisted (logout)
     from app.core.security import is_token_blacklisted
-    if await is_token_blacklisted(data.refresh_token):
+    if is_token_blacklisted(data.refresh_token):
         raise HTTPException(status_code=401, detail="Token has been revoked")
 
     settings = get_settings()

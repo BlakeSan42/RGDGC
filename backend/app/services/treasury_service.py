@@ -52,6 +52,7 @@ async def record_entry(
     player_id: int | None = None,
     payment_method: str = "cash",
     notes: str | None = None,
+    category: str | None = None,
     admin_ip: str | None = None,
 ) -> LedgerEntry:
     """Create an immutable ledger entry and log the action."""
@@ -61,6 +62,10 @@ async def record_entry(
         raise ValueError(f"Invalid payment method: {payment_method}")
     if amount == Decimal("0"):
         raise ValueError("Amount cannot be zero")
+    if category is not None:
+        from app.models.ledger import EXPENSE_CATEGORIES
+        if category not in EXPENSE_CATEGORIES:
+            raise ValueError(f"Invalid category: {category}")
 
     entry = LedgerEntry(
         entry_type=entry_type,
@@ -71,6 +76,7 @@ async def record_entry(
         recorded_by=recorded_by,
         payment_method=payment_method,
         notes=notes,
+        category=category,
     )
     db.add(entry)
     await db.flush()
@@ -352,3 +358,332 @@ async def get_ledger(
     entries = list(entries_q.scalars().all())
 
     return entries, total
+
+
+# ---------------------------------------------------------------------------
+# Expenses by Category
+# ---------------------------------------------------------------------------
+
+
+async def get_expenses_by_category(
+    db: AsyncSession,
+    season: str | None = None,
+) -> list[dict]:
+    """Group expense entries by category with totals."""
+    filters = [
+        LedgerEntry.is_voided.is_(False),
+        LedgerEntry.amount < 0,  # expenses are negative
+    ]
+
+    if season:
+        filters.append(
+            func.extract("year", LedgerEntry.created_at) == int(season)
+        )
+
+    result = await db.execute(
+        select(
+            func.coalesce(LedgerEntry.category, "uncategorized"),
+            func.sum(LedgerEntry.amount),
+            func.count(LedgerEntry.id),
+        )
+        .where(and_(*filters))
+        .group_by(func.coalesce(LedgerEntry.category, "uncategorized"))
+        .order_by(func.sum(LedgerEntry.amount))
+    )
+    rows = result.all()
+
+    return [
+        {
+            "category": row[0],
+            "total": str(abs(Decimal(str(row[1])))),
+            "count": row[2],
+        }
+        for row in rows
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Budget Tracking
+# ---------------------------------------------------------------------------
+
+
+async def set_budget(
+    db: AsyncSession,
+    *,
+    league_id: int | None,
+    season: str,
+    category: str,
+    budgeted_amount: Decimal,
+    notes: str | None = None,
+) -> "Budget":
+    """Create or update a budget line for a category/season."""
+    from app.models.ledger import Budget, EXPENSE_CATEGORIES
+
+    if category not in EXPENSE_CATEGORIES:
+        raise ValueError(f"Invalid category: {category}")
+
+    # Upsert: check if exists
+    existing = await db.execute(
+        select(Budget).where(
+            and_(
+                Budget.league_id == league_id if league_id else Budget.league_id.is_(None),
+                Budget.season == season,
+                Budget.category == category,
+            )
+        )
+    )
+    budget = existing.scalar_one_or_none()
+
+    if budget:
+        budget.budgeted_amount = budgeted_amount
+        budget.notes = notes
+    else:
+        budget = Budget(
+            league_id=league_id,
+            season=season,
+            category=category,
+            budgeted_amount=budgeted_amount,
+            notes=notes,
+        )
+        db.add(budget)
+
+    await db.flush()
+    return budget
+
+
+async def get_budget_vs_actual(
+    db: AsyncSession,
+    season: str,
+    league_id: int | None = None,
+) -> list[dict]:
+    """Compare budgeted amounts vs actual spending per category."""
+    from app.models.ledger import Budget, EXPENSE_CATEGORIES
+
+    # Get budgets for this season
+    budget_filters = [Budget.season == season]
+    if league_id:
+        budget_filters.append(Budget.league_id == league_id)
+    else:
+        budget_filters.append(Budget.league_id.is_(None))
+
+    budget_q = await db.execute(
+        select(Budget).where(and_(*budget_filters))
+    )
+    budgets = {b.category: b for b in budget_q.scalars().all()}
+
+    # Get actual expenses grouped by category for this season
+    expense_filters = [
+        LedgerEntry.is_voided.is_(False),
+        LedgerEntry.amount < 0,
+        func.extract("year", LedgerEntry.created_at) == int(season),
+    ]
+
+    actual_q = await db.execute(
+        select(
+            func.coalesce(LedgerEntry.category, "uncategorized"),
+            func.sum(LedgerEntry.amount),
+        )
+        .where(and_(*expense_filters))
+        .group_by(func.coalesce(LedgerEntry.category, "uncategorized"))
+    )
+    actuals = {row[0]: abs(Decimal(str(row[1]))) for row in actual_q.all()}
+
+    # Merge: all categories that have either a budget or actual spending
+    all_cats = set(budgets.keys()) | set(actuals.keys())
+    rows = []
+    for cat in sorted(all_cats):
+        budgeted = budgets.get(cat)
+        budgeted_amt = budgeted.budgeted_amount if budgeted else Decimal("0")
+        actual_amt = actuals.get(cat, Decimal("0"))
+        remaining = budgeted_amt - actual_amt
+
+        rows.append({
+            "category": cat,
+            "budgeted": str(budgeted_amt),
+            "actual": str(actual_amt),
+            "remaining": str(remaining),
+            "pct_used": round(float(actual_amt / budgeted_amt * 100), 1) if budgeted_amt > 0 else None,
+            "notes": budgeted.notes if budgeted else None,
+        })
+
+    return rows
+
+
+# ---------------------------------------------------------------------------
+# Player Account Balances
+# ---------------------------------------------------------------------------
+
+
+async def get_player_balances(db: AsyncSession) -> list[dict]:
+    """Net position per player: fees paid minus prizes received.
+
+    Positive = player has paid more than received (club owes nothing).
+    Negative = club owes the player.
+    """
+    # Sum all non-voided entries grouped by player_id
+    result = await db.execute(
+        select(
+            LedgerEntry.player_id,
+            func.sum(LedgerEntry.amount),
+            func.sum(case(
+                (LedgerEntry.amount > 0, LedgerEntry.amount),
+                else_=Decimal("0"),
+            )),
+            func.sum(case(
+                (LedgerEntry.amount < 0, LedgerEntry.amount),
+                else_=Decimal("0"),
+            )),
+        )
+        .where(
+            and_(
+                LedgerEntry.is_voided.is_(False),
+                LedgerEntry.player_id.isnot(None),
+            )
+        )
+        .group_by(LedgerEntry.player_id)
+        .order_by(func.sum(LedgerEntry.amount).desc())
+    )
+    rows = result.all()
+
+    if not rows:
+        return []
+
+    # Fetch usernames
+    player_ids = [row[0] for row in rows]
+    users_q = await db.execute(select(User).where(User.id.in_(player_ids)))
+    users_map = {u.id: u for u in users_q.scalars().all()}
+
+    return [
+        {
+            "player_id": row[0],
+            "username": users_map[row[0]].username if row[0] in users_map else None,
+            "total_paid_in": str(Decimal(str(row[2]))),
+            "total_received": str(abs(Decimal(str(row[3])))),
+            "net": str(Decimal(str(row[1]))),
+        }
+        for row in rows
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Financial Export (CSV data)
+# ---------------------------------------------------------------------------
+
+
+async def export_ledger_csv(
+    db: AsyncSession,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+) -> list[dict]:
+    """Return all ledger entries in a date range as flat dicts for CSV export."""
+    filters = [LedgerEntry.is_voided.is_(False)]
+    if start_date:
+        filters.append(LedgerEntry.created_at >= start_date)
+    if end_date:
+        filters.append(LedgerEntry.created_at <= end_date)
+
+    result = await db.execute(
+        select(LedgerEntry)
+        .where(and_(*filters))
+        .order_by(LedgerEntry.created_at.asc())
+    )
+    entries = result.scalars().all()
+
+    # Fetch player/recorder names in bulk
+    user_ids = set()
+    for e in entries:
+        if e.player_id:
+            user_ids.add(e.player_id)
+        user_ids.add(e.recorded_by)
+    users_q = await db.execute(select(User).where(User.id.in_(user_ids)))
+    users_map = {u.id: u.username for u in users_q.scalars().all()}
+
+    return [
+        {
+            "id": e.id,
+            "date": e.created_at.strftime("%Y-%m-%d %H:%M"),
+            "type": e.entry_type,
+            "category": e.category or "",
+            "amount": str(e.amount),
+            "description": e.description,
+            "event_id": e.event_id or "",
+            "player": users_map.get(e.player_id, "") if e.player_id else "",
+            "recorded_by": users_map.get(e.recorded_by, ""),
+            "payment_method": e.payment_method,
+            "notes": e.notes or "",
+        }
+        for e in entries
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Prize Validation
+# ---------------------------------------------------------------------------
+
+
+async def validate_prizes(db: AsyncSession, event_id: int) -> dict:
+    """Cross-check prize payouts vs fees collected and event results."""
+    event = await db.get(Event, event_id)
+    if not event:
+        raise ValueError("Event not found")
+
+    # Fees collected for this event
+    fees_q = await db.execute(
+        select(func.coalesce(func.sum(LedgerEntry.amount), 0)).where(
+            and_(
+                LedgerEntry.event_id == event_id,
+                LedgerEntry.entry_type == "fee_collected",
+                LedgerEntry.is_voided.is_(False),
+            )
+        )
+    )
+    total_fees = Decimal(str(fees_q.scalar()))
+
+    # Prize payouts for this event (stored as negative)
+    prizes_q = await db.execute(
+        select(
+            LedgerEntry.player_id,
+            LedgerEntry.amount,
+            LedgerEntry.description,
+        ).where(
+            and_(
+                LedgerEntry.event_id == event_id,
+                LedgerEntry.entry_type == "prize_payout",
+                LedgerEntry.is_voided.is_(False),
+            )
+        )
+    )
+    prize_rows = prizes_q.all()
+    total_prizes = sum(abs(Decimal(str(r[1]))) for r in prize_rows)
+
+    # Event results (who finished where)
+    results_q = await db.execute(
+        select(Result).where(Result.event_id == event_id).order_by(Result.position)
+    )
+    results = results_q.scalars().all()
+
+    # Build a map of player_id -> position from results
+    result_positions = {r.user_id: r.position for r in results}
+
+    # Check each prize payout: is the player in the results?
+    issues = []
+    for row in prize_rows:
+        pid, amt, desc = row
+        if pid and pid not in result_positions:
+            issues.append(f"Player {pid} received prize but has no result for event {event_id}")
+
+    # Check if prizes exceed fees
+    prizes_exceed_fees = total_prizes > total_fees
+
+    return {
+        "event_id": event_id,
+        "event_name": event.name,
+        "total_fees_collected": str(total_fees),
+        "total_prizes_paid": str(total_prizes),
+        "surplus": str(total_fees - total_prizes),
+        "prizes_exceed_fees": prizes_exceed_fees,
+        "prize_count": len(prize_rows),
+        "results_count": len(results),
+        "issues": issues,
+        "valid": len(issues) == 0 and not prizes_exceed_fees,
+    }

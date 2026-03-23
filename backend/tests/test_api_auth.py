@@ -58,7 +58,7 @@ async def test_get_me(client: AsyncClient, auth_headers):
 
 @pytest.mark.asyncio
 async def test_update_me(client: AsyncClient, auth_headers):
-    res = await client.put("/api/v1/auth/me", headers=auth_headers, json={
+    res = await client.put("/api/v1/users/me", headers=auth_headers, json={
         "display_name": "Updated Name",
     })
     assert res.status_code == 200
