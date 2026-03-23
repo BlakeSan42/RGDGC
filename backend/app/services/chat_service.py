@@ -234,88 +234,110 @@ async def handle_chat(
             "blocked": True,
         }
 
-    settings = get_settings()
-    api_key = getattr(settings, "anthropic_api_key", "") or ""
-
-    if api_key and len(api_key) > 10:
-        return await _claude_chat(message, user_id, username, role, api_key, db_session)
+    # Try LLM router (multi-provider) first, fall back to keywords
+    from app.services.llm_router import _get_default_model
+    if _get_default_model():
+        return await _llm_chat(message, user_id, username, role, db_session)
     else:
         return await _keyword_chat(message, username, role, db_session)
 
 
-async def _claude_chat(
+async def _llm_chat(
     message: str,
     user_id: int,
     username: str,
     role: str,
-    api_key: str,
     db_session,
 ) -> dict:
-    """Full Claude-powered chat with tool use."""
-    try:
-        import anthropic
-    except ImportError:
-        return await _keyword_chat(message, username, role, db_session)
+    """Multi-provider LLM chat via LiteLLM router with tool use."""
+    from app.services.llm_router import completion
 
     is_admin = role in ("admin", "super_admin")
     system = ADMIN_SYSTEM_PROMPT if is_admin else PLAYER_SYSTEM_PROMPT
-    tools = ADMIN_TOOLS if is_admin else PLAYER_TOOLS
+    tools_def = ADMIN_TOOLS if is_admin else PLAYER_TOOLS
 
-    client = anthropic.AsyncAnthropic(api_key=api_key)
+    # Convert tool definitions to OpenAI format (LiteLLM uses OpenAI format)
+    openai_tools = []
+    for t in tools_def:
+        openai_tools.append({
+            "type": "function",
+            "function": {
+                "name": t["name"],
+                "description": t["description"],
+                "parameters": t.get("input_schema", {"type": "object", "properties": {}}),
+            },
+        })
 
-    messages = [{"role": "user", "content": f"[{username}]: {message}"}]
+    messages = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": f"[{username}]: {message}"},
+    ]
 
     try:
-        response = await client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=800,
-            system=system,
-            tools=tools,
+        # First completion — may include tool calls
+        result = await completion(
             messages=messages,
+            tools=openai_tools if openai_tools else None,
+            user_id=user_id,
+            max_tokens=800,
+            db_session=db_session,
+            endpoint="chat",
         )
 
+        if result.get("error") and not result.get("text"):
+            return await _keyword_chat(message, username, role, db_session)
+
         # Handle tool calls
-        text_parts = []
-        tool_calls = []
-
-        for block in response.content:
-            if block.type == "text":
-                text_parts.append(block.text)
-            elif block.type == "tool_use":
-                tool_calls.append({"id": block.id, "name": block.name, "input": block.input})
-
-        if tool_calls:
-            # Execute tools and get follow-up
-            messages.append({"role": "assistant", "content": response.content})
+        if result.get("tool_calls"):
+            # Execute each tool
             tool_results = []
-            for call in tool_calls:
-                result = await _execute_tool(call["name"], call["input"], db_session, is_admin)
+            for call in result["tool_calls"]:
+                tool_result = await _execute_tool(call["name"], call["input"], db_session, is_admin)
                 tool_results.append({
-                    "type": "tool_result",
-                    "tool_use_id": call["id"],
-                    "content": json.dumps(result),
+                    "role": "tool",
+                    "tool_call_id": call["id"],
+                    "content": json.dumps(tool_result),
                 })
-            messages.append({"role": "user", "content": tool_results})
 
-            follow_up = await client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=800,
-                system=system,
-                tools=tools,
+            # Add assistant message with tool calls + tool results, then get follow-up
+            messages.append({
+                "role": "assistant",
+                "content": result.get("text", ""),
+                "tool_calls": [
+                    {
+                        "id": tc["id"],
+                        "type": "function",
+                        "function": {"name": tc["name"], "arguments": json.dumps(tc["input"])},
+                    }
+                    for tc in result["tool_calls"]
+                ],
+            })
+            messages.extend(tool_results)
+
+            follow_up = await completion(
                 messages=messages,
+                user_id=user_id,
+                max_tokens=800,
+                db_session=db_session,
+                endpoint="chat",
             )
-            text_parts = [b.text for b in follow_up.content if b.type == "text"]
+            response_text = follow_up.get("text", "")
+        else:
+            response_text = result.get("text", "")
 
-        response_text = "\n".join(text_parts) if text_parts else "I'm not sure how to help with that."
+        if not response_text:
+            response_text = "I'm not sure how to help with that."
 
         return {
             "response": response_text,
             "suggestions": _get_suggestions(role),
             "blocked": False,
+            "model": result.get("model", "unknown"),
+            "cost_usd": result.get("cost_usd", 0),
         }
 
     except Exception as e:
-        logger.error("Claude chat error: %s", e)
+        logger.error("LLM chat error: %s", e)
         return await _keyword_chat(message, username, role, db_session)
 
 

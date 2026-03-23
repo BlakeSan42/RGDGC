@@ -42,14 +42,14 @@ async def test_change_user_role_as_admin(client: AsyncClient, admin_headers, aut
     me_res = await client.get("/api/v1/auth/me", headers=auth_headers)
     user_id = me_res.json()["id"]
 
-    # Admin changes user's role
+    # Admin changes user's role (admin can assign player/guest, not admin/super_admin)
     res = await client.post(
         f"/api/v1/admin/users/{user_id}/role",
-        json={"role": "admin"},
+        json={"role": "guest"},
         headers=admin_headers,
     )
     assert res.status_code == 200
-    assert res.json()["role"] == "admin"
+    assert res.json()["role"] == "guest"
 
 
 @pytest.mark.asyncio

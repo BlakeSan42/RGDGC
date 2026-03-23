@@ -9,7 +9,7 @@ async def test_register(client: AsyncClient):
     res = await client.post("/api/v1/auth/register", json={
         "email": "new@rgdgc.com",
         "username": "newplayer",
-        "password": "pass123",
+        "password": "pass12345",
         "display_name": "New Player",
     })
     assert res.status_code == 201
@@ -25,7 +25,7 @@ async def test_register_duplicate_email(client: AsyncClient, auth_headers):
     res = await client.post("/api/v1/auth/register", json={
         "email": "test@rgdgc.com",
         "username": "different",
-        "password": "pass123",
+        "password": "pass12345",
     })
     assert res.status_code == 400
 

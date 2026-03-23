@@ -1,10 +1,11 @@
 """
 Clawd Chat Endpoint — AI-powered assistant for RGDGC.
 
-- Players: disc golf Q&A, standings, events, rules, putting tips
-- Admins: + member analytics, round stats, system status
+- Admin-only access (for now)
+- Multi-provider: OpenAI, Anthropic, Google, Groq, Ollama — via LiteLLM
 - Security: blocks probing questions about architecture/codebase/secrets
-- Falls back to keyword matching if no ANTHROPIC_API_KEY is set
+- Cost tracking: every call logged to llm_usage table
+- Falls back to keyword matching if no LLM provider configured
 """
 
 from fastapi import APIRouter, Depends
@@ -27,6 +28,8 @@ class ChatResponse(BaseModel):
     response: str
     suggestions: list[str]
     blocked: bool = False
+    model: str | None = None  # which LLM model was used
+    cost_usd: float | None = None  # cost of this request
 
 
 @router.post("", response_model=ChatResponse)
@@ -35,11 +38,11 @@ async def chat(
     user: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Send a message to Clawd (admin-only for now).
+    """Send a message to Clawd (admin-only).
 
-    Admins get tools for member analytics, standings, and system management.
+    Routes to the best available LLM provider (OpenAI, Anthropic, Google, Groq, or local Ollama).
+    Cost is tracked per-request in the llm_usage table.
     Security guardrails block questions about system architecture and secrets.
-    Uses Claude API if ANTHROPIC_API_KEY is set, keyword matching otherwise.
     """
     result = await handle_chat(
         message=data.message,

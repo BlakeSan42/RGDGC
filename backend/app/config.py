@@ -34,8 +34,13 @@ class Settings(BaseSettings):
     apple_team_id: str = ""
     apple_key_id: str = ""
 
-    # Anthropic (Clawd AI chat)
+    # LLM Providers (Clawd AI chat — configure one or more)
     anthropic_api_key: str = ""
+    openai_api_key: str = ""
+    gemini_api_key: str = ""
+    groq_api_key: str = ""
+    ollama_base_url: str = ""  # e.g. http://localhost:11434
+    llm_model: str = ""  # override auto-detection: gpt-4o-mini, claude-haiku-4-5-20251001, etc.
 
     # Storage
     storage_backend: str = "local"  # local or s3

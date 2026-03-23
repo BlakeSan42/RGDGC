@@ -25,6 +25,17 @@ api_router.include_router(tokens.router, prefix="/tokens", tags=["tokens"])
 api_router.include_router(intel.router, prefix="/intel", tags=["intel"])
 api_router.include_router(marketplace.router, prefix="/marketplace", tags=["marketplace"])
 
+# LLM usage analytics
+from app.api.v1 import llm_analytics
+api_router.include_router(llm_analytics.router, prefix="/admin", tags=["llm-analytics"])
+
+# League operations — card assignments, CTP, recurring events, ace fund
+try:
+    from app.api.v1 import league_ops
+    api_router.include_router(league_ops.router, tags=["league-ops"])
+except (ImportError, AttributeError):
+    pass
+
 # Analytics router — club leader dashboard
 try:
     from app.api.v1 import analytics
