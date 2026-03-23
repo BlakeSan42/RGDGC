@@ -226,3 +226,21 @@ blakesanders@MacBook-Pro-2 backend % ! railway add -d redis
 when this is done and fully working, simulated, tested, verified - see what you can get done with the game that is planned 
 
 consider using another clawdbot as a qa human tester to help.
+
+
+
+
+
+live right now.
+
+  ┌────────────────────┬──────────────────────────────────────────────────┐
+  │      Service       │                       URL                        │
+  ├────────────────────┼──────────────────────────────────────────────────┤
+  │ Backend API        │ https://rgdgc-api-production.up.railway.app      │
+  ├────────────────────┼──────────────────────────────────────────────────┤
+  │ API Docs (Swagger) │ https://rgdgc-api-production.up.railway.app/docs │
+  ├────────────────────┼──────────────────────────────────────────────────┤
+  │ Admin Dashboard    │ https://rgdgc-admin.vercel.app                   │
+  └────────────────────┴──────────────────────────────────────────────────┘
+
+  Login: admin@rgdgc.com / admin123
